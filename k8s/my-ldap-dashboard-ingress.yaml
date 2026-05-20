@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ldap-dashboard
+  namespace: petra-iam
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: public
+  tls:
+    - hosts:
+        - ldap.petra.ac.id
+      secretName: ldap-petra-ac-id-tls
+  rules:
+    - host: ldap.petra.ac.id
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-ldap-dashboard
+                port:
+                  number: 80

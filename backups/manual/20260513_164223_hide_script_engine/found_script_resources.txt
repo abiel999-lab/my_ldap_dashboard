@@ -1,0 +1,5 @@
+app/Filament/Resources/Operations/SavedScriptResource/Pages/ViewSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/EditSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/ListSavedScripts.php
+app/Filament/Resources/Operations/SavedScriptResource.php

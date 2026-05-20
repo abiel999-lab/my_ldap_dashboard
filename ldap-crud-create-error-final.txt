@@ -1,0 +1,547 @@
+1. LAST LARAVEL ERROR HEADER
+============================
+274:[2026-05-13 19:04:08] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "export_scope" of relation "ldif_export_batches" does not exist
+276:                                                             ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldif_export_batches" ("name", "ldap_connection_id", "base_dn", "export_scope", "search_scope", "target_rdn_attribute", "target_rdn_value", "custom_target_dn", "filter", "attributes", "size_limit", "uuid", "created_by", "updated_by", "safe_mode", "preview_mode", "destructive", "updated_at", "created_at") values (TEST Petra LDAP - Export Staff OU, 2, dc=petra,dc=ac,dc=id, ou, sub, ou, staff,ou=people, ?, (objectClass=*), * +, 1000, 40cf6432-d1a4-4e10-b8f1-e722829bccd8, 1, 1, 1, 0, 0, 2026-05-13 19:04:08, 2026-05-13 19:04:08) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"export_scope\" of relation \"ldif_export_batches\" does not exist
+358:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"export_scope\" of relation \"ldif_export_batches\" does not exist
+2433:[2026-05-14 09:19:38] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "type" of relation "operation_jobs" does not exist
+2435:                                                        ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "operation_jobs" ("operation_type", "type", "name", "module", "operation_action", "action", "status", "source", "target_type", "target_key", "target_dn", "ldap_connection_id", "created_by", "metadata", "uuid", "updated_at", "created_at") values (universal_ldap_sync, universal_ldap_sync, LDAP Sync - TEST Sync Students OU, operations.sync, execute_universal_ldap_sync, execute_universal_ldap_sync, queued, filament, App\Models\Operations\LdapSyncBatch, 1, ou=students,ou=people,dc=petra,dc=ac,dc=id, 2, 1, {"ldap_sync_batch_id":1,"effective_base_dn":"ou=students,ou=people,dc=petra,dc=ac,dc=id","filter":"(&(objectClass=inetOrgPerson)(!(uid=usr*)))","search_scope":"sub"}, 63bb98d9-90c9-4aef-8d90-6a18ae36ddd2, 2026-05-14 09:19:38, 2026-05-14 09:19:38) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"type\" of relation \"operation_jobs\" does not exist
+2517:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"type\" of relation \"operation_jobs\" does not exist
+2601:[2026-05-14 09:19:41] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "type" of relation "operation_jobs" does not exist
+2603:                                                        ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "operation_jobs" ("operation_type", "type", "name", "module", "operation_action", "action", "status", "source", "target_type", "target_key", "target_dn", "ldap_connection_id", "created_by", "metadata", "uuid", "updated_at", "created_at") values (universal_ldap_sync, universal_ldap_sync, LDAP Sync - TEST Sync Students OU, operations.sync, execute_universal_ldap_sync, execute_universal_ldap_sync, queued, filament, App\Models\Operations\LdapSyncBatch, 1, ou=students,ou=people,dc=petra,dc=ac,dc=id, 2, 1, {"ldap_sync_batch_id":1,"effective_base_dn":"ou=students,ou=people,dc=petra,dc=ac,dc=id","filter":"(&(objectClass=inetOrgPerson)(!(uid=usr*)))","search_scope":"sub"}, 387664c3-5db7-4409-88e2-cfd23b9581f4, 2026-05-14 09:19:41, 2026-05-14 09:19:41) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"type\" of relation \"operation_jobs\" does not exist
+2685:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"type\" of relation \"operation_jobs\" does not exist
+2769:[2026-05-14 09:24:07] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "name" of relation "operation_jobs" does not exist
+2771:                                                        ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "operation_jobs" ("operation_type", "name", "module", "operation_action", "action", "status", "source", "target_type", "target_key", "target_dn", "ldap_connection_id", "created_by", "metadata", "uuid", "updated_at", "created_at") values (universal_ldap_sync, LDAP Sync - TEST Sync Students OU, operations.sync, execute_universal_ldap_sync, execute_universal_ldap_sync, queued, filament, App\Models\Operations\LdapSyncBatch, 1, ou=students,ou=people,dc=petra,dc=ac,dc=id, 2, 1, {"ldap_sync_batch_id":1,"effective_base_dn":"ou=students,ou=people,dc=petra,dc=ac,dc=id","filter":"(&(objectClass=inetOrgPerson)(!(uid=usr*)))","search_scope":"sub"}, 80f4735d-508b-4575-ad55-4065577e6c3f, 2026-05-14 09:24:07, 2026-05-14 09:24:07) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"name\" of relation \"operation_jobs\" does not exist
+2853:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"name\" of relation \"operation_jobs\" does not exist
+2937:[2026-05-14 09:24:36] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "name" of relation "operation_jobs" does not exist
+2939:                                                        ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "operation_jobs" ("operation_type", "name", "module", "operation_action", "action", "status", "source", "target_type", "target_key", "target_dn", "ldap_connection_id", "created_by", "metadata", "uuid", "updated_at", "created_at") values (universal_ldap_sync, LDAP Sync - TEST Sync Students OU, operations.sync, execute_universal_ldap_sync, execute_universal_ldap_sync, queued, filament, App\Models\Operations\LdapSyncBatch, 1, ou=students,ou=people,dc=petra,dc=ac,dc=id, 2, 1, {"ldap_sync_batch_id":1,"effective_base_dn":"ou=students,ou=people,dc=petra,dc=ac,dc=id","filter":"(&(objectClass=inetOrgPerson)(!(uid=usr*)))","search_scope":"sub"}, a436295f-2918-479a-8a5c-7adc5d2b173a, 2026-05-14 09:24:36, 2026-05-14 09:24:36) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"name\" of relation \"operation_jobs\" does not exist
+3021:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"name\" of relation \"operation_jobs\" does not exist
+3105:[2026-05-14 09:31:50] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "message" of relation "operation_jobs" does not exist
+3107:                                                   ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: update "operation_jobs" set "status" = failed, "message" = Array to string conversion, "finished_at" = 2026-05-14 09:31:50, "updated_at" = 2026-05-14 09:31:50 where "operation_jobs"."id" = 89) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"message\" of relation \"operation_jobs\" does not exist
+3144:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"message\" of relation \"operation_jobs\" does not exist
+3684:[2026-05-14 10:03:36] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "message" of relation "operation_jobs" does not exist
+3686:                                                   ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: update "operation_jobs" set "status" = failed, "message" = Array to string conversion, "finished_at" = 2026-05-14 10:03:36, "updated_at" = 2026-05-14 10:03:36 where "operation_jobs"."id" = 90) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"message\" of relation \"operation_jobs\" does not exist
+3723:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"message\" of relation \"operation_jobs\" does not exist
+3762:[2026-05-14 10:13:12] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "message" of relation "operation_jobs" does not exist
+3764:                                                   ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: update "operation_jobs" set "status" = failed, "message" = Array to string conversion, "finished_at" = 2026-05-14 10:13:12, "updated_at" = 2026-05-14 10:13:12 where "operation_jobs"."id" = 91) {"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"message\" of relation \"operation_jobs\" does not exist
+3801:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"message\" of relation \"operation_jobs\" does not exist
+3840:[2026-05-14 13:03:30] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "transfer_scope" of relation "ldap_transfer_batches" does not exist
+3842:                                                             ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_transfer_batches" ("name", "source_ldap_connection_id", "target_ldap_connection_id", "transfer_scope", "source_base_dn", "source_rdn_attribute", "source_rdn_value", "custom_source_dn", "search_scope", "filter", "attributes", "size_limit", "page_size", "target_parent_dn", "target_dn_strategy", "source_base_replacement", "target_base_replacement", "if_target_exists", "excluded_attributes", "include_operational_attributes", "preview_only", "safe_mode", "destructive", "updated_at", "created_at") values (TEST Petra External Users 000000-000061 To Tiny, 4, 2, custom_dn, dc=petra,dc=ac,dc=id, ?, ?, ou=external,ou=people,dc=petra,dc=ac,dc=id, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(uid=usr000002)(uid=usr000003)(uid=usr000004)(uid=usr000005)(uid=usr000006)(uid=usr000007)(uid=usr000008)(uid=usr000009)(uid=usr000010)(uid=usr000011)(uid=usr000012)(uid=usr000013)(uid=usr000014)(uid=usr000015)(uid=usr000016)(uid=usr000017)(uid=usr000018)(uid=usr000019)(uid=usr000020)(uid=usr000021)(uid=usr000022)(uid=usr000023)(uid=usr000024)(uid=usr000025)(uid=usr000026)(uid=usr000027)(uid=usr000028)(uid=usr000029)(uid=usr000030)(uid=usr000031)(uid=usr000032)(uid=usr000033)(uid=usr000034)(uid=usr000035)(uid=usr000036)(uid=usr000037)(uid=usr000038)(uid=usr000039)(uid=usr000040)(uid=usr000041)(uid=usr000042)(uid=usr000043)(uid=usr000044)(uid=usr000045)(uid=usr000046)(uid=usr000047)(uid=usr000048)(uid=usr000049)(uid=usr000050)(uid=usr000051)(uid=usr000052)(uid=usr000053)(uid=usr000054)(uid=usr000055)(uid=usr000056)(uid=usr000057)(uid=usr000058)(uid=usr000059)(uid=usr000060)(uid=usr000061))), *, 100, 50, ou=transfer-target,dc=test,dc=local, flatten, ?, ?, skip, "userPassword entryUUID entryCSN createTimestamp creatorsName modifyTimestamp modifiersName structuralObjectClass", 0, 1, 1, 0, 2026-05-14 13:03:30, 2026-05-14 13:03:30) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"transfer_scope\" of relation \"ldap_transfer_batches\" does not exist
+3924:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"transfer_scope\" of relation \"ldap_transfer_batches\" does not exist
+4048:[2026-05-14 13:09:29] local.ERROR: SQLSTATE[42703]: Undefined column: 7 ERROR:  column "transfer_scope" of relation "ldap_transfer_batches" does not exist
+4050:                                                             ^ (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_transfer_batches" ("name", "source_ldap_connection_id", "target_ldap_connection_id", "transfer_scope", "source_base_dn", "source_rdn_attribute", "source_rdn_value", "custom_source_dn", "search_scope", "filter", "attributes", "size_limit", "page_size", "target_parent_dn", "target_dn_strategy", "source_base_replacement", "target_base_replacement", "if_target_exists", "excluded_attributes", "include_operational_attributes", "preview_only", "safe_mode", "destructive", "updated_at", "created_at") values (TEST Petra External Users 000000-000061 To Tiny, 2, 4, custom_dn, dc=petra,dc=ac,dc=id, ?, ?, ou=external,ou=people,dc=petra,dc=ac,dc=id, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(uid=usr000002)(uid=usr000003)(uid=usr000004)(uid=usr000005)(uid=usr000006)(uid=usr000007)(uid=usr000008)(uid=usr000009)(uid=usr000010)(uid=usr000011)(uid=usr000012)(uid=usr000013)(uid=usr000014)(uid=usr000015)(uid=usr000016)(uid=usr000017)(uid=usr000018)(uid=usr000019)(uid=usr000020)(uid=usr000021)(uid=usr000022)(uid=usr000023)(uid=usr000024)(uid=usr000025)(uid=usr000026)(uid=usr000027)(uid=usr000028)(uid=usr000029)(uid=usr000030)(uid=usr000031)(uid=usr000032)(uid=usr000033)(uid=usr000034)(uid=usr000035)(uid=usr000036)(uid=usr000037)(uid=usr000038)(uid=usr000039)(uid=usr000040)(uid=usr000041)(uid=usr000042)(uid=usr000043)(uid=usr000044)(uid=usr000045)(uid=usr000046)(uid=usr000047)(uid=usr000048)(uid=usr000049)(uid=usr000050)(uid=usr000051)(uid=usr000052)(uid=usr000053)(uid=usr000054)(uid=usr000055)(uid=usr000056)(uid=usr000057)(uid=usr000058)(uid=usr000059)(uid=usr000060)(uid=usr000061))), *, 100, 50, ou=transfer-target,dc=test,dc=local, flatten, ?, ?, skip, "userPassword entryUUID entryCSN createTimestamp creatorsName modifyTimestamp modifiersName structuralObjectClass", 0, 1, 1, 0, 2026-05-14 13:09:29, 2026-05-14 13:09:29) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"transfer_scope\" of relation \"ldap_transfer_batches\" does not exist
+4132:[previous exception] [object] (PDOException(code: 42703): SQLSTATE[42703]: Undefined column: 7 ERROR:  column \"transfer_scope\" of relation \"ldap_transfer_batches\" does not exist
+4216:[2026-05-14 13:22:42] local.ERROR: SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column "uuid" of relation "ldap_transfer_batches" violates not-null constraint
+4217:DETAIL:  Failing row contains (3, null, 2, 4, TEST Petra External Users 000000-000061 To Tiny, copy, draft, dc=petra,dc=ac,dc=id, null, (objectClass=*), sub, f, f, skip, "userPassword entryUUID entryCSN createTimestamp creatorsName mo..., null, 0, 0, 0, 0, null, null, null, null, null, null, null, 2026-05-14 13:22:42, 2026-05-14 13:22:42, filter, null, null, null, auto, custom_dn, null, null, ou=external,ou=people,dc=petra,dc=ac,dc=id, ou=transfer-target,dc=test,dc=local, flatten, null, null, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(ui..., *, 100, 50, skip, t, t, f, null, null, null, null, 0, 0, null, null, null, null). (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_transfer_batches" ("name", "source_ldap_connection_id", "target_ldap_connection_id", "transfer_scope", "source_base_dn", "source_rdn_attribute", "source_rdn_value", "custom_source_dn", "search_scope", "filter", "attributes", "size_limit", "page_size", "target_parent_dn", "target_dn_strategy", "source_base_replacement", "target_base_replacement", "if_target_exists", "excluded_attributes", "include_operational_attributes", "preview_only", "safe_mode", "destructive", "updated_at", "created_at") values (TEST Petra External Users 000000-000061 To Tiny, 2, 4, custom_dn, dc=petra,dc=ac,dc=id, ?, ?, ou=external,ou=people,dc=petra,dc=ac,dc=id, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(uid=usr000002)(uid=usr000003)(uid=usr000004)(uid=usr000005)(uid=usr000006)(uid=usr000007)(uid=usr000008)(uid=usr000009)(uid=usr000010)(uid=usr000011)(uid=usr000012)(uid=usr000013)(uid=usr000014)(uid=usr000015)(uid=usr000016)(uid=usr000017)(uid=usr000018)(uid=usr000019)(uid=usr000020)(uid=usr000021)(uid=usr000022)(uid=usr000023)(uid=usr000024)(uid=usr000025)(uid=usr000026)(uid=usr000027)(uid=usr000028)(uid=usr000029)(uid=usr000030)(uid=usr000031)(uid=usr000032)(uid=usr000033)(uid=usr000034)(uid=usr000035)(uid=usr000036)(uid=usr000037)(uid=usr000038)(uid=usr000039)(uid=usr000040)(uid=usr000041)(uid=usr000042)(uid=usr000043)(uid=usr000044)(uid=usr000045)(uid=usr000046)(uid=usr000047)(uid=usr000048)(uid=usr000049)(uid=usr000050)(uid=usr000051)(uid=usr000052)(uid=usr000053)(uid=usr000054)(uid=usr000055)(uid=usr000056)(uid=usr000057)(uid=usr000058)(uid=usr000059)(uid=usr000060)(uid=usr000061))), *, 100, 50, ou=transfer-target,dc=test,dc=local, flatten, ?, ?, skip, "userPassword entryUUID entryCSN createTimestamp creatorsName modifyTimestamp modifiersName structuralObjectClass", 0, 1, 1, 0, 2026-05-14 13:22:42, 2026-05-14 13:22:42) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_transfer_batches\" violates not-null constraint
+4298:[previous exception] [object] (PDOException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_transfer_batches\" violates not-null constraint
+4381:[2026-05-14 13:22:43] local.ERROR: SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column "uuid" of relation "ldap_transfer_batches" violates not-null constraint
+4382:DETAIL:  Failing row contains (4, null, 2, 4, TEST Petra External Users 000000-000061 To Tiny, copy, draft, dc=petra,dc=ac,dc=id, null, (objectClass=*), sub, f, f, skip, "userPassword entryUUID entryCSN createTimestamp creatorsName mo..., null, 0, 0, 0, 0, null, null, null, null, null, null, null, 2026-05-14 13:22:43, 2026-05-14 13:22:43, filter, null, null, null, auto, custom_dn, null, null, ou=external,ou=people,dc=petra,dc=ac,dc=id, ou=transfer-target,dc=test,dc=local, flatten, null, null, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(ui..., *, 100, 50, skip, t, t, f, null, null, null, null, 0, 0, null, null, null, null). (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_transfer_batches" ("name", "source_ldap_connection_id", "target_ldap_connection_id", "transfer_scope", "source_base_dn", "source_rdn_attribute", "source_rdn_value", "custom_source_dn", "search_scope", "filter", "attributes", "size_limit", "page_size", "target_parent_dn", "target_dn_strategy", "source_base_replacement", "target_base_replacement", "if_target_exists", "excluded_attributes", "include_operational_attributes", "preview_only", "safe_mode", "destructive", "updated_at", "created_at") values (TEST Petra External Users 000000-000061 To Tiny, 2, 4, custom_dn, dc=petra,dc=ac,dc=id, ?, ?, ou=external,ou=people,dc=petra,dc=ac,dc=id, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(uid=usr000002)(uid=usr000003)(uid=usr000004)(uid=usr000005)(uid=usr000006)(uid=usr000007)(uid=usr000008)(uid=usr000009)(uid=usr000010)(uid=usr000011)(uid=usr000012)(uid=usr000013)(uid=usr000014)(uid=usr000015)(uid=usr000016)(uid=usr000017)(uid=usr000018)(uid=usr000019)(uid=usr000020)(uid=usr000021)(uid=usr000022)(uid=usr000023)(uid=usr000024)(uid=usr000025)(uid=usr000026)(uid=usr000027)(uid=usr000028)(uid=usr000029)(uid=usr000030)(uid=usr000031)(uid=usr000032)(uid=usr000033)(uid=usr000034)(uid=usr000035)(uid=usr000036)(uid=usr000037)(uid=usr000038)(uid=usr000039)(uid=usr000040)(uid=usr000041)(uid=usr000042)(uid=usr000043)(uid=usr000044)(uid=usr000045)(uid=usr000046)(uid=usr000047)(uid=usr000048)(uid=usr000049)(uid=usr000050)(uid=usr000051)(uid=usr000052)(uid=usr000053)(uid=usr000054)(uid=usr000055)(uid=usr000056)(uid=usr000057)(uid=usr000058)(uid=usr000059)(uid=usr000060)(uid=usr000061))), *, 100, 50, ou=transfer-target,dc=test,dc=local, flatten, ?, ?, skip, "userPassword entryUUID entryCSN createTimestamp creatorsName modifyTimestamp modifiersName structuralObjectClass", 0, 1, 1, 0, 2026-05-14 13:22:43, 2026-05-14 13:22:43) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_transfer_batches\" violates not-null constraint
+4463:[previous exception] [object] (PDOException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_transfer_batches\" violates not-null constraint
+4546:[2026-05-14 13:32:58] local.ERROR: SQLSTATE[22001]: String data, right truncated: 7 ERROR:  value too long for type character varying(255) (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_transfer_batches" ("name", "source_ldap_connection_id", "target_ldap_connection_id", "transfer_scope", "source_base_dn", "source_rdn_attribute", "source_rdn_value", "custom_source_dn", "search_scope", "filter", "attributes", "size_limit", "page_size", "target_parent_dn", "target_dn_strategy", "source_base_replacement", "target_base_replacement", "if_target_exists", "excluded_attributes", "include_operational_attributes", "preview_only", "safe_mode", "destructive", "status", "mode", "source_input_mode", "scope", "ldap_filter", "target_dn", "target_base_dn", "target_dn_mode", "collision_strategy", "source_dns_text", "source_file_path", "delete_source_after_copy", "total_entries", "success_entries", "failed_entries", "skipped_entries", "planned_entries", "transferred_entries", "preview_ldif", "stdout", "stderr", "error_message", "message", "uuid", "created_by", "updated_by", "updated_at", "created_at") values (TEST Petra External Users 000000-000061 To Tiny, 2, 4, custom_dn, dc=petra,dc=ac,dc=id, ?, ?, ou=external,ou=people,dc=petra,dc=ac,dc=id, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(uid=usr000002)(uid=usr000003)(uid=usr000004)(uid=usr000005)(uid=usr000006)(uid=usr000007)(uid=usr000008)(uid=usr000009)(uid=usr000010)(uid=usr000011)(uid=usr000012)(uid=usr000013)(uid=usr000014)(uid=usr000015)(uid=usr000016)(uid=usr000017)(uid=usr000018)(uid=usr000019)(uid=usr000020)(uid=usr000021)(uid=usr000022)(uid=usr000023)(uid=usr000024)(uid=usr000025)(uid=usr000026)(uid=usr000027)(uid=usr000028)(uid=usr000029)(uid=usr000030)(uid=usr000031)(uid=usr000032)(uid=usr000033)(uid=usr000034)(uid=usr000035)(uid=usr000036)(uid=usr000037)(uid=usr000038)(uid=usr000039)(uid=usr000040)(uid=usr000041)(uid=usr000042)(uid=usr000043)(uid=usr000044)(uid=usr000045)(uid=usr000046)(uid=usr000047)(uid=usr000048)(uid=usr000049)(uid=usr000050)(uid=usr000051)(uid=usr000052)(uid=usr000053)(uid=usr000054)(uid=usr000055)(uid=usr000056)(uid=usr000057)(uid=usr000058)(uid=usr000059)(uid=usr000060)(uid=usr000061))), *, 100, 50, ou=transfer-target,dc=test,dc=local, flatten, ?, ?, skip, ["userPassword","entryUUID","entryCSN","createTimestamp","creatorsName","modifyTimestamp","modifiersName","structuralObjectClass"], 0, 1, 1, 0, draft, copy, ldap_query, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(uid=usr000002)(uid=usr000003)(uid=usr000004)(uid=usr000005)(uid=usr000006)(uid=usr000007)(uid=usr000008)(uid=usr000009)(uid=usr000010)(uid=usr000011)(uid=usr000012)(uid=usr000013)(uid=usr000014)(uid=usr000015)(uid=usr000016)(uid=usr000017)(uid=usr000018)(uid=usr000019)(uid=usr000020)(uid=usr000021)(uid=usr000022)(uid=usr000023)(uid=usr000024)(uid=usr000025)(uid=usr000026)(uid=usr000027)(uid=usr000028)(uid=usr000029)(uid=usr000030)(uid=usr000031)(uid=usr000032)(uid=usr000033)(uid=usr000034)(uid=usr000035)(uid=usr000036)(uid=usr000037)(uid=usr000038)(uid=usr000039)(uid=usr000040)(uid=usr000041)(uid=usr000042)(uid=usr000043)(uid=usr000044)(uid=usr000045)(uid=usr000046)(uid=usr000047)(uid=usr000048)(uid=usr000049)(uid=usr000050)(uid=usr000051)(uid=usr000052)(uid=usr000053)(uid=usr000054)(uid=usr000055)(uid=usr000056)(uid=usr000057)(uid=usr000058)(uid=usr000059)(uid=usr000060)(uid=usr000061))), ou=transfer-target,dc=test,dc=local, ou=transfer-target,dc=test,dc=local, auto, skip, ou=external,ou=people,dc=petra,dc=ac,dc=id, ?, 0, 0, 0, 0, 0, 0, 0, ?, ?, ?, ?, Transfer draft created. Queue preview to generate LDIF plan., 7ad5206d-a2c8-4c6e-9e1c-24f25d228dee, 1, 1, 2026-05-14 13:32:58, 2026-05-14 13:32:58) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 22001): SQLSTATE[22001]: String data, right truncated: 7 ERROR:  value too long for type character varying(255) (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into \"ldap_transfer_batches\" (\"name\", \"source_ldap_connection_id\", \"target_ldap_connection_id\", \"transfer_scope\", \"source_base_dn\", \"source_rdn_attribute\", \"source_rdn_value\", \"custom_source_dn\", \"search_scope\", \"filter\", \"attributes\", \"size_limit\", \"page_size\", \"target_parent_dn\", \"target_dn_strategy\", \"source_base_replacement\", \"target_base_replacement\", \"if_target_exists\", \"excluded_attributes\", \"include_operational_attributes\", \"preview_only\", \"safe_mode\", \"destructive\", \"status\", \"mode\", \"source_input_mode\", \"scope\", \"ldap_filter\", \"target_dn\", \"target_base_dn\", \"target_dn_mode\", \"collision_strategy\", \"source_dns_text\", \"source_file_path\", \"delete_source_after_copy\", \"total_entries\", \"success_entries\", \"failed_entries\", \"skipped_entries\", \"planned_entries\", \"transferred_entries\", \"preview_ldif\", \"stdout\", \"stderr\", \"error_message\", \"message\", \"uuid\", \"created_by\", \"updated_by\", \"updated_at\", \"created_at\") values (TEST Petra External Users 000000-000061 To Tiny, 2, 4, custom_dn, dc=petra,dc=ac,dc=id, ?, ?, ou=external,ou=people,dc=petra,dc=ac,dc=id, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(uid=usr000002)(uid=usr000003)(uid=usr000004)(uid=usr000005)(uid=usr000006)(uid=usr000007)(uid=usr000008)(uid=usr000009)(uid=usr000010)(uid=usr000011)(uid=usr000012)(uid=usr000013)(uid=usr000014)(uid=usr000015)(uid=usr000016)(uid=usr000017)(uid=usr000018)(uid=usr000019)(uid=usr000020)(uid=usr000021)(uid=usr000022)(uid=usr000023)(uid=usr000024)(uid=usr000025)(uid=usr000026)(uid=usr000027)(uid=usr000028)(uid=usr000029)(uid=usr000030)(uid=usr000031)(uid=usr000032)(uid=usr000033)(uid=usr000034)(uid=usr000035)(uid=usr000036)(uid=usr000037)(uid=usr000038)(uid=usr000039)(uid=usr000040)(uid=usr000041)(uid=usr000042)(uid=usr000043)(uid=usr000044)(uid=usr000045)(uid=usr000046)(uid=usr000047)(uid=usr000048)(uid=usr000049)(uid=usr000050)(uid=usr000051)(uid=usr000052)(uid=usr000053)(uid=usr000054)(uid=usr000055)(uid=usr000056)(uid=usr000057)(uid=usr000058)(uid=usr000059)(uid=usr000060)(uid=usr000061))), *, 100, 50, ou=transfer-target,dc=test,dc=local, flatten, ?, ?, skip, [\"userPassword\",\"entryUUID\",\"entryCSN\",\"createTimestamp\",\"creatorsName\",\"modifyTimestamp\",\"modifiersName\",\"structuralObjectClass\"], 0, 1, 1, 0, draft, copy, ldap_query, sub, (&(objectClass=inetOrgPerson)(|(uid=usr000000)(uid=usr000001)(uid=usr000002)(uid=usr000003)(uid=usr000004)(uid=usr000005)(uid=usr000006)(uid=usr000007)(uid=usr000008)(uid=usr000009)(uid=usr000010)(uid=usr000011)(uid=usr000012)(uid=usr000013)(uid=usr000014)(uid=usr000015)(uid=usr000016)(uid=usr000017)(uid=usr000018)(uid=usr000019)(uid=usr000020)(uid=usr000021)(uid=usr000022)(uid=usr000023)(uid=usr000024)(uid=usr000025)(uid=usr000026)(uid=usr000027)(uid=usr000028)(uid=usr000029)(uid=usr000030)(uid=usr000031)(uid=usr000032)(uid=usr000033)(uid=usr000034)(uid=usr000035)(uid=usr000036)(uid=usr000037)(uid=usr000038)(uid=usr000039)(uid=usr000040)(uid=usr000041)(uid=usr000042)(uid=usr000043)(uid=usr000044)(uid=usr000045)(uid=usr000046)(uid=usr000047)(uid=usr000048)(uid=usr000049)(uid=usr000050)(uid=usr000051)(uid=usr000052)(uid=usr000053)(uid=usr000054)(uid=usr000055)(uid=usr000056)(uid=usr000057)(uid=usr000058)(uid=usr000059)(uid=usr000060)(uid=usr000061))), ou=transfer-target,dc=test,dc=local, ou=transfer-target,dc=test,dc=local, auto, skip, ou=external,ou=people,dc=petra,dc=ac,dc=id, ?, 0, 0, 0, 0, 0, 0, 0, ?, ?, ?, ?, Transfer draft created. Queue preview to generate LDIF plan., 7ad5206d-a2c8-4c6e-9e1c-24f25d228dee, 1, 1, 2026-05-14 13:32:58, 2026-05-14 13:32:58) returning \"id\") at /opt/petra_iam_big_project/my_ldap_dashboard/vendor/laravel/framework/src/Illuminate/Database/Connection.php:841)
+4626:[previous exception] [object] (PDOException(code: 22001): SQLSTATE[22001]: String data, right truncated: 7 ERROR:  value too long for type character varying(255) at /opt/petra_iam_big_project/my_ldap_dashboard/vendor/laravel/framework/src/Illuminate/Database/Connection.php:426)
+7292:[2026-05-15 17:00:45] local.ERROR: SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type json
+7298:inetOrgPerson, ;, 3)) {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type json
+7376:[previous exception] [object] (PDOException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type json
+7453:[2026-05-15 17:00:50] local.ERROR: SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type json
+7459:inetOrgPerson, ;, 3)) {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type json
+7537:[previous exception] [object] (PDOException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type json
+7614:[2026-05-15 17:01:04] local.ERROR: SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type json
+7620:inetOrgPerson, ;, 3)) {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type json
+7698:[previous exception] [object] (PDOException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type json
+7775:[2026-05-16 02:09:47] local.ERROR: SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column "uuid" of relation "ldap_connections" violates not-null constraint
+7776:DETAIL:  Failing row contains (5, null, Petra LDAP Development, local, 127.0.0.1, 3389, dc=petra,dc=dev, cn=admin,dc=petra,dc=dev, SeongJinWoo999!, f, f, 5, t, f, f, null, null, uid, cn, mail, member, entryUUID, null, null, null, null, null, null, null, 2026-05-16 02:09:46, 2026-05-16 02:09:46, f, disabled, null, null, null, null, null, null, null, null, null, null). (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_connections" ("name", "host", "port", "base_dn", "bind_dn", "bind_password", "is_active", "is_default", "created_at", "updated_at") values (Petra LDAP Development, 127.0.0.1, 3389, dc=petra,dc=dev, cn=admin,dc=petra,dc=dev, SeongJinWoo999!, 1, 0, 2026-05-16 02:09:46, 2026-05-16 02:09:46)) {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_connections\" violates not-null constraint
+7850:[previous exception] [object] (PDOException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_connections\" violates not-null constraint
+7926:[2026-05-16 02:10:31] local.ERROR: SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column "uuid" of relation "ldap_connections" violates not-null constraint
+7927:DETAIL:  Failing row contains (6, null, Petra LDAP Development, local, 127.0.0.1, 3389, dc=petra,dc=dev, cn=admin,dc=petra,dc=dev, SeongJinWoo999!, f, f, 5, t, f, f, null, null, uid, cn, mail, member, entryUUID, null, null, null, null, null, null, null, 2026-05-16 02:10:31, 2026-05-16 02:10:31, f, disabled, null, null, null, null, null, null, null, null, null, null). (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_connections" ("name", "host", "port", "base_dn", "bind_dn", "bind_password", "is_active", "is_default", "created_at", "updated_at") values (Petra LDAP Development, 127.0.0.1, 3389, dc=petra,dc=dev, cn=admin,dc=petra,dc=dev, SeongJinWoo999!, 1, 0, 2026-05-16 02:10:31, 2026-05-16 02:10:31)) {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_connections\" violates not-null constraint
+8001:[previous exception] [object] (PDOException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_connections\" violates not-null constraint
+8629:[2026-05-17 17:47:08] local.ERROR: SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type bigint: "create"
+8630:CONTEXT:  unnamed portal parameter $1 = '...' (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: select * from "ldap_crud_operations" where "id" = create limit 1) {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type bigint: \"create\"
+8631:CONTEXT:  unnamed portal parameter $1 = '...' (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: select * from \"ldap_crud_operations\" where \"id\" = create limit 1) at /opt/petra_iam_big_project/my_ldap_dashboard/vendor/laravel/framework/src/Illuminate/Database/Connection.php:841)
+8722:[previous exception] [object] (PDOException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type bigint: \"create\"
+8816:[2026-05-17 18:46:05] local.ERROR: Array to string conversion (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_crud_operations" ("name", "ldap_connection_id", "target_mode", "base_dn", "search_scope", "size_limit", "ldap_filter", "operation_kind", "objectclass_name", "objectclass_must_values", "skip_if_invalid", "queue_threshold", "require_preview", "updated_at", "created_at") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, ?, 1, 200, 1, 2026-05-17 18:46:05, 2026-05-17 18:46:05) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 0): Array to string conversion (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into \"ldap_crud_operations\" (\"name\", \"ldap_connection_id\", \"target_mode\", \"base_dn\", \"search_scope\", \"size_limit\", \"ldap_filter\", \"operation_kind\", \"objectclass_name\", \"objectclass_must_values\", \"skip_if_invalid\", \"queue_threshold\", \"require_preview\", \"updated_at\", \"created_at\") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, ?, 1, 200, 1, 2026-05-17 18:46:05, 2026-05-17 18:46:05) returning \"id\") at /opt/petra_iam_big_project/my_ldap_dashboard/vendor/laravel/framework/src/Illuminate/Database/Connection.php:841)
+8981:[2026-05-17 19:08:51] local.ERROR: SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column "uuid" of relation "ldap_crud_operations" violates not-null constraint
+8982:DETAIL:  Failing row contains (3, null, 2, Bulk Add domainRelatedObject Alumni Above 45, null, draft, null, null, null, null, null, null, null, null, null, null, null, t, t, f, t, null, null, null, null, null, null, null, null, null, null, 2026-05-17 19:08:51, 2026-05-17 19:08:51, add_objectclass, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), 100, domainRelatedObject, null, null, null, skip, t, t, null, null, null, base_dn, null, null, null, skip, 200, null, null, null, {"associatedDomain":"alumni.petra.ac.id"}, t). (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_crud_operations" ("name", "ldap_connection_id", "target_mode", "base_dn", "search_scope", "size_limit", "ldap_filter", "operation_kind", "objectclass_name", "objectclass_must_values", "skip_if_invalid", "queue_threshold", "require_preview", "updated_at", "created_at") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {"associatedDomain":"alumni.petra.ac.id"}, 1, 200, 1, 2026-05-17 19:08:51, 2026-05-17 19:08:51) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_crud_operations\" violates not-null constraint
+8983:DETAIL:  Failing row contains (3, null, 2, Bulk Add domainRelatedObject Alumni Above 45, null, draft, null, null, null, null, null, null, null, null, null, null, null, t, t, f, t, null, null, null, null, null, null, null, null, null, null, 2026-05-17 19:08:51, 2026-05-17 19:08:51, add_objectclass, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), 100, domainRelatedObject, null, null, null, skip, t, t, null, null, null, base_dn, null, null, null, skip, 200, null, null, null, {\"associatedDomain\":\"alumni.petra.ac.id\"}, t). (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into \"ldap_crud_operations\" (\"name\", \"ldap_connection_id\", \"target_mode\", \"base_dn\", \"search_scope\", \"size_limit\", \"ldap_filter\", \"operation_kind\", \"objectclass_name\", \"objectclass_must_values\", \"skip_if_invalid\", \"queue_threshold\", \"require_preview\", \"updated_at\", \"created_at\") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {\"associatedDomain\":\"alumni.petra.ac.id\"}, 1, 200, 1, 2026-05-17 19:08:51, 2026-05-17 19:08:51) returning \"id\") at /opt/petra_iam_big_project/my_ldap_dashboard/vendor/laravel/framework/src/Illuminate/Database/Connection.php:841)
+9063:[previous exception] [object] (PDOException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_crud_operations\" violates not-null constraint
+9146:[2026-05-17 19:12:53] local.ERROR: SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type bigint: "abielpasaribu@gmail.com"
+9147:CONTEXT:  unnamed portal parameter $22 = '...' (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_crud_operations" ("name", "ldap_connection_id", "target_mode", "base_dn", "search_scope", "size_limit", "ldap_filter", "operation_kind", "objectclass_name", "objectclass_must_values", "skip_if_invalid", "queue_threshold", "require_preview", "operation_type", "status", "target_dn", "custom_target_dn", "preview_result", "execution_result", "rollback_payload", "rollback_result", "created_by", "updated_at", "created_at") values (Bulk Add domainRelatedObject Alumni Above 45, 1, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {"associatedDomain":"alumni.petra.ac.id"}, 1, 200, 1, add_objectclass, draft, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, ?, ?, ?, ?, ?, abielpasaribu@gmail.com, 2026-05-17 19:12:53, 2026-05-17 19:12:53) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type bigint: \"abielpasaribu@gmail.com\"
+9148:CONTEXT:  unnamed portal parameter $22 = '...' (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into \"ldap_crud_operations\" (\"name\", \"ldap_connection_id\", \"target_mode\", \"base_dn\", \"search_scope\", \"size_limit\", \"ldap_filter\", \"operation_kind\", \"objectclass_name\", \"objectclass_must_values\", \"skip_if_invalid\", \"queue_threshold\", \"require_preview\", \"operation_type\", \"status\", \"target_dn\", \"custom_target_dn\", \"preview_result\", \"execution_result\", \"rollback_payload\", \"rollback_result\", \"created_by\", \"updated_at\", \"created_at\") values (Bulk Add domainRelatedObject Alumni Above 45, 1, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {\"associatedDomain\":\"alumni.petra.ac.id\"}, 1, 200, 1, add_objectclass, draft, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, ?, ?, ?, ?, ?, abielpasaribu@gmail.com, 2026-05-17 19:12:53, 2026-05-17 19:12:53) returning \"id\") at /opt/petra_iam_big_project/my_ldap_dashboard/vendor/laravel/framework/src/Illuminate/Database/Connection.php:841)
+9228:[previous exception] [object] (PDOException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type bigint: \"abielpasaribu@gmail.com\"
+9311:[2026-05-17 19:15:33] local.ERROR: SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column "uuid" of relation "ldap_crud_operations" violates not-null constraint
+9312:DETAIL:  Failing row contains (4, null, 2, Bulk Add domainRelatedObject Alumni Above 45, add_objectclass, draft, dc=petra,dc=ac,dc=id, null, null, null, null, null, null, null, null, null, null, t, t, f, t, null, null, null, null, null, null, null, null, 1, null, 2026-05-17 19:15:33, 2026-05-17 19:15:33, add_objectclass, dc=petra,dc=ac,dc=id, subtree, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), 100, domainRelatedObject, null, null, null, skip, t, t, null, null, null, base_dn, null, null, null, skip, 200, null, null, null, {"associatedDomain":"alumni.petra.ac.id"}, t). (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_crud_operations" ("name", "ldap_connection_id", "target_mode", "base_dn", "search_scope", "size_limit", "ldap_filter", "operation_kind", "objectclass_name", "objectclass_must_values", "skip_if_invalid", "queue_threshold", "require_preview", "operation_type", "status", "target_dn", "custom_target_dn", "preview_result", "execution_result", "rollback_payload", "rollback_result", "created_by", "updated_at", "created_at") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {"associatedDomain":"alumni.petra.ac.id"}, 1, 200, 1, add_objectclass, draft, dc=petra,dc=ac,dc=id, ?, ?, ?, ?, ?, 1, 2026-05-17 19:15:33, 2026-05-17 19:15:33) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_crud_operations\" violates not-null constraint
+9313:DETAIL:  Failing row contains (4, null, 2, Bulk Add domainRelatedObject Alumni Above 45, add_objectclass, draft, dc=petra,dc=ac,dc=id, null, null, null, null, null, null, null, null, null, null, t, t, f, t, null, null, null, null, null, null, null, null, 1, null, 2026-05-17 19:15:33, 2026-05-17 19:15:33, add_objectclass, dc=petra,dc=ac,dc=id, subtree, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), 100, domainRelatedObject, null, null, null, skip, t, t, null, null, null, base_dn, null, null, null, skip, 200, null, null, null, {\"associatedDomain\":\"alumni.petra.ac.id\"}, t). (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into \"ldap_crud_operations\" (\"name\", \"ldap_connection_id\", \"target_mode\", \"base_dn\", \"search_scope\", \"size_limit\", \"ldap_filter\", \"operation_kind\", \"objectclass_name\", \"objectclass_must_values\", \"skip_if_invalid\", \"queue_threshold\", \"require_preview\", \"operation_type\", \"status\", \"target_dn\", \"custom_target_dn\", \"preview_result\", \"execution_result\", \"rollback_payload\", \"rollback_result\", \"created_by\", \"updated_at\", \"created_at\") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {\"associatedDomain\":\"alumni.petra.ac.id\"}, 1, 200, 1, add_objectclass, draft, dc=petra,dc=ac,dc=id, ?, ?, ?, ?, ?, 1, 2026-05-17 19:15:33, 2026-05-17 19:15:33) returning \"id\") at /opt/petra_iam_big_project/my_ldap_dashboard/vendor/laravel/framework/src/Illuminate/Database/Connection.php:841)
+9393:[previous exception] [object] (PDOException(code: 23502): SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column \"uuid\" of relation \"ldap_crud_operations\" violates not-null constraint
+9476:[2026-05-17 19:20:42] local.ERROR: SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type uuid: ""
+9477:CONTEXT:  unnamed portal parameter $30 = '' (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_crud_operations" ("name", "ldap_connection_id", "target_mode", "base_dn", "search_scope", "size_limit", "ldap_filter", "operation_kind", "objectclass_name", "objectclass_must_values", "skip_if_invalid", "queue_threshold", "require_preview", "operation_type", "status", "target_dn", "custom_target_dn", "attribute_name", "attribute_value", "target_ou_dn", "existing_value_behavior", "missing_objectclass_behavior", "delete_related_objectclass_attributes", "preview_result", "execution_result", "rollback_payload", "rollback_result", "created_by", "updated_by", "uuid", "safe_mode", "dry_run", "destructive", "approval_required", "updated_at", "created_at") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {"associatedDomain":"alumni.petra.ac.id"}, 1, 200, 1, add_objectclass, draft, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, ?, ?, ?, ?, skip, skip, 1, ?, ?, ?, ?, 1, 1, , 0, 0, 0, 0, 2026-05-17 19:20:41, 2026-05-17 19:20:41) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type uuid: \"\"
+9478:CONTEXT:  unnamed portal parameter $30 = '' (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into \"ldap_crud_operations\" (\"name\", \"ldap_connection_id\", \"target_mode\", \"base_dn\", \"search_scope\", \"size_limit\", \"ldap_filter\", \"operation_kind\", \"objectclass_name\", \"objectclass_must_values\", \"skip_if_invalid\", \"queue_threshold\", \"require_preview\", \"operation_type\", \"status\", \"target_dn\", \"custom_target_dn\", \"attribute_name\", \"attribute_value\", \"target_ou_dn\", \"existing_value_behavior\", \"missing_objectclass_behavior\", \"delete_related_objectclass_attributes\", \"preview_result\", \"execution_result\", \"rollback_payload\", \"rollback_result\", \"created_by\", \"updated_by\", \"uuid\", \"safe_mode\", \"dry_run\", \"destructive\", \"approval_required\", \"updated_at\", \"created_at\") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {\"associatedDomain\":\"alumni.petra.ac.id\"}, 1, 200, 1, add_objectclass, draft, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, ?, ?, ?, ?, skip, skip, 1, ?, ?, ?, ?, 1, 1, , 0, 0, 0, 0, 2026-05-17 19:20:41, 2026-05-17 19:20:41) returning \"id\") at /opt/petra_iam_big_project/my_ldap_dashboard/vendor/laravel/framework/src/Illuminate/Database/Connection.php:841)
+9562:[previous exception] [object] (PDOException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type uuid: \"\"
+9649:[2026-05-17 19:20:45] local.ERROR: SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type uuid: ""
+9650:CONTEXT:  unnamed portal parameter $30 = '' (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into "ldap_crud_operations" ("name", "ldap_connection_id", "target_mode", "base_dn", "search_scope", "size_limit", "ldap_filter", "operation_kind", "objectclass_name", "objectclass_must_values", "skip_if_invalid", "queue_threshold", "require_preview", "operation_type", "status", "target_dn", "custom_target_dn", "attribute_name", "attribute_value", "target_ou_dn", "existing_value_behavior", "missing_objectclass_behavior", "delete_related_objectclass_attributes", "preview_result", "execution_result", "rollback_payload", "rollback_result", "created_by", "updated_by", "uuid", "safe_mode", "dry_run", "destructive", "approval_required", "updated_at", "created_at") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {"associatedDomain":"alumni.petra.ac.id"}, 1, 200, 1, add_objectclass, draft, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, ?, ?, ?, ?, skip, skip, 1, ?, ?, ?, ?, 1, 1, , 0, 0, 0, 0, 2026-05-17 19:20:45, 2026-05-17 19:20:45) returning "id") {"userId":1,"exception":"[object] (Illuminate\\Database\\QueryException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type uuid: \"\"
+9651:CONTEXT:  unnamed portal parameter $30 = '' (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: my_ldap_dashboard, SQL: insert into \"ldap_crud_operations\" (\"name\", \"ldap_connection_id\", \"target_mode\", \"base_dn\", \"search_scope\", \"size_limit\", \"ldap_filter\", \"operation_kind\", \"objectclass_name\", \"objectclass_must_values\", \"skip_if_invalid\", \"queue_threshold\", \"require_preview\", \"operation_type\", \"status\", \"target_dn\", \"custom_target_dn\", \"attribute_name\", \"attribute_value\", \"target_ou_dn\", \"existing_value_behavior\", \"missing_objectclass_behavior\", \"delete_related_objectclass_attributes\", \"preview_result\", \"execution_result\", \"rollback_payload\", \"rollback_result\", \"created_by\", \"updated_by\", \"uuid\", \"safe_mode\", \"dry_run\", \"destructive\", \"approval_required\", \"updated_at\", \"created_at\") values (Bulk Add domainRelatedObject Alumni Above 45, 2, base_dn, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, subtree, 100, (|(uid=usr000046)(uid=usr000047)(uid=usr000048)), add_objectclass, domainRelatedObject, {\"associatedDomain\":\"alumni.petra.ac.id\"}, 1, 200, 1, add_objectclass, draft, ou=alumni,ou=people,dc=petra,dc=ac,dc=id, ?, ?, ?, ?, skip, skip, 1, ?, ?, ?, ?, 1, 1, , 0, 0, 0, 0, 2026-05-17 19:20:45, 2026-05-17 19:20:45) returning \"id\") at /opt/petra_iam_big_project/my_ldap_dashboard/vendor/laravel/framework/src/Illuminate/Database/Connection.php:841)
+9735:[previous exception] [object] (PDOException(code: 22P02): SQLSTATE[22P02]: Invalid text representation: 7 ERROR:  invalid input syntax for type uuid: \"\"
+
+2. LDAP CRUD TABLE COLUMNS
+==========================
+id | bigint | nullable=NO | default=nextval('ldap_crud_operations_id_seq'::regclass)
+uuid | uuid | nullable=NO | default=NULL
+ldap_connection_id | bigint | nullable=YES | default=NULL
+name | character varying | nullable=NO | default=NULL
+operation_type | character varying | nullable=NO | default=NULL
+status | character varying | nullable=NO | default='draft'::character varying
+target_dn | text | nullable=YES | default=NULL
+new_dn | text | nullable=YES | default=NULL
+parent_dn | text | nullable=YES | default=NULL
+new_rdn | character varying | nullable=YES | default=NULL
+object_classes | json | nullable=YES | default=NULL
+attributes | json | nullable=YES | default=NULL
+attribute_changes | json | nullable=YES | default=NULL
+validation_errors | json | nullable=YES | default=NULL
+metadata | json | nullable=YES | default=NULL
+ldif_preview | text | nullable=YES | default=NULL
+command_preview | text | nullable=YES | default=NULL
+safe_mode | boolean | nullable=NO | default=true
+dry_run | boolean | nullable=NO | default=true
+destructive | boolean | nullable=NO | default=false
+approval_required | boolean | nullable=NO | default=true
+preview_command_execution_id | bigint | nullable=YES | default=NULL
+apply_command_execution_id | bigint | nullable=YES | default=NULL
+operation_job_id | bigint | nullable=YES | default=NULL
+previewed_at | timestamp without time zone | nullable=YES | default=NULL
+applied_at | timestamp without time zone | nullable=YES | default=NULL
+failed_at | timestamp without time zone | nullable=YES | default=NULL
+message | text | nullable=YES | default=NULL
+error_message | text | nullable=YES | default=NULL
+created_by | bigint | nullable=YES | default=NULL
+updated_by | bigint | nullable=YES | default=NULL
+created_at | timestamp without time zone | nullable=YES | default=NULL
+updated_at | timestamp without time zone | nullable=YES | default=NULL
+operation_kind | character varying | nullable=YES | default=NULL
+base_dn | text | nullable=YES | default=NULL
+search_scope | character varying | nullable=NO | default='subtree'::character varying
+ldap_filter | text | nullable=YES | default=NULL
+size_limit | integer | nullable=NO | default=100
+objectclass_name | character varying | nullable=YES | default=NULL
+attribute_name | character varying | nullable=YES | default=NULL
+attribute_value | text | nullable=YES | default=NULL
+target_ou_dn | text | nullable=YES | default=NULL
+existing_value_behavior | character varying | nullable=NO | default='skip'::character varying
+skip_if_invalid | boolean | nullable=NO | default=true
+require_preview | boolean | nullable=NO | default=true
+preview_result | json | nullable=YES | default=NULL
+execution_result | json | nullable=YES | default=NULL
+executed_at | timestamp without time zone | nullable=YES | default=NULL
+target_mode | character varying | nullable=NO | default='base_dn'::character varying
+custom_target_dn | text | nullable=YES | default=NULL
+rdn_attribute | character varying | nullable=YES | default=NULL
+rdn_value | character varying | nullable=YES | default=NULL
+missing_objectclass_behavior | character varying | nullable=NO | default='skip'::character varying
+queue_threshold | integer | nullable=NO | default=200
+rollback_payload | json | nullable=YES | default=NULL
+rollback_result | json | nullable=YES | default=NULL
+rolled_back_at | timestamp without time zone | nullable=YES | default=NULL
+objectclass_must_values | json | nullable=YES | default=NULL
+delete_related_objectclass_attributes | boolean | nullable=NO | default=true
+
+3. CURRENT CREATE ACTION FILE
+=============================
+<?php
+
+namespace App\Filament\Resources\Operations\LdapCrudOperationResource\Pages;
+
+use App\Filament\Resources\Operations\LdapCrudOperationResource;
+use App\Models\Operations\LdapCrudOperation;
+use Filament\Actions;
+use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+class ListLdapCrudOperations extends ListRecords
+{
+    protected static string $resource = LdapCrudOperationResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\CreateAction::make()
+                ->label('New LDAP Bulk Operation')
+                ->modalHeading('Create LDAP Bulk Operation')
+                ->modalSubmitActionLabel('Create')
+                ->modalWidth('7xl')
+                ->createAnother(false)
+                ->using(function (array $data): Model {
+                    return $this->createLdapBulkOperationSafely($data);
+                }),
+        ];
+    }
+
+    private function createLdapBulkOperationSafely(array $data): LdapCrudOperation
+    {
+        $table = 'ldap_crud_operations';
+
+        $columns = Schema::getColumnListing($table);
+        $columnTypes = $this->columnTypes($table);
+        $nullableColumns = $this->nullableColumns($table);
+
+        $operationKind = $data['operation_kind'] ?? $data['operation_type'] ?? 'add_attribute';
+        $baseDn = $data['base_dn'] ?? $data['custom_target_dn'] ?? '';
+        $targetDn = $data['custom_target_dn'] ?? $baseDn;
+        $filter = $data['ldap_filter'] ?? '(objectClass=*)';
+        $scope = $data['search_scope'] ?? 'subtree';
+
+        $defaults = [
+            'name' => $data['name'] ?? 'LDAP Bulk Operation',
+            'operation_type' => $operationKind,
+            'operation_kind' => $operationKind,
+            'status' => 'draft',
+
+            'mode' => 'bulk',
+            'source_mode' => 'ldap_query',
+            'target_mode' => $data['target_mode'] ?? 'base_dn',
+
+            'ldap_connection_id' => $data['ldap_connection_id'] ?? null,
+            'base_dn' => $baseDn,
+            'target_dn' => $targetDn,
+            'custom_target_dn' => $data['custom_target_dn'] ?? null,
+
+            'ldap_filter' => $filter,
+            'search_filter' => $filter,
+            'filter' => $filter,
+
+            'search_scope' => $scope,
+            'scope' => $scope,
+            'size_limit' => $data['size_limit'] ?? 100,
+
+            'objectclass_name' => $data['objectclass_name'] ?? null,
+            'attribute_name' => $data['attribute_name'] ?? null,
+            'attribute_value' => $data['attribute_value'] ?? null,
+            'target_ou_dn' => $data['target_ou_dn'] ?? null,
+            'existing_value_behavior' => $data['existing_value_behavior'] ?? 'skip',
+            'missing_objectclass_behavior' => $data['missing_objectclass_behavior'] ?? 'skip',
+
+            'skip_if_invalid' => $data['skip_if_invalid'] ?? true,
+            'require_preview' => $data['require_preview'] ?? true,
+            'delete_related_objectclass_attributes' => $data['delete_related_objectclass_attributes'] ?? true,
+            'queue_threshold' => $data['queue_threshold'] ?? 200,
+
+            'objectclass_must_values' => $data['objectclass_must_values'] ?? [],
+            'payload' => $data,
+            'result' => [],
+            'preview_result' => null,
+            'execution_result' => null,
+            'rollback_payload' => null,
+            'rollback_result' => null,
+
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id(),
+            'user_id' => Auth::id(),
+            'actor_id' => Auth::id(),
+        ];
+
+        foreach ($defaults as $key => $value) {
+            if (! array_key_exists($key, $data)) {
+                $data[$key] = $value;
+            }
+        }
+
+        $clean = [];
+
+        foreach ($data as $key => $value) {
+            if (! in_array($key, $columns, true)) {
+                continue;
+            }
+
+            $type = strtolower((string) ($columnTypes[$key] ?? ''));
+
+            if ($this->isIntegerType($type)) {
+                if (in_array($key, ['created_by', 'updated_by', 'user_id', 'actor_id'], true)) {
+                    $value = Auth::id();
+                } elseif ($value === '' || $value === null) {
+                    $value = null;
+                } elseif (! is_numeric($value)) {
+                    $value = null;
+                } else {
+                    $value = (int) $value;
+                }
+            }
+
+            if ($this->isBooleanType($type)) {
+                $value = (bool) $value;
+            }
+
+            if ($this->isJsonType($type) && is_string($value)) {
+                $decoded = json_decode($value, true);
+                $value = json_last_error() === JSON_ERROR_NONE ? $decoded : $value;
+            }
+
+            if ($value === null && ! in_array($key, $nullableColumns, true)) {
+                $value = $this->defaultForType($type, $key);
+            }
+
+            $clean[$key] = $value;
+        }
+
+        foreach ($columns as $column) {
+            if (in_array($column, ['id', 'created_at', 'updated_at'], true)) {
+                continue;
+            }
+
+            if (array_key_exists($column, $clean)) {
+                continue;
+            }
+
+            if (in_array($column, $nullableColumns, true)) {
+                continue;
+            }
+
+            $type = strtolower((string) ($columnTypes[$column] ?? ''));
+            $clean[$column] = $this->defaultForType($type, $column);
+        }
+
+        return LdapCrudOperation::query()->create($clean);
+    }
+
+    private function columnTypes(string $table): array
+    {
+        $rows = DB::select(
+            "select column_name, data_type
+             from information_schema.columns
+             where table_schema = current_schema()
+             and table_name = ?",
+            [$table]
+        );
+
+        $types = [];
+
+        foreach ($rows as $row) {
+            $types[$row->column_name] = $row->data_type;
+        }
+
+        return $types;
+    }
+
+    private function nullableColumns(string $table): array
+    {
+        $rows = DB::select(
+            "select column_name
+             from information_schema.columns
+             where table_schema = current_schema()
+             and table_name = ?
+             and is_nullable = 'YES'",
+            [$table]
+        );
+
+        return array_map(fn ($row) => $row->column_name, $rows);
+    }
+
+    private function isIntegerType(string $type): bool
+    {
+        return in_array($type, [
+            'bigint',
+            'integer',
+            'smallint',
+        ], true);
+    }
+
+    private function isBooleanType(string $type): bool
+    {
+        return $type === 'boolean';
+    }
+
+    private function isJsonType(string $type): bool
+    {
+        return in_array($type, [
+            'json',
+            'jsonb',
+        ], true);
+    }
+
+    private function defaultForType(string $type, string $column): mixed
+    {
+        if ($this->isIntegerType($type)) {
+            if (in_array($column, ['created_by', 'updated_by', 'user_id', 'actor_id'], true)) {
+                return Auth::id() ?: 1;
+            }
+
+            return 0;
+        }
+
+        if ($this->isBooleanType($type)) {
+            return false;
+        }
+
+        if ($this->isJsonType($type)) {
+            return [];
+        }
+
+        if (str_contains($type, 'timestamp') || str_contains($type, 'date')) {
+            return now();
+        }
+
+        if ($column === 'status') {
+            return 'draft';
+        }
+
+        if ($column === 'name') {
+            return 'LDAP Bulk Operation';
+        }
+
+        return '';
+    }
+}
+
+4. CURRENT MODEL
+================
+<?php
+
+namespace App\Models\Operations;
+
+use App\Models\Directory\LdapConnection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class LdapCrudOperation extends Model
+{
+    protected $guarded = [];
+
+    protected $casts = [
+        'payload' => 'array',
+        'result' => 'array',
+        'preview_result' => 'array',
+        'execution_result' => 'array',
+        'objectclass_must_values' => 'array',
+        'skip_if_invalid' => 'boolean',
+        'require_preview' => 'boolean',
+        'delete_related_objectclass_attributes' => 'boolean',
+        'previewed_at' => 'datetime',
+        'executed_at' => 'datetime',
+    ];
+
+    public function ldapConnection(): BelongsTo
+    {
+        return $this->belongsTo(LdapConnection::class, 'ldap_connection_id');
+    }
+}
+
+5. RESOURCE FIELDS AROUND CREATED_BY
+====================================
+app/Filament/Resources/Observability/AuditLogResource.php:138:                                'user_id' => auth()->id(),
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php:448:                            'created_by' => Auth::id(),
+app/Filament/Resources/Operations/LdapSyncBatchResource.php:321:                            'created_by' => Auth::id(),
+app/Filament/Resources/Operations/OperationJobLogResource.php:183:                                'user_id' => auth()->id(),
+app/Filament/Resources/Operations/CommandExecutionResource.php:251:                                'user_id' => auth()->id(),
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php:90:            'created_by' => Auth::id(),
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php:91:            'updated_by' => Auth::id(),
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php:92:            'user_id' => Auth::id(),
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php:93:            'actor_id' => Auth::id(),
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php:112:                if (in_array($key, ['created_by', 'updated_by', 'user_id', 'actor_id'], true)) {
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php:113:                    $value = Auth::id();
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php:217:            if (in_array($column, ['created_by', 'updated_by', 'user_id', 'actor_id'], true)) {
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php:218:                return Auth::id() ?: 1;
+app/Filament/Resources/Directory/LdapConnectionResource.php:152:                        TextInput::make('user_identifier_attribute')
+app/Filament/Resources/Directory/LdapConnectionResource.php:267:                        TextEntry::make('user_identifier_attribute')
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/CreateLdapConnection.php:17:            $data['created_by'] = Auth::id();
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/CreateLdapConnection.php:18:            $data['updated_by'] = Auth::id();
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/EditLdapConnection.php:43:            $data['updated_by'] = Auth::id();
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:135:                        TextEntry::make('resolved_user_ids_text')
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:122:                        TextEntry::make('resolved_user_ids_text')
+app/Filament/Resources/Directory/LdapUserEntryResource.php:532:                                    'user_id' => $record->id,
+app/Filament/Resources/Directory/LdapUserEntryResource.php:547:                                'user_id' => $record->id ?? null,
+app/Filament/Resources/Directory/LdapUserEntryResource.php:573:                                    'user_id' => $record->id,
+app/Filament/Resources/Directory/LdapUserEntryResource.php:588:                                'user_id' => $record->id ?? null,
+app/Filament/Resources/Directory/LdapUserEntryResource.php:617:                                        'user_ids' => $ids,
+app/Filament/Resources/Directory/LdapUserEntryResource.php:667:                                        'user_ids' => $ids,
+app/Filament/Resources/Directory/LdapUserEntryResource.php:711:                                        'user_ids' => $ids,
+app/Filament/Resources/Directory/LdapConnectionResource.php.bak.actions.20260506_002905:149:                        TextInput::make('user_identifier_attribute')
+app/Filament/Resources/Directory/LdapConnectionResource.php.bak.actions.20260506_002905:264:                        TextEntry::make('user_identifier_attribute')
+app/Models/Operations/LdapTransferBatch.php:106:            $batch->setDefault('created_by', Auth::id());
+app/Models/Operations/LdapTransferBatch.php:107:            $batch->setDefault('updated_by', Auth::id());
+app/Models/Operations/LdapTransferBatch.php:113:            $batch->setDefault('updated_by', Auth::id());
+app/Models/Operations/LdifExportBatch.php:41:            if (blank($batch->created_by)) {
+app/Models/Operations/LdifExportBatch.php:42:                $batch->created_by = Auth::id();
+app/Models/Operations/LdifExportBatch.php:45:            if (blank($batch->updated_by)) {
+app/Models/Operations/LdifExportBatch.php:46:                $batch->updated_by = Auth::id();
+app/Models/Operations/LdifExportBatch.php:63:            $batch->updated_by = Auth::id();
+app/Models/Operations/LdifExportBatch.php:84:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Operations/LdifExportBatch.php:89:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Operations/UniversalLdapTransferBatch.php:44:            $batch->created_by ??= Auth::id();
+app/Models/Operations/UniversalLdapTransferBatch.php:45:            $batch->updated_by ??= Auth::id();
+app/Models/Operations/UniversalLdapTransferBatch.php:66:            $batch->updated_by = Auth::id();
+app/Models/Operations/UniversalLdapTransferBatch.php:98:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Operations/BulkLdapOperation.php:44:            if (blank($operation->created_by)) {
+app/Models/Operations/BulkLdapOperation.php:45:                $operation->created_by = Auth::id();
+app/Models/Operations/BulkLdapOperation.php:48:            if (blank($operation->updated_by)) {
+app/Models/Operations/BulkLdapOperation.php:49:                $operation->updated_by = Auth::id();
+app/Models/Operations/BulkLdapOperation.php:54:            $operation->updated_by = Auth::id();
+app/Models/Operations/BulkLdapOperation.php:75:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Operations/BulkLdapOperation.php:80:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Operations/OperationJob.php:53:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Operations/LdapSyncBatch.php:39:            $batch->created_by ??= Auth::id();
+app/Models/Operations/LdapSyncBatch.php:40:            $batch->updated_by ??= Auth::id();
+app/Models/Operations/LdapSyncBatch.php:53:            $batch->updated_by = Auth::id();
+app/Models/Operations/LdapSyncBatch.php:71:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Operations/SavedScript.php:34:            if (blank($script->created_by)) {
+app/Models/Operations/SavedScript.php:35:                $script->created_by = Auth::id();
+app/Models/Operations/SavedScript.php:38:            if (blank($script->updated_by)) {
+app/Models/Operations/SavedScript.php:39:                $script->updated_by = Auth::id();
+app/Models/Operations/SavedScript.php:44:            $script->updated_by = Auth::id();
+app/Models/Operations/SavedScript.php:50:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Operations/SavedScript.php:55:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Operations/ImportApplyPlan.php:51:            if (blank($plan->created_by)) {
+app/Models/Operations/ImportApplyPlan.php:52:                $plan->created_by = Auth::id();
+app/Models/Operations/ImportApplyPlan.php:55:            if (blank($plan->updated_by)) {
+app/Models/Operations/ImportApplyPlan.php:56:                $plan->updated_by = Auth::id();
+app/Models/Operations/ImportApplyPlan.php:69:            $plan->updated_by = Auth::id();
+app/Models/Operations/ImportApplyPlan.php:115:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Operations/ImportApplyPlan.php:120:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Operations/CommandExecution.php:52:        return $this->belongsTo(User::class, 'actor_user_id');
+app/Models/Operations/ImportBatch.php:49:            if (blank($batch->created_by)) {
+app/Models/Operations/ImportBatch.php:50:                $batch->created_by = Auth::id();
+app/Models/Operations/ImportBatch.php:53:            if (blank($batch->updated_by)) {
+app/Models/Operations/ImportBatch.php:54:                $batch->updated_by = Auth::id();
+app/Models/Operations/ImportBatch.php:71:            $batch->updated_by = Auth::id();
+app/Models/Operations/ImportBatch.php:97:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Operations/ImportBatch.php:102:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Audit/AuditLog.php:19:        'actor_user_id',
+app/Models/Audit/AuditLog.php:70:        return $this->belongsTo(User::class, 'actor_user_id');
+app/Models/Directory/LdapApplicationEntry.php:21:            'resolved_user_ids' => 'array',
+app/Models/Directory/LdapApplicationEntry.php:42:            if (blank($entry->created_by)) {
+app/Models/Directory/LdapApplicationEntry.php:43:                $entry->created_by = Auth::id();
+app/Models/Directory/LdapApplicationEntry.php:46:            if (blank($entry->updated_by)) {
+app/Models/Directory/LdapApplicationEntry.php:47:                $entry->updated_by = Auth::id();
+app/Models/Directory/LdapApplicationEntry.php:52:            $entry->updated_by = Auth::id();
+app/Models/Directory/LdapApplicationEntry.php:68:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Directory/LdapApplicationEntry.php:73:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Directory/LdapApplicationEntry.php:137:        $ids = $this->resolved_user_ids ?? [];
+app/Models/Directory/LdapConnection.php:31:        'user_identifier_attribute',
+app/Models/Directory/LdapConnection.php:41:        'created_by',
+app/Models/Directory/LdapConnection.php:42:        'updated_by',
+app/Models/Directory/LdapConnection.php:72:                $connection->created_by ??= Auth::id();
+app/Models/Directory/LdapConnection.php:73:                $connection->updated_by ??= Auth::id();
+app/Models/Directory/LdapConnection.php:79:                $connection->updated_by = Auth::id();
+app/Models/Directory/LdapConnection.php:125:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Directory/LdapConnection.php:130:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Directory/LdapGroupEntry.php:38:            if (blank($entry->created_by)) {
+app/Models/Directory/LdapGroupEntry.php:39:                $entry->created_by = Auth::id();
+app/Models/Directory/LdapGroupEntry.php:42:            if (blank($entry->updated_by)) {
+app/Models/Directory/LdapGroupEntry.php:43:                $entry->updated_by = Auth::id();
+app/Models/Directory/LdapGroupEntry.php:48:            $entry->updated_by = Auth::id();
+app/Models/Directory/LdapGroupEntry.php:59:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Directory/LdapGroupEntry.php:64:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Directory/LdapUserEntry.php:38:            if (blank($entry->created_by)) {
+app/Models/Directory/LdapUserEntry.php:39:                $entry->created_by = Auth::id();
+app/Models/Directory/LdapUserEntry.php:42:            if (blank($entry->updated_by)) {
+app/Models/Directory/LdapUserEntry.php:43:                $entry->updated_by = Auth::id();
+app/Models/Directory/LdapUserEntry.php:48:            $entry->updated_by = Auth::id();
+app/Models/Directory/LdapUserEntry.php:59:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Directory/LdapUserEntry.php:64:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Directory/LdapUnitEntry.php:36:            if (blank($entry->created_by)) {
+app/Models/Directory/LdapUnitEntry.php:37:                $entry->created_by = Auth::id();
+app/Models/Directory/LdapUnitEntry.php:40:            if (blank($entry->updated_by)) {
+app/Models/Directory/LdapUnitEntry.php:41:                $entry->updated_by = Auth::id();
+app/Models/Directory/LdapUnitEntry.php:46:            $entry->updated_by = Auth::id();
+app/Models/Directory/LdapUnitEntry.php:62:        return $this->belongsTo(User::class, 'created_by');
+app/Models/Directory/LdapUnitEntry.php:67:        return $this->belongsTo(User::class, 'updated_by');
+app/Models/Directory/LdapDirectoryEntry.php:36:            if (blank($entry->created_by)) {
+app/Models/Directory/LdapDirectoryEntry.php:37:                $entry->created_by = Auth::id();
+app/Models/Directory/LdapDirectoryEntry.php:40:            if (blank($entry->updated_by)) {

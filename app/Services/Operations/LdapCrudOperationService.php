@@ -1,0 +1,1538 @@
+<?php
+
+namespace App\Services\Operations;
+
+use App\Models\Directory\LdapConnection;
+use App\Models\Operations\LdapCrudOperation;
+use App\Services\Ldap\LdapSchemaDropdownService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
+
+class LdapCrudOperationService
+{
+    public function preview(LdapCrudOperation $operation): array
+    {
+        $baseDn = $this->effectiveBaseDn($operation);
+        $filter = trim((string) ($operation->ldap_filter ?: '(objectClass=*)'));
+
+        if ($baseDn === '') {
+            return $this->fail('Base DN / Custom Target DN wajib diisi.');
+        }
+
+        if ($filter === '') {
+            $filter = '(objectClass=*)';
+        }
+
+        $schemaCheck = $this->validateObjectClassRules($operation);
+
+        if (! ($schemaCheck['ok'] ?? false)) {
+            return $schemaCheck;
+        }
+
+        $ldap = $this->connectFromOperation($operation);
+
+        if (! $ldap) {
+            return $this->fail('Gagal connect/bind ke LDAP connection yang dipilih.');
+        }
+
+        $entries = $this->searchEntries($ldap, $operation, $baseDn, $filter);
+
+        $previewEntries = [];
+
+        foreach ($entries as $entry) {
+            $previewEntries[] = $this->buildPreviewEntry($operation, $entry);
+        }
+
+        $result = [
+            'ok' => true,
+            'message' => 'Preview berhasil dari LDAP asli. Total matched: ' . count($previewEntries),
+            'entry_count' => count($previewEntries),
+            'entries' => $previewEntries,
+            'meta' => [
+                'ldap_connection_id' => $operation->ldap_connection_id,
+                'target_mode' => $operation->target_mode,
+                'base_dn' => $baseDn,
+                'search_scope' => $operation->search_scope,
+                'ldap_filter' => $filter,
+                'operation_kind' => $operation->operation_kind,
+                'objectclass_name' => $operation->objectclass_name,
+                'objectclass_must_values' => $operation->objectclass_must_values,
+            ],
+        ];
+
+        $operation->forceFill([
+            'status' => 'previewed',
+            'preview_result' => $result,
+            'previewed_at' => now(),
+        ])->save();
+
+        $this->writeAudit($operation, 'preview', 'success', $result['message']);
+        $this->writeOperationLog($operation, 'preview', 'success', $result['message']);
+
+        return $result;
+    }
+
+    public function apply(LdapCrudOperation $operation): array
+    {
+        $preview = $operation->preview_result;
+
+        if (! is_array($preview) || empty($preview['entries'])) {
+            return $this->fail('Preview belum ada. Generate Preview dulu.');
+        }
+
+        $ldap = $this->connectFromOperation($operation);
+
+        if (! $ldap) {
+            return $this->fail('Gagal connect/bind ke LDAP connection yang dipilih.');
+        }
+
+        $results = [];
+        $rollbackItems = [];
+
+        foreach ($preview['entries'] as $entry) {
+            $dn = (string) ($entry['dn'] ?? '');
+
+            if ($dn === '') {
+                continue;
+            }
+
+            if (($entry['status'] ?? null) !== 'planned') {
+                $row = [
+                    'dn' => $dn,
+                    'status' => 'skipped',
+                    'reason' => $entry['reason'] ?? 'Entry tidak planned.',
+                ];
+
+                $results[] = $row;
+                $this->writeItemLog($operation, $row);
+                continue;
+            }
+
+            try {
+                $row = $this->applyEntry($ldap, $operation, $dn);
+            } catch (Throwable $e) {
+                $row = [
+                    'dn' => $dn,
+                    'status' => 'failed',
+                    'reason' => $e->getMessage(),
+                ];
+            }
+
+            $results[] = $row;
+            $this->writeItemLog($operation, $row);
+
+            if (($row['status'] ?? null) === 'applied') {
+                $rollbackItems[] = [
+                    'dn' => $dn,
+                    'operation_kind' => $operation->operation_kind,
+                    'objectclass_name' => $operation->objectclass_name,
+                    'added_attributes' => $row['added_attributes'] ?? [],
+                    'added_objectclass' => $row['added_objectclass'] ?? false,
+                ];
+            }
+        }
+
+        $success = collect($results)->where('status', 'applied')->count();
+        $failed = collect($results)->where('status', 'failed')->count();
+        $skipped = collect($results)->where('status', 'skipped')->count();
+
+                $summary = $this->summarizeApplyResults($results);
+
+$result = [
+            'ok' => $summary['failed'] === 0,
+            'message' => "Apply selesai. Success: {$summary['success']}, skipped: {$summary['skipped']}, failed: {$summary['failed']}.",
+            'results' => $results,
+            'summary' => $summary,
+        ];
+
+        $operation->forceFill([
+            'status' => $failed === 0 ? 'applied' : 'partial_failed',
+            'execution_result' => $result,
+            'rollback_payload' => json_encode($this->buildRollbackPayloadFromApplyResults($results), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'executed_at' => now(),
+        ])->save();
+
+        $this->writeAudit($operation, 'apply', $failed === 0 ? 'success' : 'partial_failed', $result['message']);
+        $this->writeOperationLog($operation, 'apply', $failed === 0 ? 'success' : 'partial_failed', $result['message']);
+
+        return $result;
+    }
+
+    public function rollback(LdapCrudOperation $operation): array
+    {
+        $payload = $operation->rollback_payload;
+
+        if (is_string($payload)) {
+            $decodedPayload = json_decode($payload, true);
+            $payload = json_last_error() === JSON_ERROR_NONE ? $decodedPayload : null;
+        }
+
+        if (! is_array($payload) || empty($payload['items']) || ! is_array($payload['items'])) {
+            return $this->fail('Rollback payload belum tersedia.');
+        }
+
+        $ldap = $this->connectFromOperation($operation);
+
+        if (! $ldap) {
+            return $this->fail('Gagal connect/bind ke LDAP connection yang dipilih.');
+        }
+
+        $results = [];
+
+        /*
+         * IMPORTANT:
+         * Jangan skip item hanya karena tidak punya key "dn".
+         * Beberapa rollback action seperti move_back memakai new_dn/old_dn.
+         * Semua item harus dilewatkan ke executeRollbackItem().
+         */
+        foreach ($payload['items'] as $item) {
+            if (! is_array($item)) {
+                $results[] = [
+                    'status' => 'rollback_failed',
+                    'reason' => 'Rollback item bukan array.',
+                    'item' => $item,
+                ];
+
+                continue;
+            }
+
+            $results[] = $this->executeRollbackItem($ldap, $item);
+        }
+
+        $summary = $this->summarizeRollbackResults($results);
+
+        $result = [
+            'ok' => $summary['failed'] === 0,
+            'message' => $summary['failed'] === 0
+                ? "Rollback selesai. Success: {$summary['success']}, skipped: {$summary['skipped']}, failed: {$summary['failed']}."
+                : "Rollback selesai dengan sebagian gagal. Success: {$summary['success']}, skipped: {$summary['skipped']}, failed: {$summary['failed']}.",
+            'summary' => $summary,
+            'results' => $results,
+        ];
+
+        $operation->forceFill([
+            'status' => $summary['failed'] === 0 ? 'rolled_back' : 'rollback_partial_failed',
+            'rollback_result' => $result,
+            'rolled_back_at' => now(),
+        ])->save();
+
+        $this->writeAudit($operation, 'rollback', $summary['failed'] === 0 ? 'success' : 'partial_failed', $result['message']);
+        $this->writeOperationLog($operation, 'rollback', $summary['failed'] === 0 ? 'success' : 'partial_failed', $result['message']);
+
+        return $result;
+    }
+
+    private function applyEntry(mixed $ldap, LdapCrudOperation $operation, string $dn): array
+    {
+        return match ((string) $operation->operation_kind) {
+            'add_objectclass' => $this->applyAddObjectClass($ldap, $operation, $dn),
+            'delete_objectclass', 'remove_objectclass' => $this->applyDeleteObjectClass($ldap, $operation, $dn),
+
+            'add_attribute' => $this->applyAddAttribute($ldap, $operation, $dn),
+            'delete_attribute', 'remove_attribute' => $this->applyDeleteAttribute($ldap, $operation, $dn),
+            'move_to_ou', 'move_ou' => $this->applyMoveToOu($ldap, $operation, $dn),
+            'delete_entry', 'delete_dn' => $this->applyDeleteEntry($ldap, $operation, $dn),
+
+            default => [
+                'dn' => $dn,
+                'status' => 'skipped',
+                'reason' => 'Operation kind belum didukung real apply: ' . (string) $operation->operation_kind,
+            ],
+        };
+    }
+
+
+
+    private function applyAddAttribute(mixed $ldap, LdapCrudOperation $operation, string $dn): array
+    {
+        $attribute = trim((string) $operation->attribute_name);
+        $value = $operation->attribute_value;
+        $behavior = strtolower(trim((string) ($operation->if_attribute_exists ?: $operation->existing_value_behavior ?: 'skip')));
+
+        if ($attribute === '') {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => 'Attribute name kosong.',
+            ];
+        }
+
+        if ($value === null || $value === '') {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => "Value untuk attribute {$attribute} kosong.",
+            ];
+        }
+
+        $beforeEntry = $this->readEntry($ldap, $dn);
+        $attributeKey = strtolower($attribute);
+        $oldValues = $beforeEntry[$attributeKey] ?? [];
+        $exists = count((array) $oldValues) > 0;
+
+        if ($exists && $behavior === 'skip') {
+            return [
+                'dn' => $dn,
+                'status' => 'skipped',
+                'reason' => "Attribute {$attribute} sudah ada, behavior skip.",
+            ];
+        }
+
+        $payload = [
+            $attribute => $this->normalizeBulkAttributeValue($value),
+        ];
+
+        $ok = $exists
+            ? @ldap_mod_replace($ldap, $dn, $payload)
+            : @ldap_mod_add($ldap, $dn, $payload);
+
+        if (! $ok) {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => "Gagal add/replace attribute {$attribute}: " . @ldap_error($ldap),
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'success',
+            'reason' => $exists
+                ? "Attribute {$attribute} berhasil direplace."
+                : "Attribute {$attribute} berhasil ditambahkan.",
+            'rollback' => [
+                'action' => $exists ? 'restore_attribute' : 'remove_attribute',
+                'dn' => $dn,
+                'attribute' => $attribute,
+                'old_values' => array_values((array) $oldValues),
+            ],
+        ];
+    }
+
+    private function applyDeleteAttribute(mixed $ldap, LdapCrudOperation $operation, string $dn): array
+    {
+        $attribute = trim((string) $operation->attribute_name);
+        $value = $operation->attribute_value;
+
+        if ($attribute === '') {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => 'Attribute name kosong.',
+                'debug_marker' => 'DELETE_ATTRIBUTE_WITH_ROLLBACK_V1',
+            ];
+        }
+
+        $beforeEntry = $this->readEntry($ldap, $dn);
+        $attributeKey = strtolower($attribute);
+        $oldValues = array_values((array) ($beforeEntry[$attributeKey] ?? []));
+
+        $ok = false;
+        $method = null;
+
+        if ($value === null || $value === '') {
+            $ok = @ldap_modify_batch($ldap, $dn, [
+                [
+                    'attrib' => $attribute,
+                    'modtype' => LDAP_MODIFY_BATCH_REMOVE_ALL,
+                ],
+            ]);
+
+            $method = 'ldap_modify_batch_remove_all';
+
+            if (! $ok) {
+                $ok = @ldap_mod_del($ldap, $dn, [
+                    $attribute => [],
+                ]);
+
+                $method = 'ldap_mod_del_empty_array_fallback';
+            }
+        } else {
+            $values = $this->normalizeBulkAttributeValue($value);
+
+            if (! is_array($values)) {
+                $values = [$values];
+            }
+
+            $ok = @ldap_modify_batch($ldap, $dn, [
+                [
+                    'attrib' => $attribute,
+                    'modtype' => LDAP_MODIFY_BATCH_REMOVE,
+                    'values' => $values,
+                ],
+            ]);
+
+            $method = 'ldap_modify_batch_remove_values';
+
+            if (! $ok) {
+                $ok = @ldap_mod_del($ldap, $dn, [
+                    $attribute => $values,
+                ]);
+
+                $method = 'ldap_mod_del_values_fallback';
+            }
+        }
+
+        if ($ok) {
+            return [
+                'dn' => $dn,
+                'status' => 'success',
+                'reason' => "Attribute {$attribute} berhasil dihapus.",
+                'debug_marker' => 'DELETE_ATTRIBUTE_WITH_ROLLBACK_V1',
+                'method' => $method,
+                'rollback' => [
+                    'action' => 'restore_attribute',
+                    'dn' => $dn,
+                    'attribute' => $attribute,
+                    'old_values' => $oldValues,
+                ],
+            ];
+        }
+
+        $errno = (int) @ldap_errno($ldap);
+        $error = (string) @ldap_error($ldap);
+
+        if ($errno === 16 || stripos($error, 'No such attribute') !== false) {
+            return [
+                'dn' => $dn,
+                'status' => 'skipped',
+                'reason' => "Attribute {$attribute} tidak ada pada entry menurut LDAP server saat apply.",
+                'debug_marker' => 'DELETE_ATTRIBUTE_WITH_ROLLBACK_V1',
+                'ldap_errno' => $errno,
+                'ldap_error' => $error,
+                'method' => $method,
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'failed',
+            'reason' => "Gagal delete attribute {$attribute}: [{$errno}] {$error}",
+            'debug_marker' => 'DELETE_ATTRIBUTE_WITH_ROLLBACK_V1',
+            'ldap_errno' => $errno,
+            'ldap_error' => $error,
+            'method' => $method,
+        ];
+    }
+
+    private function applyMoveToOu(mixed $ldap, LdapCrudOperation $operation, string $dn): array
+    {
+        $targetOu = trim((string) (
+            $operation->target_ou_dn
+            ?: $operation->destination_ou_dn
+            ?: $operation->target_ou
+            ?: $operation->destination_dn
+            ?: ''
+        ));
+
+        if ($targetOu === '') {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => 'Target OU / destination DN kosong.',
+            ];
+        }
+
+        $parts = @ldap_explode_dn($dn, 0);
+
+        if (! is_array($parts) || (($parts['count'] ?? 0) < 1) || empty($parts[0])) {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => 'Gagal mengambil RDN dari DN.',
+            ];
+        }
+
+        $rdn = $parts[0];
+        $oldParentDn = $this->extractParentDnFromDn($dn);
+        $newDn = "{$rdn},{$targetOu}";
+
+        $ok = @ldap_rename($ldap, $dn, $rdn, $targetOu, true);
+
+        if (! $ok) {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => 'Gagal move entry ke OU tujuan: ' . @ldap_error($ldap),
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'success',
+            'reason' => "Entry berhasil dipindahkan ke {$targetOu}.",
+            'new_dn' => $newDn,
+            'rollback' => [
+                'action' => 'move_back',
+                'old_dn' => $dn,
+                'new_dn' => $newDn,
+                'rdn' => $rdn,
+                'old_parent_dn' => $oldParentDn,
+                'new_parent_dn' => $targetOu,
+            ],
+        ];
+    }
+
+    private function applyDeleteEntry(mixed $ldap, LdapCrudOperation $operation, string $dn): array
+    {
+        $beforeEntry = $this->readEntry($ldap, $dn);
+
+        $ok = @ldap_delete($ldap, $dn);
+
+        if (! $ok) {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => 'Gagal delete entry: ' . @ldap_error($ldap),
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'success',
+            'reason' => 'Entry berhasil dihapus.',
+            'rollback' => [
+                'action' => 'restore_entry',
+                'dn' => $dn,
+                'attributes' => $beforeEntry,
+            ],
+        ];
+    }
+
+    private function normalizeBulkAttributeValue(mixed $value): array|string
+    {
+        if (is_array($value)) {
+            $values = array_values(array_filter(array_map(
+                fn ($item) => trim((string) $item),
+                $value
+            ), fn ($item) => $item !== ''));
+
+            return count($values) === 1 ? $values[0] : $values;
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', (string) $value) ?: [];
+
+        $lines = array_values(array_filter(array_map(
+            fn ($line) => trim($line),
+            $lines
+        ), fn ($line) => $line !== ''));
+
+        return count($lines) <= 1 ? ($lines[0] ?? '') : $lines;
+    }
+
+    private function applyAddObjectClass(mixed $ldap, LdapCrudOperation $operation, string $dn): array
+    {
+        $objectClass = (string) $operation->objectclass_name;
+
+        if ($objectClass === '') {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => 'ObjectClass kosong.',
+            ];
+        }
+
+        $current = $this->readEntry($ldap, $dn);
+        $currentObjectClasses = array_map('strtolower', $current['objectclass'] ?? []);
+
+        if (in_array(strtolower($objectClass), $currentObjectClasses, true)) {
+            return [
+                'dn' => $dn,
+                'status' => 'skipped',
+                'reason' => 'Entry sudah punya objectClass tersebut.',
+            ];
+        }
+
+        $mustValues = is_array($operation->objectclass_must_values)
+            ? $operation->objectclass_must_values
+            : [];
+
+        $modAdd = [
+            'objectClass' => [$objectClass],
+        ];
+
+        $addedAttributes = [];
+
+        foreach ($mustValues as $attribute => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $attributeLower = strtolower((string) $attribute);
+            $currentHasAttribute = false;
+
+            foreach (array_keys($current) as $existingAttribute) {
+                if (strtolower($existingAttribute) === $attributeLower) {
+                    $currentHasAttribute = true;
+                    break;
+                }
+            }
+
+            if (! $currentHasAttribute) {
+                $modAdd[$attribute] = [(string) $value];
+                $addedAttributes[$attribute] = (string) $value;
+            }
+        }
+
+        $ok = @ldap_mod_add($ldap, $dn, $modAdd);
+
+        if (! $ok) {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => ldap_error($ldap),
+                'mod_add' => $modAdd,
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'applied',
+            'reason' => 'ObjectClass berhasil ditambahkan ke LDAP asli.',
+            'added_objectclass' => true,
+            'added_attributes' => $addedAttributes,
+            'mod_add' => $modAdd,
+        ];
+    }
+
+    private function applyDeleteObjectClass(mixed $ldap, LdapCrudOperation $operation, string $dn): array
+    {
+        $objectClass = (string) $operation->objectclass_name;
+
+        if ($objectClass === '') {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => 'ObjectClass kosong.',
+            ];
+        }
+
+        $current = $this->readEntry($ldap, $dn);
+        $currentObjectClasses = array_map('strtolower', $current['objectclass'] ?? []);
+
+        if (! in_array(strtolower($objectClass), $currentObjectClasses, true)) {
+            return [
+                'dn' => $dn,
+                'status' => 'skipped',
+                'reason' => 'Entry tidak punya objectClass tersebut.',
+            ];
+        }
+
+        $schemaAttributes = app(\App\Services\Ldap\LdapSchemaDropdownService::class)
+            ->attributeOptions($operation->ldap_connection_id, $objectClass);
+
+        $relatedAttributes = [];
+
+        foreach ($schemaAttributes as $attribute => $label) {
+            $attributeName = is_string($attribute) ? $attribute : $label;
+            $key = strtolower((string) $attributeName);
+
+            if ($key === 'objectclass') {
+                continue;
+            }
+
+            if (isset($current[$key]) && ! empty($current[$key])) {
+                $relatedAttributes[$attributeName] = $current[$key];
+            }
+        }
+
+        /*
+         * IMPORTANT:
+         * Jangan hapus MUST attribute dulu secara terpisah.
+         * Kalau associatedDomain dihapus saat domainRelatedObject masih ada,
+         * LDAP akan menolak dengan Object class violation.
+         *
+         * Jadi objectClass + related attributes harus dihapus dalam 1 modify request.
+         */
+        $modDelete = [];
+
+        if ((bool) ($operation->delete_related_objectclass_attributes ?? true)) {
+            foreach ($relatedAttributes as $attribute => $values) {
+                $modDelete[$attribute] = array_values($values);
+            }
+        }
+
+        $modDelete['objectClass'] = [$objectClass];
+
+        $ok = @ldap_mod_del($ldap, $dn, $modDelete);
+
+        if (! $ok) {
+            return [
+                'dn' => $dn,
+                'status' => 'failed',
+                'reason' => ldap_error($ldap),
+                'mod_delete' => $modDelete,
+                'related_attributes_attempted_delete' => $relatedAttributes,
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'applied',
+            'reason' => 'ObjectClass dan related attributes berhasil dihapus dari LDAP asli.',
+            'deleted_objectclass' => $objectClass,
+            'deleted_related_attributes' => $relatedAttributes,
+            'rollback_restore' => [
+                'objectClass' => [$objectClass],
+                'attributes' => $relatedAttributes,
+            ],
+        ];
+    }
+
+    private function buildPreviewEntry(LdapCrudOperation $operation, array $entry): array
+    {
+        $dn = (string) ($entry['dn'] ?? '');
+        $operationKind = (string) ($operation->operation_kind ?? '');
+
+        return match ($operationKind) {
+            'add_objectclass' => $this->previewAddObjectClass($operation, $entry, $dn),
+            'delete_objectclass', 'remove_objectclass' => $this->previewDeleteObjectClass($operation, $entry, $dn),
+            'add_attribute' => $this->previewAddAttribute($operation, $entry, $dn),
+            'delete_attribute', 'remove_attribute' => $this->previewDeleteAttribute($operation, $entry, $dn),
+            'move_ou', 'move_entry' => $this->previewMoveOu($operation, $entry, $dn),
+            'delete_entry' => $this->previewDeleteEntry($operation, $entry, $dn),
+            default => [
+                'dn' => $dn,
+                'status' => 'blocked',
+                'planned_action' => $operationKind,
+                'reason' => 'Operation type belum dikenal.',
+            ],
+        };
+    }
+
+    private function previewAddObjectClass(LdapCrudOperation $operation, array $entry, string $dn): array
+    {
+        $objectClass = (string) $operation->objectclass_name;
+        $currentObjectClasses = array_map('strtolower', $entry['objectclass'] ?? []);
+
+        if ($objectClass === '') {
+            return [
+                'dn' => $dn,
+                'status' => 'blocked',
+                'planned_action' => 'add_objectclass',
+                'reason' => 'ObjectClass kosong.',
+            ];
+        }
+
+        if (in_array(strtolower($objectClass), $currentObjectClasses, true)) {
+            return [
+                'dn' => $dn,
+                'status' => 'skipped',
+                'planned_action' => 'add_objectclass',
+                'reason' => 'Entry sudah punya objectClass ' . $objectClass,
+                'current_objectclasses' => $entry['objectclass'] ?? [],
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'planned',
+            'planned_action' => 'add_objectclass',
+            'reason' => 'Akan menambahkan auxiliary objectClass ' . $objectClass,
+            'current_objectclasses' => $entry['objectclass'] ?? [],
+            'planned_changes' => [
+                'add_objectClass' => $objectClass,
+                'add_must_attributes_if_missing' => $operation->objectclass_must_values,
+            ],
+        ];
+    }
+
+    private function previewDeleteObjectClass(LdapCrudOperation $operation, array $entry, string $dn): array
+    {
+        $objectClass = (string) $operation->objectclass_name;
+        $currentObjectClasses = array_map('strtolower', $entry['objectclass'] ?? []);
+
+        if ($objectClass === '') {
+            return [
+                'dn' => $dn,
+                'status' => 'blocked',
+                'planned_action' => 'delete_objectclass',
+                'reason' => 'ObjectClass kosong.',
+            ];
+        }
+
+        if (! in_array(strtolower($objectClass), $currentObjectClasses, true)) {
+            return [
+                'dn' => $dn,
+                'status' => 'skipped',
+                'planned_action' => 'delete_objectclass',
+                'reason' => 'Entry tidak punya objectClass ' . $objectClass,
+                'current_objectclasses' => $entry['objectclass'] ?? [],
+            ];
+        }
+
+        $attributes = app(\App\Services\Ldap\LdapSchemaDropdownService::class)
+            ->attributeOptions($operation->ldap_connection_id, $objectClass);
+
+        $relatedAttributes = [];
+
+        foreach ($attributes as $attribute => $label) {
+            $attributeName = is_string($attribute) ? $attribute : $label;
+            $key = strtolower((string) $attributeName);
+
+            if (array_key_exists($key, $entry)) {
+                $relatedAttributes[$attributeName] = $entry[$key];
+            }
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'planned',
+            'planned_action' => 'delete_objectclass',
+            'reason' => 'Entry punya objectClass ' . $objectClass . '. Akan dihapus bersama related attributes jika aman.',
+            'current_objectclasses' => $entry['objectclass'] ?? [],
+            'before' => [
+                'objectClass' => $entry['objectclass'] ?? [],
+                'related_attributes' => $relatedAttributes,
+            ],
+            'planned_changes' => [
+                'delete_objectClass' => $objectClass,
+                'delete_related_attributes' => (bool) ($operation->delete_related_objectclass_attributes ?? true),
+                'candidate_related_attributes' => array_keys($relatedAttributes),
+            ],
+            'rollback_plan' => [
+                'restore_objectClass' => $objectClass,
+                'restore_related_attributes' => $relatedAttributes,
+            ],
+        ];
+    }
+
+    private function previewAddAttribute(LdapCrudOperation $operation, array $entry, string $dn): array
+    {
+        $attribute = (string) $operation->attribute_name;
+        $value = (string) $operation->attribute_value;
+        $behavior = (string) ($operation->existing_value_behavior ?? 'skip');
+
+        if ($attribute === '') {
+            return ['dn' => $dn, 'status' => 'blocked', 'planned_action' => 'add_attribute', 'reason' => 'Attribute kosong.'];
+        }
+
+        if ($value === '') {
+            return ['dn' => $dn, 'status' => 'blocked', 'planned_action' => 'add_attribute', 'reason' => 'Attribute value kosong.'];
+        }
+
+        $key = strtolower($attribute);
+        $existingValues = $entry[$key] ?? [];
+
+        if (! empty($existingValues) && $behavior === 'skip') {
+            return [
+                'dn' => $dn,
+                'status' => 'skipped',
+                'planned_action' => 'add_attribute',
+                'reason' => 'Attribute sudah ada dan behavior adalah skip.',
+                'attribute' => $attribute,
+                'existing_values' => $existingValues,
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'planned',
+            'planned_action' => 'add_attribute',
+            'reason' => 'Attribute akan ditambahkan/diproses.',
+            'before' => [$attribute => $existingValues],
+            'planned_changes' => [
+                'attribute' => $attribute,
+                'value' => $value,
+                'behavior' => $behavior,
+            ],
+        ];
+    }
+
+    private function previewDeleteAttribute(LdapCrudOperation $operation, array $entry, string $dn): array
+    {
+        $attribute = (string) $operation->attribute_name;
+
+        if ($attribute === '') {
+            return ['dn' => $dn, 'status' => 'blocked', 'planned_action' => 'delete_attribute', 'reason' => 'Attribute kosong.'];
+        }
+
+        $key = strtolower($attribute);
+        $existingValues = $entry[$key] ?? [];
+
+        if (empty($existingValues)) {
+            return [
+                'dn' => $dn,
+                'status' => 'planned',
+                'planned_action' => 'delete_attribute',
+                'reason' => 'Attribute tidak ada pada entry. [OLD_PATH_SHOULD_NOT_APPEAR]',
+                'attribute' => $attribute,
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'planned',
+            'planned_action' => 'delete_attribute',
+            'reason' => 'Attribute ada dan akan dihapus.',
+            'before' => [$attribute => $existingValues],
+            'planned_changes' => ['delete_attribute' => $attribute],
+        ];
+    }
+
+    private function previewMoveOu(LdapCrudOperation $operation, array $entry, string $dn): array
+    {
+        $targetOuDn = trim((string) ($operation->target_ou_dn ?? ''));
+
+        if ($targetOuDn === '') {
+            return ['dn' => $dn, 'status' => 'blocked', 'planned_action' => 'move_ou', 'reason' => 'Target OU DN kosong.'];
+        }
+
+        $rdn = $this->rdnFromDn($dn);
+        $oldParent = $this->parentDnFromDn($dn);
+        $newDn = $rdn . ',' . $targetOuDn;
+
+        return [
+            'dn' => $dn,
+            'status' => 'planned',
+            'planned_action' => 'move_ou',
+            'reason' => 'Entry akan dipindahkan ke parent DN baru tanpa rename RDN.',
+            'before' => ['old_dn' => $dn, 'old_parent_dn' => $oldParent],
+            'planned_changes' => ['rdn' => $rdn, 'new_parent_dn' => $targetOuDn, 'new_dn' => $newDn],
+        ];
+    }
+
+    private function previewDeleteEntry(LdapCrudOperation $operation, array $entry, string $dn): array
+    {
+        return [
+            'dn' => $dn,
+            'status' => 'planned',
+            'planned_action' => 'delete_entry',
+            'reason' => 'Entry akan dihapus. Pastikan target benar.',
+            'before' => [
+                'dn' => $dn,
+                'attributes_snapshot' => $entry,
+            ],
+            'warning' => 'Jika entry punya child, apply delete dapat gagal. Jangan hapus OU besar tanpa backup LDIF.',
+        ];
+    }
+
+    private function rdnFromDn(string $dn): string
+    {
+        $parts = explode(',', $dn, 2);
+
+        return trim($parts[0] ?? $dn);
+    }
+
+    private function parentDnFromDn(string $dn): string
+    {
+        $parts = explode(',', $dn, 2);
+
+        return trim($parts[1] ?? '');
+    }
+
+    private function searchEntries(mixed $ldap, LdapCrudOperation $operation, string $baseDn, string $filter): array
+    {
+        $attributes = ['dn', 'objectClass', 'uid', 'cn', 'ou', 'mail'];
+
+        $scope = strtolower((string) ($operation->search_scope ?? 'subtree'));
+
+        $result = match ($scope) {
+            'base' => @ldap_read($ldap, $baseDn, $filter, $attributes, 0, (int) ($operation->size_limit ?: 100)),
+            'one', 'onelevel', 'one_level' => @ldap_list($ldap, $baseDn, $filter, $attributes, 0, (int) ($operation->size_limit ?: 100)),
+            default => @ldap_search($ldap, $baseDn, $filter, $attributes, 0, (int) ($operation->size_limit ?: 100)),
+        };
+
+        if (! $result) {
+            throw new \RuntimeException('LDAP search gagal: ' . ldap_error($ldap));
+        }
+
+        $entries = @ldap_get_entries($ldap, $result);
+        $out = [];
+
+        $count = (int) ($entries['count'] ?? 0);
+
+        for ($i = 0; $i < $count; $i++) {
+            $row = $entries[$i];
+            $normalized = [
+                'dn' => $row['dn'] ?? '',
+            ];
+
+            foreach ($row as $key => $value) {
+                if (is_int($key) || $key === 'count' || $key === 'dn') {
+                    continue;
+                }
+
+                $values = [];
+                $valueCount = (int) ($value['count'] ?? 0);
+
+                for ($j = 0; $j < $valueCount; $j++) {
+                    if (isset($value[$j])) {
+                        $values[] = (string) $value[$j];
+                    }
+                }
+
+                $normalized[strtolower((string) $key)] = $values;
+            }
+
+            $out[] = $normalized;
+        }
+
+        return $out;
+    }
+
+    private function readEntry(mixed $ldap, string $dn): array
+    {
+        $result = @ldap_read($ldap, $dn, '(objectClass=*)', []);
+
+        if (! $result) {
+            throw new \RuntimeException('Gagal read entry: ' . ldap_error($ldap));
+        }
+
+        $entries = @ldap_get_entries($ldap, $result);
+
+        if (($entries['count'] ?? 0) < 1) {
+            throw new \RuntimeException('Entry tidak ditemukan: ' . $dn);
+        }
+
+        $row = $entries[0];
+        $out = [
+            'dn' => $dn,
+        ];
+
+        foreach ($row as $key => $value) {
+            if (is_int($key) || $key === 'count' || $key === 'dn') {
+                continue;
+            }
+
+            $values = [];
+            $valueCount = (int) ($value['count'] ?? 0);
+
+            for ($i = 0; $i < $valueCount; $i++) {
+                if (isset($value[$i])) {
+                    $values[] = (string) $value[$i];
+                }
+            }
+
+            $out[strtolower((string) $key)] = $values;
+        }
+
+        return $out;
+    }
+
+    private function connectFromOperation(LdapCrudOperation $operation): mixed
+    {
+        $connection = LdapConnection::query()->find($operation->ldap_connection_id);
+
+        if (! $connection) {
+            return null;
+        }
+
+        $host = trim((string) ($connection->host ?? ''));
+
+        if ($host === '') {
+            return null;
+        }
+
+        $port = (int) ($connection->port ?? 389);
+        $encryption = strtolower((string) ($connection->encryption ?? $connection->security ?? ''));
+        $useSsl = in_array($encryption, ['ssl', 'ldaps'], true) || (bool) ($connection->use_ssl ?? false);
+
+        if (str_starts_with($host, 'ldap://') || str_starts_with($host, 'ldaps://')) {
+            $uri = $host;
+        } else {
+            $uri = ($useSsl ? 'ldaps://' : 'ldap://') . $host . ':' . $port;
+        }
+
+        $ldap = @ldap_connect($uri);
+
+        if (! $ldap) {
+            return null;
+        }
+
+        @ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+        @ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
+        @ldap_set_option($ldap, LDAP_OPT_NETWORK_TIMEOUT, 5);
+        @ldap_set_option($ldap, LDAP_OPT_TIMELIMIT, 15);
+
+        $bindDn = (string) (
+            $connection->bind_dn
+            ?? $connection->bind_user
+            ?? $connection->username
+            ?? $connection->admin_dn
+            ?? $connection->manager_dn
+            ?? ''
+        );
+
+        $bindPassword = (string) (
+            $connection->bind_password
+            ?? $connection->password
+            ?? $connection->admin_password
+            ?? $connection->manager_password
+            ?? ''
+        );
+
+        if ($bindDn !== '') {
+            return @ldap_bind($ldap, $bindDn, $bindPassword) ? $ldap : null;
+        }
+
+        return @ldap_bind($ldap) ? $ldap : null;
+    }
+
+    private function validateObjectClassRules(LdapCrudOperation $operation): array
+    {
+        if (! in_array($operation->operation_kind, ['add_objectclass', 'delete_objectclass'], true)) {
+            return ['ok' => true];
+        }
+
+        if (blank($operation->objectclass_name)) {
+            return $this->fail('ObjectClass wajib dipilih.');
+        }
+
+        if ($operation->operation_kind === 'add_objectclass') {
+            $mustAttributes = app(LdapSchemaDropdownService::class)
+                ->mustAttributes($operation->ldap_connection_id, $operation->objectclass_name);
+
+            $values = is_array($operation->objectclass_must_values)
+                ? $operation->objectclass_must_values
+                : [];
+
+            $missing = [];
+
+            foreach ($mustAttributes as $attribute) {
+                if (! array_key_exists($attribute, $values) || blank($values[$attribute])) {
+                    $missing[] = $attribute;
+                }
+            }
+
+            if (! empty($missing)) {
+                return $this->fail('MUST attribute wajib diisi sebelum Add ObjectClass: ' . implode(', ', $missing));
+            }
+        }
+
+        return ['ok' => true];
+    }
+
+    private function effectiveBaseDn(LdapCrudOperation $operation): string
+    {
+        if (($operation->target_mode ?? 'base_dn') === 'custom_dn') {
+            return trim((string) ($operation->custom_target_dn ?? ''));
+        }
+
+        return trim((string) ($operation->base_dn ?? ''));
+    }
+
+    private function fail(string $message): array
+    {
+        return [
+            'ok' => false,
+            'message' => $message,
+            'entries' => [],
+            'results' => [],
+        ];
+    }
+
+    private function writeItemLog(LdapCrudOperation $operation, array $row): void
+    {
+        if (! Schema::hasTable('ldap_crud_operation_logs')) {
+            return;
+        }
+
+        DB::table('ldap_crud_operation_logs')->insert([
+            'ldap_crud_operation_id' => $operation->id,
+            'ldap_connection_id' => $operation->ldap_connection_id,
+            'operation_kind' => $operation->operation_kind,
+            'target_dn' => $row['dn'] ?? null,
+            'status' => $row['status'] ?? 'unknown',
+            'reason' => $row['reason'] ?? null,
+            'payload' => json_encode($operation->toArray()),
+            'result' => json_encode($row),
+            'executed_by' => Auth::id(),
+            'executed_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function writeAudit(LdapCrudOperation $operation, string $action, string $status, string $message): void
+    {
+        if (! Schema::hasTable('audit_logs')) {
+            return;
+        }
+
+        $this->insertOnlyExistingColumns('audit_logs', [
+            'module' => 'ldap_bulk_operations',
+            'action' => $action,
+            'status' => $status,
+            'target_type' => 'ldap_crud_operation',
+            'target_key' => (string) $operation->id,
+            'target_dn' => $operation->custom_target_dn ?: $operation->base_dn,
+            'after_value' => json_encode([
+                'message' => $message,
+                'operation' => $operation->toArray(),
+            ]),
+            'actor_id' => Auth::id(),
+            'actor_name' => Auth::user()?->name,
+            'actor_email' => Auth::user()?->email,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function writeOperationLog(LdapCrudOperation $operation, string $action, string $status, string $message): void
+    {
+        foreach (['operation_job_logs', 'operation_logs'] as $table) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
+            $this->insertOnlyExistingColumns($table, [
+                'operation_job_id' => null,
+                'level' => $status === 'success' ? 'info' : 'error',
+                'status' => $status,
+                'message' => '[LDAP Bulk Operations] ' . $action . ' - ' . $message,
+                'context' => json_encode($operation->toArray()),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return;
+        }
+    }
+
+    private function insertOnlyExistingColumns(string $table, array $data): void
+    {
+        try {
+            $columns = Schema::getColumnListing($table);
+            $filtered = array_intersect_key($data, array_flip($columns));
+
+            if (! empty($filtered)) {
+                DB::table($table)->insert($filtered);
+            }
+        } catch (Throwable) {
+            //
+        }
+    }
+
+    private function summarizeApplyResults(array $results): array
+    {
+        $success = 0;
+        $skipped = 0;
+        $failed = 0;
+
+        foreach ($results as $row) {
+            $status = strtolower((string) ($row['status'] ?? ''));
+
+            if (in_array($status, ['success', 'applied', 'ok', 'done'], true)) {
+                $success++;
+                continue;
+            }
+
+            if (in_array($status, ['skipped', 'skip'], true)) {
+                $skipped++;
+                continue;
+            }
+
+            if (in_array($status, ['failed', 'fail', 'error', 'rollback_failed'], true)) {
+                $failed++;
+                continue;
+            }
+
+            /*
+             * Status tidak dikenal jangan diam-diam hilang.
+             * Anggap failed supaya kelihatan di summary.
+             */
+            if ($status !== '') {
+                $failed++;
+            }
+        }
+
+        return [
+            'success' => $success,
+            'skipped' => $skipped,
+            'failed' => $failed,
+            'total' => count($results),
+        ];
+    }
+
+
+    private function buildRollbackPayloadFromApplyResults(array $results): array
+    {
+        $items = [];
+
+        foreach ($results as $result) {
+            if (($result['status'] ?? null) !== 'success') {
+                continue;
+            }
+
+            if (! isset($result['rollback']) || ! is_array($result['rollback'])) {
+                continue;
+            }
+
+            $items[] = $result['rollback'];
+        }
+
+        return [
+            'generated_at' => now()->format('Y-m-d H:i:s'),
+            'items' => $items,
+        ];
+    }
+
+    private function extractParentDnFromDn(string $dn): ?string
+    {
+        $parts = explode(',', $dn);
+
+        if (count($parts) <= 1) {
+            return null;
+        }
+
+        array_shift($parts);
+
+        return implode(',', $parts);
+    }
+
+    private function executeRollbackItem(mixed $ldap, array $item): array
+    {
+        $action = $item['action'] ?? null;
+
+        try {
+            return match ($action) {
+                'remove_attribute' => $this->rollbackRemoveAttribute($ldap, $item),
+                'restore_attribute' => $this->rollbackRestoreAttribute($ldap, $item),
+                'move_back' => $this->rollbackMoveBack($ldap, $item),
+                'restore_entry' => $this->rollbackRestoreEntry($ldap, $item),
+                default => [
+                    'status' => 'rollback_failed',
+                    'reason' => 'Unknown rollback action: ' . (string) $action,
+                    'item' => $item,
+                ],
+            };
+        } catch (\Throwable $e) {
+            return [
+                'status' => 'rollback_failed',
+                'reason' => $e->getMessage(),
+                'item' => $item,
+            ];
+        }
+    }
+
+    private function rollbackRemoveAttribute(mixed $ldap, array $item): array
+    {
+        $dn = (string) ($item['dn'] ?? '');
+        $attribute = (string) ($item['attribute'] ?? '');
+
+        if ($dn === '' || $attribute === '') {
+            return [
+                'status' => 'rollback_failed',
+                'reason' => 'Rollback remove_attribute gagal: DN/attribute kosong.',
+                'item' => $item,
+            ];
+        }
+
+        $ok = @ldap_modify_batch($ldap, $dn, [
+            [
+                'attrib' => $attribute,
+                'modtype' => LDAP_MODIFY_BATCH_REMOVE_ALL,
+            ],
+        ]);
+
+        if (! $ok) {
+            $errno = (int) @ldap_errno($ldap);
+            $error = (string) @ldap_error($ldap);
+
+            if ($errno === 16 || stripos($error, 'No such attribute') !== false) {
+                return [
+                    'dn' => $dn,
+                    'status' => 'rollback_skipped',
+                    'reason' => "Attribute {$attribute} sudah tidak ada.",
+                ];
+            }
+
+            return [
+                'dn' => $dn,
+                'status' => 'rollback_failed',
+                'reason' => "Gagal rollback remove attribute {$attribute}: [{$errno}] {$error}",
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'rollback_success',
+            'reason' => "Rollback berhasil: attribute {$attribute} dihapus.",
+        ];
+    }
+
+    private function rollbackRestoreAttribute(mixed $ldap, array $item): array
+    {
+        $dn = (string) ($item['dn'] ?? '');
+        $attribute = (string) ($item['attribute'] ?? '');
+        $oldValues = array_values(array_filter((array) ($item['old_values'] ?? []), fn ($value) => $value !== null && $value !== ''));
+
+        if ($dn === '' || $attribute === '') {
+            return [
+                'status' => 'rollback_failed',
+                'reason' => 'Rollback restore_attribute gagal: DN/attribute kosong.',
+                'item' => $item,
+            ];
+        }
+
+        /*
+         * Kalau old_values kosong, jangan bilang success.
+         * Ini berarti payload tidak punya data lama untuk dikembalikan.
+         */
+        if (count($oldValues) < 1) {
+            return [
+                'dn' => $dn,
+                'status' => 'rollback_failed',
+                'reason' => "Rollback restore attribute {$attribute} gagal: old_values kosong, tidak ada nilai lama yang bisa dikembalikan.",
+                'item' => $item,
+            ];
+        }
+
+        $ok = @ldap_mod_replace($ldap, $dn, [
+            $attribute => count($oldValues) === 1 ? $oldValues[0] : $oldValues,
+        ]);
+
+        if (! $ok) {
+            return [
+                'dn' => $dn,
+                'status' => 'rollback_failed',
+                'reason' => "Gagal rollback restore attribute {$attribute}: " . @ldap_error($ldap),
+                'ldap_errno' => (int) @ldap_errno($ldap),
+                'ldap_error' => (string) @ldap_error($ldap),
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'rollback_success',
+            'reason' => "Rollback berhasil: attribute {$attribute} dikembalikan.",
+            'restored_values' => $oldValues,
+        ];
+    }
+
+    private function rollbackMoveBack(mixed $ldap, array $item): array
+    {
+        $newDn = (string) ($item['new_dn'] ?? '');
+        $oldParentDn = (string) ($item['old_parent_dn'] ?? '');
+        $rdn = (string) ($item['rdn'] ?? '');
+
+        if ($newDn === '' || $oldParentDn === '' || $rdn === '') {
+            return [
+                'status' => 'rollback_failed',
+                'reason' => 'Rollback move_back gagal: new_dn/old_parent_dn/rdn kosong.',
+                'item' => $item,
+            ];
+        }
+
+        $ok = @ldap_rename($ldap, $newDn, $rdn, $oldParentDn, true);
+
+        if (! $ok) {
+            return [
+                'dn' => $newDn,
+                'status' => 'rollback_failed',
+                'reason' => 'Gagal rollback move back: ' . @ldap_error($ldap),
+            ];
+        }
+
+        return [
+            'dn' => $newDn,
+            'status' => 'rollback_success',
+            'reason' => "Rollback berhasil: entry dikembalikan ke {$oldParentDn}.",
+            'restored_dn' => "{$rdn},{$oldParentDn}",
+        ];
+    }
+
+    private function rollbackRestoreEntry(mixed $ldap, array $item): array
+    {
+        $dn = (string) ($item['dn'] ?? '');
+        $attributes = (array) ($item['attributes'] ?? []);
+
+        if ($dn === '' || count($attributes) < 1) {
+            return [
+                'status' => 'rollback_failed',
+                'reason' => 'Rollback restore_entry gagal: DN/attributes kosong.',
+                'item' => $item,
+            ];
+        }
+
+        $payload = [];
+
+        foreach ($attributes as $key => $value) {
+            if (! is_string($key)) {
+                continue;
+            }
+
+            if ($key === 'dn' || $key === 'count') {
+                continue;
+            }
+
+            if (str_starts_with($key, 'entry')) {
+                continue;
+            }
+
+            $values = array_values((array) $value);
+
+            if (count($values) < 1) {
+                continue;
+            }
+
+            $payload[$key] = count($values) === 1 ? $values[0] : $values;
+        }
+
+        if (! isset($payload['objectclass']) && ! isset($payload['objectClass'])) {
+            return [
+                'dn' => $dn,
+                'status' => 'rollback_failed',
+                'reason' => 'Rollback restore_entry gagal: objectClass tidak tersedia.',
+            ];
+        }
+
+        $ok = @ldap_add($ldap, $dn, $payload);
+
+        if (! $ok) {
+            return [
+                'dn' => $dn,
+                'status' => 'rollback_failed',
+                'reason' => 'Gagal rollback restore entry: ' . @ldap_error($ldap),
+            ];
+        }
+
+        return [
+            'dn' => $dn,
+            'status' => 'rollback_success',
+            'reason' => 'Rollback berhasil: entry dibuat ulang.',
+        ];
+    }
+
+
+    private function summarizeRollbackResults(array $results): array
+    {
+        $success = 0;
+        $skipped = 0;
+        $failed = 0;
+
+        foreach ($results as $row) {
+            $status = strtolower((string) ($row['status'] ?? ''));
+
+            if (in_array($status, ['rollback_success', 'success', 'applied', 'ok', 'done'], true)) {
+                $success++;
+                continue;
+            }
+
+            if (in_array($status, ['rollback_skipped', 'skipped', 'skip'], true)) {
+                $skipped++;
+                continue;
+            }
+
+            if (in_array($status, ['rollback_failed', 'failed', 'fail', 'error'], true)) {
+                $failed++;
+                continue;
+            }
+
+            if ($status !== '') {
+                $failed++;
+            }
+        }
+
+        return [
+            'success' => $success,
+            'skipped' => $skipped,
+            'failed' => $failed,
+            'total' => count($results),
+        ];
+    }
+
+}

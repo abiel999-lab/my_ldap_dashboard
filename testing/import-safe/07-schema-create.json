@@ -1,0 +1,22 @@
+[
+  {
+    "action": "schema_create",
+    "schema_type": "attributeType",
+    "name": "petraJsonSafeCode",
+    "oid": "1.3.6.1.4.1.99999.310.1",
+    "description": "Petra JSON safe code attribute",
+    "syntax": "1.3.6.1.4.1.1466.115.121.1.15",
+    "equality": "caseIgnoreMatch",
+    "single_value": true
+  },
+  {
+    "action": "schema_create",
+    "schema_type": "objectClass",
+    "name": "petraJsonSafeObject",
+    "oid": "1.3.6.1.4.1.99999.310.2",
+    "description": "Petra JSON safe objectClass",
+    "sup": "top",
+    "kind": "AUXILIARY",
+    "may": "petraJsonSafeCode"
+  }
+]

@@ -1,0 +1,23 @@
+{
+    "Dashboard": "Dashboard",
+    "Directory Management": "Directory Management",
+    "Operations": "Operations",
+    "Identity Federation": "Identity Federation",
+    "Network Access": "Network Access",
+    "Observability": "Observability",
+    "Maintenance": "Maintenance",
+    "User Manual": "User Manual",
+    "LDAP Connections": "LDAP Connections",
+    "Operation Jobs": "Operation Jobs",
+    "Audit Logs": "Audit Logs",
+    "Health Check": "Health Check",
+    "Job Queue": "Job Queue",
+    "Created At": "Created At",
+    "Updated At": "Updated At",
+    "Created By": "Created By",
+    "Updated By": "Updated By",
+    "Status": "Status",
+    "Action": "Action",
+    "Module": "Module",
+    "Description": "Description"
+}

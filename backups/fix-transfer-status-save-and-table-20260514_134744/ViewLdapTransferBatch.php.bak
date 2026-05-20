@@ -1,0 +1,139 @@
+<?php
+
+namespace App\Filament\Resources\Operations\LdapTransferBatchResource\Pages;
+
+use App\Filament\Resources\Operations\LdapTransferBatchResource;
+use App\Models\Operations\LdapTransferBatch;
+use App\Services\Operations\LdapTransferPreviewService;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
+
+class ViewLdapTransferBatch extends ViewRecord
+{
+    protected static string $resource = LdapTransferBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('previewTransfer')
+                ->label('Preview Transfer')
+                ->icon('heroicon-o-eye')
+                ->color('primary')
+                ->requiresConfirmation()
+                ->modalHeading('Generate LDAP transfer preview?')
+                ->modalDescription('This only generates preview LDIF. It will not write anything to target LDAP.')
+                ->action(function (): void {
+                    /** @var LdapTransferBatch $record */
+                    $record = $this->getRecord();
+
+                    $record->forceFill([
+                        'status' => 'running',
+                        'error_message' => null,
+                        'message' => 'Generating LDAP transfer preview.',
+                        'started_at' => now(),
+                        'finished_at' => null,
+                    ])->save();
+
+                    try {
+                        $result = app(LdapTransferPreviewService::class)->preview($record);
+
+                        if (! ($result['ok'] ?? false)) {
+                            $record->forceFill([
+                                'status' => 'failed',
+                                'message' => $result['message'] ?? 'LDAP transfer preview failed.',
+                                'error_message' => $result['message'] ?? 'LDAP transfer preview failed.',
+                                'stdout' => $result['stdout'] ?? null,
+                                'stderr' => $result['stderr'] ?? null,
+                                'failed_entries' => max(1, (int) ($result['failed_entries'] ?? 1)),
+                                'finished_at' => now(),
+                            ])->save();
+
+                            Notification::make()
+                                ->title('LDAP transfer preview failed')
+                                ->body($result['message'] ?? 'Check transfer output.')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        $record->forceFill([
+                            'status' => 'previewed',
+                            'message' => $result['message'] ?? 'LDAP transfer preview generated.',
+                            'stdout' => $result['stdout'] ?? null,
+                            'stderr' => $result['stderr'] ?? null,
+                            'preview_ldif' => $result['preview_ldif'] ?? null,
+                            'output_path' => $result['output_path'] ?? null,
+                            'output_size_bytes' => $result['output_size_bytes'] ?? null,
+                            'output_hash' => $result['output_hash'] ?? null,
+                            'total_entries' => (int) ($result['total_entries'] ?? 0),
+                            'success_entries' => (int) ($result['success_entries'] ?? 0),
+                            'planned_entries' => (int) ($result['planned_entries'] ?? 0),
+                            'failed_entries' => (int) ($result['failed_entries'] ?? 0),
+                            'skipped_entries' => (int) ($result['skipped_entries'] ?? 0),
+                            'finished_at' => now(),
+                        ])->save();
+
+                        Notification::make()
+                            ->title('LDAP transfer preview generated')
+                            ->body('Total entries: '.((int) ($result['total_entries'] ?? 0)))
+                            ->success()
+                            ->send();
+                    } catch (Throwable $exception) {
+                        $message = $exception->getMessage().' | '.$exception->getFile().':'.$exception->getLine();
+
+                        $record->forceFill([
+                            'status' => 'failed',
+                            'message' => $message,
+                            'error_message' => $message,
+                            'failed_entries' => max(1, (int) ($record->failed_entries ?? 0)),
+                            'finished_at' => now(),
+                        ])->save();
+
+                        Notification::make()
+                            ->title('LDAP transfer preview error')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            Action::make('executeTransfer')
+                ->label('Execute Transfer')
+                ->icon('heroicon-o-play')
+                ->color('warning')
+                ->disabled()
+                ->tooltip('Disabled for now. Finish and verify Preview Transfer first.'),
+
+            Action::make('downloadPreview')
+                ->label('Download Preview LDIF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->visible(fn (): bool => $this->getRecord()->hasOutputFile())
+                ->action(function () {
+                    /** @var LdapTransferBatch $record */
+                    $record = $this->getRecord();
+
+                    if (! $record->hasOutputFile()) {
+                        Notification::make()
+                            ->title('Preview LDIF file not found')
+                            ->danger()
+                            ->send();
+
+                        return null;
+                    }
+
+                    return Response::download(
+                        Storage::disk('local')->path((string) $record->output_path),
+                        basename((string) $record->output_path)
+                    );
+                }),
+
+            EditAction::make(),
+        ];
+    }
+}

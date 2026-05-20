@@ -1,0 +1,139 @@
+<?php
+
+namespace App\Filament\Resources\Operations\LdapTransferBatchResource\Pages;
+
+use App\Filament\Resources\Operations\LdapTransferBatchResource;
+use App\Models\Operations\LdapTransferBatch;
+use App\Services\Operations\LdapTransferStableRunner;
+use App\Services\Operations\LdapTransferRollbackService;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
+
+class ViewLdapTransferBatch extends ViewRecord
+{
+    protected static string $resource = LdapTransferBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('previewTransfer')
+                ->label('Generate Preview')
+                ->icon('heroicon-o-eye')
+                ->color('primary')
+                ->requiresConfirmation()
+                ->modalHeading('Generate LDAP transfer preview?')
+                ->modalDescription('This will only generate preview LDIF. It will not write to target LDAP.')
+                ->action(function (): void {
+                    /** @var LdapTransferBatch $record */
+                    $record = $this->getRecord();
+
+                    $result = app(LdapTransferStableRunner::class)->preview($record);
+
+                    if ($result['ok'] ?? false) {
+                        Notification::make()
+                            ->title('LDAP transfer preview generated')
+                            ->body('Total: '.$result['total_entries'].' | Planned: '.$result['success_entries'])
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('LDAP transfer preview failed')
+                            ->body($result['message'] ?? 'Unknown error')
+                            ->danger()
+                            ->send();
+                    }
+
+                    $this->redirect(static::getResource()::getUrl('view', ['record' => $record->id]));
+                }),
+
+            Action::make('executeTransfer')
+                ->label('Execute to Target LDAP')
+                ->icon('heroicon-o-play')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading('Execute LDAP transfer?')
+                ->modalDescription('This will write entries to the target LDAP. Existing target entries will be skipped.')
+                ->action(function (): void {
+                    /** @var LdapTransferBatch $record */
+                    $record = $this->getRecord();
+
+                    $result = app(LdapTransferStableRunner::class)->execute($record);
+
+                    if ($result['ok'] ?? false) {
+                        Notification::make()
+                            ->title('LDAP transfer executed')
+                            ->body('Success: '.$result['success_entries'].' | Failed: '.$result['failed_entries'].' | Skipped: '.$result['skipped_entries'])
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('LDAP transfer failed')
+                            ->body($result['message'] ?? 'Unknown error')
+                            ->danger()
+                            ->send();
+                    }
+
+                    $this->redirect(static::getResource()::getUrl('view', ['record' => $record->id]));
+                }),
+
+            Action::make('rollbackTransfer')
+                ->label('Rollback Transfer')
+                ->icon('heroicon-o-arrow-uturn-left')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Rollback LDAP transfer?')
+                ->modalDescription('This will delete target DNs that were created by this transfer. Use only for testing rollback.')
+                ->action(function (): void {
+                    /** @var LdapTransferBatch $record */
+                    $record = $this->getRecord();
+
+                    $result = app(LdapTransferRollbackService::class)->rollback($record);
+
+                    if ($result['ok'] ?? false) {
+                        Notification::make()
+                            ->title('LDAP transfer rollback completed')
+                            ->body('Deleted: '.$result['success_entries'].' | Failed: '.$result['failed_entries'].' | Skipped: '.$result['skipped_entries'])
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('LDAP transfer rollback failed')
+                            ->body($result['message'] ?? 'Unknown error')
+                            ->danger()
+                            ->send();
+                    }
+
+                    $this->redirect(static::getResource()::getUrl('view', ['record' => $record->id]));
+                }),
+
+            Action::make('downloadOutput')
+                ->label('Download Output / LDIF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->visible(fn (): bool => $this->getRecord()->hasOutputFile())
+                ->action(function () {
+                    /** @var LdapTransferBatch $record */
+                    $record = $this->getRecord();
+
+                    if (! $record->hasOutputFile()) {
+                        Notification::make()
+                            ->title('Output file not found')
+                            ->danger()
+                            ->send();
+
+                        return null;
+                    }
+
+                    return Response::download(
+                        Storage::disk('local')->path((string) $record->output_path),
+                        basename((string) $record->output_path)
+                    );
+                }),
+
+            EditAction::make(),
+        ];
+    }
+}

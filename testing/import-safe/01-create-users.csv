@@ -1,0 +1,4 @@
+action,dn,uid,objectClass,cn,sn,givenName,mail,userPassword,description
+create,"uid=imp-test-001,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id",imp-test-001,"top;person;organizationalPerson;inetOrgPerson",Import Test 001,Test001,Import,imp-test-001@petra.ac.id,SeongJinWoo999!,SAFE TEST - create user 001
+create,"uid=imp-test-002,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id",imp-test-002,"top;person;organizationalPerson;inetOrgPerson",Import Test 002,Test002,Import,imp-test-002@petra.ac.id,SeongJinWoo999!,SAFE TEST - create user 002
+create,"uid=imp-test-003,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id",imp-test-003,"top;person;organizationalPerson;inetOrgPerson",Import Test 003,Test003,Import,imp-test-003@petra.ac.id,SeongJinWoo999!,SAFE TEST - create user 003

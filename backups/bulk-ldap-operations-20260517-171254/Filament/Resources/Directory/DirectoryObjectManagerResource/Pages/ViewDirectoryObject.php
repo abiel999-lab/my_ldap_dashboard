@@ -1,0 +1,454 @@
+<?php
+
+namespace App\Filament\Resources\Directory\DirectoryObjectManagerResource\Pages;
+
+use App\Services\Directory\DirectoryManagementSyncDispatcher;
+
+use App\Filament\Resources\Directory\DirectoryObjectManagerResource;
+use App\Jobs\Directory\GenericLdapEntryMutationJob;
+use App\Jobs\Directory\SyncDirectoryObjectsJob;
+use App\Support\Directory\LdapSchemaObjectClassHelper;
+use App\Support\Operations\SafeCommandExecutionLogger;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Schema;
+use Throwable;
+
+class ViewDirectoryObject extends ViewRecord
+{
+    protected static string $resource = DirectoryObjectManagerResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('syncObjectToLdapSyncCenter')
+                ->label('Sync This Object')
+                ->icon('heroicon-o-arrow-path')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalHeading('Queue object detail sync?')
+                ->modalDescription('Sync object ini akan masuk ke LDAP Sync Center, Operation Jobs, dan Operation Job Logs.')
+                ->action(function (): void {
+                    $record = $this->getRecord();
+
+                    $dn = (string) ($record->dn ?? '');
+                    $connectionId = (int) ($record->ldap_connection_id ?? 0);
+                    $displayName = (string) ($record->entry_key ?? $record->rdn ?? $record->cn ?? $dn);
+
+                    $result = app(DirectoryManagementSyncDispatcher::class)->queueSingleDn(
+                        ldapConnectionId: $connectionId,
+                        dn: $dn,
+                        name: 'Directory Object Detail Sync - '.$displayName,
+                        sourcePage: 'directory.object_manager.detail',
+                        filter: '(objectClass=*)',
+                        attributes: '* +',
+                    );
+
+                    DirectoryManagementSyncDispatcher::notifyResult($result, 'Directory object detail sync queued');
+                }),
+
+            
+
+            ActionGroup::make([
+                Action::make('renameRdn')
+                    ->label('Rename RDN')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('info')
+                    ->form([
+                        TextInput::make('rdn_attribute')
+                            ->label('RDN Attribute')
+                            ->default(fn (): string => DirectoryObjectManagerResource::rdnAttribute((string) ($this->record->dn ?? '')))
+                            ->required(),
+
+                        TextInput::make('rdn_value')
+                            ->label('New RDN Value')
+                            ->required(),
+
+                        Toggle::make('delete_old_rdn')
+                            ->label('Delete old RDN value')
+                            ->default(true),
+                    ])
+                    ->action(fn (array $data) => $this->queueMutation('rename_rdn', $data)),
+
+                Action::make('moveEntry')
+                    ->label('Move Parent DN')
+                    ->icon('heroicon-o-arrows-right-left')
+                    ->color('warning')
+                    ->form([
+                        TextInput::make('new_parent_dn')
+                            ->label('New Parent DN')
+                            ->default(fn (): string => DirectoryObjectManagerResource::parentDn((string) ($this->record->dn ?? '')))
+                            ->required(),
+                    ])
+                    ->action(fn (array $data) => $this->queueMutation('move_entry', $data)),
+
+                Action::make('addObjectClass')
+                    ->label('Add ObjectClass')
+                    ->icon('heroicon-o-cube')
+                    ->color('primary')
+                    ->form([
+                        Select::make('object_class')
+                            ->label('ObjectClass')
+                            ->options(fn (): array => DirectoryObjectManagerResource::auxiliaryOnlyOptions((int) ($this->record->ldap_connection_id ?? 0)))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(fn ($state, callable $set) => $set('must_attributes', DirectoryObjectManagerResource::mustAttributeRowsForObjectClass((int) ($this->record->ldap_connection_id ?? 0), (string) $state)))
+                            ->required(),
+
+                        Repeater::make('must_attributes')
+                            ->label('MUST Attributes')
+                            ->schema([
+                                TextInput::make('attribute')
+                                    ->label('Attribute')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->required(),
+
+                                TextInput::make('value')
+                                    ->label('Value')
+                                    ->required(),
+                            ])
+                            ->columns(2)
+                            ->addable(false)
+                            ->deletable(false)
+                            ->reorderable(false)
+                            ->helperText('Nama attribute otomatis. User hanya isi value. Direct add hanya untuk AUXILIARY objectClass.'),
+                    ])
+                    ->action(fn (array $data) => $this->queueMutation('add_objectclass', $data)),
+
+                Action::make('removeObjectClass')
+                    ->label('Remove ObjectClass')
+                    ->icon('heroicon-o-cube-transparent')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->form([
+                        Select::make('object_class')
+                            ->label('ObjectClass')
+                            ->options(fn (): array => DirectoryObjectManagerResource::removableAuxiliaryObjectClassOptions($this->record))
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                    ])
+                    ->action(fn (array $data) => $this->queueMutation('remove_objectclass', array_merge($data, ['auto_remove_related_attributes' => true]))),
+
+                Action::make('deleteObject')
+                    ->label('Delete LDAP')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete LDAP object?')
+                    ->modalDescription('Object akan dihapus dari LDAP lewat queue dan tercatat di Command Executions.')
+                    ->action(fn () => $this->queueMutation('delete_entry', [])),
+            ])
+                ->label('LDAP Operations')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->button()
+                    ->color('primary'),
+        ];
+    }
+
+    public function infolist(Schema $schema): Schema
+    {
+        $dn = (string) ($this->record->dn ?? '');
+        $objectClasses = DirectoryObjectManagerResource::extractObjectClasses($this->record);
+
+        $normalRows = DirectoryObjectManagerResource::attributeRowsForDetail(
+            DirectoryObjectManagerResource::normalAttributesForDetail($this->record)
+        );
+
+        $operationalRows = DirectoryObjectManagerResource::attributeRowsForDetail(
+            DirectoryObjectManagerResource::operationalAttributesForDetail($this->record)
+        );
+
+        return $schema
+            ->state([
+                'dn' => $dn,
+                'rdn' => DirectoryObjectManagerResource::safeRdn($dn),
+                'parent_dn' => DirectoryObjectManagerResource::parentDn($dn) ?: 'N/A',
+                'ldap_connection' => DirectoryObjectManagerResource::connectionName($this->record->ldap_connection_id ?? null),
+                'status' => (string) ($this->record->status ?? 'active'),
+                'object_class_count' => count($objectClasses),
+                'normal_attribute_count' => count($normalRows),
+                'operational_attribute_count' => count($operationalRows),
+                'object_classes' => collect($objectClasses)->map(fn ($item): array => ['name' => (string) $item])->values()->all(),
+                'normal_attributes' => $normalRows,
+                'operational_attributes' => $operationalRows,
+            ])
+            ->components([
+                Tabs::make('Directory Object Detail')
+                    ->columnSpanFull()
+                    ->tabs([
+                        Tab::make('Overview')
+                            ->icon('heroicon-o-information-circle')
+                            ->schema([
+                                Grid::make(2)
+                                    ->schema([
+                                        Section::make('Object Identity')
+                                            ->schema([
+                                                TextEntry::make('dn')
+                                                    ->label('DN')
+                                                    ->copyable()
+                                                    ->columnSpanFull(),
+
+                                                TextEntry::make('rdn')
+                                                    ->label('RDN')
+                                                    ->copyable(),
+
+                                                TextEntry::make('parent_dn')
+                                                    ->label('Parent DN')
+                                                    ->copyable(),
+
+                                                TextEntry::make('ldap_connection')
+                                                    ->label('LDAP Connection')
+                                                    ->badge(),
+
+                                                TextEntry::make('status')
+                                                    ->label('Status')
+                                                    ->badge(),
+                                            ]),
+
+                                        Section::make('Object Summary')
+                                            ->schema([
+                                                TextEntry::make('object_class_count')
+                                                    ->label('Object Classes')
+                                                    ->badge(),
+
+                                                TextEntry::make('normal_attribute_count')
+                                                    ->label('Directory Attributes')
+                                                    ->badge(),
+
+                                                TextEntry::make('operational_attribute_count')
+                                                    ->label('Operational Attributes')
+                                                    ->badge(),
+
+                                                TextEntry::make('rdn')
+                                                    ->label('Entry Key')
+                                                    ->copyable(),
+                                            ]),
+                                    ]),
+                            ]),
+
+                        Tab::make('Object Classes')
+                            ->icon('heroicon-o-cube')
+                            ->schema([
+                                Section::make('Object Classes')
+                                    ->description('ObjectClass yang melekat pada LDAP object ini.')
+                                    ->schema([
+                                        RepeatableEntry::make('object_classes')
+                                            ->hiddenLabel()
+                                            ->schema([
+                                                TextEntry::make('name')
+                                                    ->label('ObjectClass')
+                                                    ->badge()
+                                                    ->copyable(),
+                                            ])
+                                            ->columns(3),
+                                    ]),
+                            ]),
+
+                        Tab::make('Directory Attributes')
+                            ->icon('heroicon-o-adjustments-horizontal')
+                            ->schema([
+                                Section::make('Directory Attributes')
+                                    ->description('Normal LDAP attributes.')
+                                    ->schema([
+                                        RepeatableEntry::make('normal_attributes')
+                                            ->hiddenLabel()
+                                            ->schema([
+                                                Grid::make(4)
+                                                    ->schema([
+                                                        TextEntry::make('attribute')
+                                                            ->label('Attribute')
+                                                            ->weight('bold')
+                                                            ->copyable(),
+
+                                                        TextEntry::make('count')
+                                                            ->label('Count')
+                                                            ->badge(),
+
+                                                        TextEntry::make('type')
+                                                            ->label('Type')
+                                                            ->badge(),
+
+                                                        TextEntry::make('values_text')
+                                                            ->label('Values')
+                                                            ->copyable()
+                                                            ->columnSpanFull(),
+                                                    ]),
+                                            ]),
+                                    ]),
+                            ]),
+
+                        Tab::make('Operational Attributes')
+                            ->icon('heroicon-o-shield-check')
+                            ->schema([
+                                Section::make('Operational / Read-only Attributes')
+                                    ->description('Server-managed LDAP attributes untuk audit dan inspeksi.')
+                                    ->schema([
+                                        RepeatableEntry::make('operational_attributes')
+                                            ->hiddenLabel()
+                                            ->schema([
+                                                Grid::make(4)
+                                                    ->schema([
+                                                        TextEntry::make('attribute')
+                                                            ->label('Attribute')
+                                                            ->weight('bold')
+                                                            ->copyable(),
+
+                                                        TextEntry::make('count')
+                                                            ->label('Count')
+                                                            ->badge(),
+
+                                                        TextEntry::make('type')
+                                                            ->label('Type')
+                                                            ->badge(),
+
+                                                        TextEntry::make('values_text')
+                                                            ->label('Values')
+                                                            ->copyable()
+                                                            ->columnSpanFull(),
+                                                    ]),
+                                            ]),
+                                    ]),
+                            ]),
+                    ]),
+            ]);
+    }
+
+    private function queueMutation(string $operation, array $payload = []): void
+    {
+        try {
+            $payload = DirectoryObjectManagerResource::normalizeObjectClassMutationPayload($this->record, $operation, $payload);
+            $execution = SafeCommandExecutionLogger::createQueued(
+                'ldap_directory_object_detail_mutation_queued',
+                'queued job: GenericLdapEntryMutationJob',
+                [
+                    'operation' => $operation,
+                    'model_class' => get_class($this->record),
+                    'record_id' => $this->record->id ?? null,
+                    'dn' => $this->record->dn ?? null,
+                    'payload' => $payload,
+                    'queue' => 'ldap',
+                ]
+            );
+
+            GenericLdapEntryMutationJob::dispatch(
+                get_class($this->record),
+                (int) $this->record->id,
+                $operation,
+                $payload,
+                SafeCommandExecutionLogger::id($execution)
+            );
+
+            Notification::make()
+                ->title('LDAP operation queued')
+                ->body('Operation: '.$operation.' | Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+                ->success()
+                ->send();
+        } catch (Throwable $e) {
+            SafeCommandExecutionLogger::createFailed(
+                'ldap_directory_object_detail_mutation_dispatch_failed',
+                $e->getMessage(),
+                [
+                    'operation' => $operation,
+                    'record_id' => $this->record->id ?? null,
+                    'dn' => $this->record->dn ?? null,
+                    'payload' => $payload,
+                ]
+            );
+
+            Notification::make()
+                ->title('LDAP operation failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    private function queueSyncThisObject(): void
+    {
+        try {
+            $execution = SafeCommandExecutionLogger::createQueued(
+                'ldap_directory_object_single_sync_queued',
+                'queued job: SyncDirectoryObjectsJob',
+                [
+                    'operation' => 'sync_directory_object_connection',
+                    'ldap_connection_id' => $this->record->ldap_connection_id ?? null,
+                    'dn' => $this->record->dn ?? null,
+                    'queue' => 'ldap',
+                ]
+            );
+
+            SyncDirectoryObjectsJob::dispatch(
+                $this->record->ldap_connection_id ? (int) $this->record->ldap_connection_id : null,
+                SafeCommandExecutionLogger::id($execution)
+            );
+
+            Notification::make()
+                ->title('Directory object sync queued')
+                ->body('Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+                ->success()
+                ->send();
+        } catch (Throwable $e) {
+            SafeCommandExecutionLogger::createFailed(
+                'ldap_directory_object_single_sync_dispatch_failed',
+                $e->getMessage(),
+                [
+                    'record_id' => $this->record->id ?? null,
+                    'dn' => $this->record->dn ?? null,
+                ]
+            );
+
+            Notification::make()
+                ->title('Sync failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    private function objectClassOptions(): array
+    {
+        try {
+            $options = app(LdapSchemaObjectClassHelper::class)
+                ->objectClassOptions((int) ($this->record->ldap_connection_id ?? 0));
+
+            if ($options !== []) {
+                return $options;
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
+
+        return [
+            'extensibleObject' => 'extensibleObject',
+            'organizationalUnit' => 'organizationalUnit',
+            'groupOfNames' => 'groupOfNames',
+            'groupOfUniqueNames' => 'groupOfUniqueNames',
+            'applicationProcess' => 'applicationProcess',
+            'device' => 'device',
+        ];
+    }
+
+    private function currentObjectClassOptions(): array
+    {
+        return collect(DirectoryObjectManagerResource::extractObjectClasses($this->record))
+            ->mapWithKeys(fn ($value): array => [$value => $value])
+            ->toArray();
+    }
+}

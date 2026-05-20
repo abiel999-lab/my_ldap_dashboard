@@ -1,0 +1,23 @@
+{
+    "Dashboard": "Dashboard",
+    "Directory Management": "Manajemen Direktori",
+    "Operations": "Operasi",
+    "Identity Federation": "Federasi Identitas",
+    "Network Access": "Akses Jaringan",
+    "Observability": "Observabilitas",
+    "Maintenance": "Pemeliharaan",
+    "User Manual": "Panduan Pengguna",
+    "LDAP Connections": "Koneksi LDAP",
+    "Operation Jobs": "Pekerjaan Operasi",
+    "Audit Logs": "Log Audit",
+    "Health Check": "Pemeriksaan Kesehatan",
+    "Job Queue": "Antrean Pekerjaan",
+    "Created At": "Dibuat Pada",
+    "Updated At": "Diperbarui Pada",
+    "Created By": "Dibuat Oleh",
+    "Updated By": "Diperbarui Oleh",
+    "Status": "Status",
+    "Action": "Aksi",
+    "Module": "Modul",
+    "Description": "Deskripsi"
+}

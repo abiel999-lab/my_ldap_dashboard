@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-ldap-dashboard
+  namespace: petra-iam
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-ldap-dashboard
+  template:
+    metadata:
+      labels:
+        app: my-ldap-dashboard
+    spec:
+      containers:
+        - name: my-ldap-dashboard
+          image: localhost:32000/my-ldap-dashboard:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          envFrom:
+            - secretRef:
+                name: my-ldap-dashboard-env
+          readinessProbe:
+            httpGet:
+              path: /admin
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /admin
+              port: 80
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6

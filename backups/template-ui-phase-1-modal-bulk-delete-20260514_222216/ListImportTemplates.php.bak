@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportTemplateResource\Pages;
+
+use App\Filament\Resources\Operations\ImportTemplateResource;
+use Filament\Actions\CreateAction;
+use Filament\Resources\Pages\ListRecords;
+
+class ListImportTemplates extends ListRecords
+{
+    protected static string $resource = ImportTemplateResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            CreateAction::make()
+                ->label('New Generic Template')
+                ->icon('heroicon-o-plus-circle')
+                ->modalHeading('Create Generic LDAP Import Template')
+                ->modalSubmitActionLabel('Create Template')
+                ->createAnother(false),
+        ];
+    }
+}

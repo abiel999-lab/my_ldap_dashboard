@@ -1,0 +1,37 @@
+[2026-05-13 16:42:25] local.ERROR: Declaration of App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript::canAccess(): bool must be compatible with Filament\Resources\Pages\Page::canAccess(array $parameters = []): bool {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Declaration of App\\Filament\\Resources\\Operations\\SavedScriptResource\\Pages\\CreateSavedScript::canAccess(): bool must be compatible with Filament\\Resources\\Pages\\Page::canAccess(array $parameters = []): bool at /opt/petra_iam_big_project/my_ldap_dashboard/app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 16:42:26] local.ERROR: Declaration of App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript::canAccess(): bool must be compatible with Filament\Resources\Pages\Page::canAccess(array $parameters = []): bool {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Declaration of App\\Filament\\Resources\\Operations\\SavedScriptResource\\Pages\\CreateSavedScript::canAccess(): bool must be compatible with Filament\\Resources\\Pages\\Page::canAccess(array $parameters = []): bool at /opt/petra_iam_big_project/my_ldap_dashboard/app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 16:42:26] local.ERROR: Declaration of App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript::canAccess(): bool must be compatible with Filament\Resources\Pages\Page::canAccess(array $parameters = []): bool {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Declaration of App\\Filament\\Resources\\Operations\\SavedScriptResource\\Pages\\CreateSavedScript::canAccess(): bool must be compatible with Filament\\Resources\\Pages\\Page::canAccess(array $parameters = []): bool at /opt/petra_iam_big_project/my_ldap_dashboard/app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 16:42:27] local.ERROR: Declaration of App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript::canAccess(): bool must be compatible with Filament\Resources\Pages\Page::canAccess(array $parameters = []): bool {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Declaration of App\\Filament\\Resources\\Operations\\SavedScriptResource\\Pages\\CreateSavedScript::canAccess(): bool must be compatible with Filament\\Resources\\Pages\\Page::canAccess(array $parameters = []): bool at /opt/petra_iam_big_project/my_ldap_dashboard/app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 16:42:27] local.ERROR: Declaration of App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript::canAccess(): bool must be compatible with Filament\Resources\Pages\Page::canAccess(array $parameters = []): bool {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Declaration of App\\Filament\\Resources\\Operations\\SavedScriptResource\\Pages\\CreateSavedScript::canAccess(): bool must be compatible with Filament\\Resources\\Pages\\Page::canAccess(array $parameters = []): bool at /opt/petra_iam_big_project/my_ldap_dashboard/app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 16:42:28] local.ERROR: Declaration of App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript::canAccess(): bool must be compatible with Filament\Resources\Pages\Page::canAccess(array $parameters = []): bool {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Declaration of App\\Filament\\Resources\\Operations\\SavedScriptResource\\Pages\\CreateSavedScript::canAccess(): bool must be compatible with Filament\\Resources\\Pages\\Page::canAccess(array $parameters = []): bool at /opt/petra_iam_big_project/my_ldap_dashboard/app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 16:42:32] local.ERROR: Declaration of App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript::canAccess(): bool must be compatible with Filament\Resources\Pages\Page::canAccess(array $parameters = []): bool {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Declaration of App\\Filament\\Resources\\Operations\\SavedScriptResource\\Pages\\CreateSavedScript::canAccess(): bool must be compatible with Filament\\Resources\\Pages\\Page::canAccess(array $parameters = []): bool at /opt/petra_iam_big_project/my_ldap_dashboard/app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 16:42:32] local.ERROR: Declaration of App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript::canAccess(): bool must be compatible with Filament\Resources\Pages\Page::canAccess(array $parameters = []): bool {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Declaration of App\\Filament\\Resources\\Operations\\SavedScriptResource\\Pages\\CreateSavedScript::canAccess(): bool must be compatible with Filament\\Resources\\Pages\\Page::canAccess(array $parameters = []): bool at /opt/petra_iam_big_project/my_ldap_dashboard/app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 16:42:33] local.ERROR: Declaration of App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript::canAccess(): bool must be compatible with Filament\Resources\Pages\Page::canAccess(array $parameters = []): bool {"exception":"[object] (Symfony\\Component\\ErrorHandler\\Error\\FatalError(code: 0): Declaration of App\\Filament\\Resources\\Operations\\SavedScriptResource\\Pages\\CreateSavedScript::canAccess(): bool must be compatible with Filament\\Resources\\Pages\\Page::canAccess(array $parameters = []): bool at /opt/petra_iam_big_project/my_ldap_dashboard/app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:26)
+[stacktrace]
+#0 {main}
+"} 
+[2026-05-13 16:48:35] local.WARNING: Clear all logs executed from Filament table {"model_class":"App\\Models\\Operations\\QueueJob","table":"jobs","count":6,"user_id":1,"user_email":"abielpasaribu@gmail.com"} 

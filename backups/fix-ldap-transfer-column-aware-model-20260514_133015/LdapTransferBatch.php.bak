@@ -1,0 +1,247 @@
+<?php
+
+namespace App\Models\Operations;
+
+use App\Models\Directory\LdapConnection;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class LdapTransferBatch extends Model
+{
+    protected $table = 'ldap_transfer_batches';
+
+    protected $guarded = [];
+
+    protected function casts(): array
+    {
+        return [
+            'options' => 'array',
+            'metadata' => 'array',
+            'include_operational_attributes' => 'boolean',
+            'delete_source_after_copy' => 'boolean',
+            'preview_only' => 'boolean',
+            'safe_mode' => 'boolean',
+            'destructive' => 'boolean',
+            'size_limit' => 'integer',
+            'page_size' => 'integer',
+            'total_entries' => 'integer',
+            'success_entries' => 'integer',
+            'failed_entries' => 'integer',
+            'skipped_entries' => 'integer',
+            'planned_entries' => 'integer',
+            'transferred_entries' => 'integer',
+            'output_size_bytes' => 'integer',
+            'started_at' => 'datetime',
+            'finished_at' => 'datetime',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (LdapTransferBatch $batch): void {
+            $batch->uuid ??= (string) Str::uuid();
+
+            $batch->status ??= 'draft';
+
+            $batch->mode ??= 'copy';
+            $batch->transfer_mode ??= 'copy';
+
+            $batch->source_input_mode ??= 'ldap_query';
+            $batch->source_mode ??= 'ldap_query';
+
+            $batch->transfer_scope ??= 'custom_dn';
+            $batch->search_scope ??= 'sub';
+            $batch->scope ??= $batch->search_scope;
+
+            $batch->filter ??= $batch->ldap_filter ?? '(objectClass=*)';
+            $batch->ldap_filter ??= $batch->filter ?? '(objectClass=*)';
+
+            $batch->attributes ??= '*';
+
+            $batch->target_parent_dn ??= $batch->target_dn ?? $batch->target_base_dn ?? null;
+            $batch->target_dn ??= $batch->target_parent_dn;
+            $batch->target_base_dn ??= $batch->target_parent_dn;
+
+            $batch->target_dn_strategy ??= 'flatten';
+            $batch->target_dn_mode ??= 'auto';
+
+            $batch->if_target_exists ??= 'skip';
+            $batch->collision_strategy ??= $batch->if_target_exists;
+
+            $batch->excluded_attributes ??= 'userPassword entryUUID entryCSN createTimestamp creatorsName modifyTimestamp modifiersName structuralObjectClass';
+            $batch->include_operational_attributes ??= false;
+            $batch->delete_source_after_copy ??= false;
+
+            $batch->size_limit ??= 1000;
+            $batch->page_size ??= 500;
+
+            $batch->preview_only ??= true;
+            $batch->safe_mode ??= true;
+            $batch->destructive ??= false;
+
+            $batch->total_entries ??= 0;
+            $batch->success_entries ??= 0;
+            $batch->failed_entries ??= 0;
+            $batch->skipped_entries ??= 0;
+            $batch->planned_entries ??= 0;
+            $batch->transferred_entries ??= 0;
+
+            $batch->created_by ??= Auth::id();
+            $batch->updated_by ??= Auth::id();
+        });
+
+        static::updating(function (LdapTransferBatch $batch): void {
+            $batch->updated_by = Auth::id();
+
+            $batch->filter ??= $batch->ldap_filter ?? '(objectClass=*)';
+            $batch->ldap_filter ??= $batch->filter ?? '(objectClass=*)';
+
+            $batch->search_scope ??= $batch->scope ?? 'sub';
+            $batch->scope ??= $batch->search_scope;
+
+            $batch->target_parent_dn ??= $batch->target_dn ?? $batch->target_base_dn ?? null;
+            $batch->target_dn ??= $batch->target_parent_dn;
+            $batch->target_base_dn ??= $batch->target_parent_dn;
+
+            $batch->preview_only = true;
+            $batch->safe_mode = true;
+            $batch->destructive = false;
+        });
+    }
+
+    public function sourceLdapConnection(): BelongsTo
+    {
+        return $this->belongsTo(LdapConnection::class, 'source_ldap_connection_id');
+    }
+
+    public function targetLdapConnection(): BelongsTo
+    {
+        return $this->belongsTo(LdapConnection::class, 'target_ldap_connection_id');
+    }
+
+    public function operationJob(): BelongsTo
+    {
+        return $this->belongsTo(OperationJob::class);
+    }
+
+    protected function effectiveSourceDn(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $baseDn = $this->safeString($this->getRawOriginal('source_base_dn'));
+                $scope = $this->safeString($this->getRawOriginal('transfer_scope') ?: 'custom_dn');
+
+                if ($scope === 'custom_dn') {
+                    return $this->safeString($this->getRawOriginal('custom_source_dn'));
+                }
+
+                if ($scope === 'full') {
+                    return $baseDn;
+                }
+
+                if (in_array($scope, ['ou', 'cn', 'uid'], true)) {
+                    $attr = $this->safeString($this->getRawOriginal('source_rdn_attribute') ?: $scope);
+                    $value = $this->safeString($this->getRawOriginal('source_rdn_value'));
+
+                    if ($attr === '' || $value === '' || $baseDn === '') {
+                        return '';
+                    }
+
+                    if (str_contains($value, '=')) {
+                        return $value.','.$baseDn;
+                    }
+
+                    return $attr.'='.$value.','.$baseDn;
+                }
+
+                return $baseDn;
+            }
+        );
+    }
+
+    protected function attributeList(): Attribute
+    {
+        return Attribute::make(
+            get: function (): array {
+                $value = $this->getRawOriginal('attributes');
+
+                if ($value === null || trim((string) $value) === '') {
+                    return ['*'];
+                }
+
+                return collect(preg_split('/[\s,]+/', (string) $value) ?: [])
+                    ->map(fn ($item): string => trim((string) $item))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+            }
+        );
+    }
+
+    protected function displayOutputSize(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $bytes = (int) ($this->output_size_bytes ?? 0);
+
+                if ($bytes <= 0) {
+                    return 'N/A';
+                }
+
+                if ($bytes >= 1024 * 1024) {
+                    return round($bytes / 1024 / 1024, 2).' MB';
+                }
+
+                return round($bytes / 1024, 2).' KB';
+            }
+        );
+    }
+
+    public function hasOutputFile(): bool
+    {
+        return filled($this->output_path) && Storage::disk('local')->exists((string) $this->output_path);
+    }
+
+    public function readOutputContent(int $maxBytes = 60000): string
+    {
+        if ($this->hasOutputFile()) {
+            $content = Storage::disk('local')->get((string) $this->output_path);
+
+            return strlen($content) > $maxBytes
+                ? substr($content, 0, $maxBytes)."\n\n--- FILE TRUNCATED IN UI. DOWNLOAD FULL FILE TO VIEW ALL CONTENT. ---"
+                : $content;
+        }
+
+        if (filled($this->preview_ldif)) {
+            return (string) $this->preview_ldif;
+        }
+
+        return 'Transfer preview plan output file is missing.';
+    }
+
+    private function safeString(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if (is_string($value)) {
+            return trim($value);
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_scalar($value)) {
+            return trim((string) $value);
+        }
+
+        return '';
+    }
+}

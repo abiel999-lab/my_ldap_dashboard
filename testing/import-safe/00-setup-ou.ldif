@@ -1,0 +1,13 @@
+dn: ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id
+changetype: add
+objectClass: top
+objectClass: organizationalUnit
+ou: import-stage
+description: Safe import testing stage OU
+
+dn: ou=import-archive,ou=test-dom,dc=petra,dc=ac,dc=id
+changetype: add
+objectClass: top
+objectClass: organizationalUnit
+ou: import-archive
+description: Safe import testing archive OU

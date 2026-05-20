@@ -1,0 +1,185 @@
+<?php
+
+namespace App\Services\Observability;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+class OperationActivityDetailService
+{
+    public function detailForJob(int $jobId): array
+    {
+        $job = $this->tableRow('operation_jobs', $jobId);
+
+        return [
+            'job' => $job,
+            'logs' => $this->logsForJob($jobId),
+            'items' => $this->itemsForJob($jobId),
+            'audits' => $this->auditsForJob($jobId, $job),
+            'commands' => $this->commandsForJob($jobId, $job),
+        ];
+    }
+
+    private function tableRow(string $table, int $id): ?array
+    {
+        if (! Schema::hasTable($table)) {
+            return null;
+        }
+
+        $row = DB::table($table)->where('id', $id)->first();
+
+        return $row ? (array) $row : null;
+    }
+
+    private function logsForJob(int $jobId): array
+    {
+        if (! Schema::hasTable('operation_job_logs')) {
+            return [];
+        }
+
+        $columns = Schema::getColumnListing('operation_job_logs');
+
+        $query = DB::table('operation_job_logs');
+
+        if (in_array('operation_job_id', $columns, true)) {
+            $query->where('operation_job_id', $jobId);
+        } elseif (in_array('job_id', $columns, true)) {
+            $query->where('job_id', $jobId);
+        } else {
+            return [];
+        }
+
+        if (in_array('created_at', $columns, true)) {
+            $query->orderBy('created_at');
+        } else {
+            $query->orderBy('id');
+        }
+
+        return $query->limit(50)->get()->map(fn ($row) => (array) $row)->all();
+    }
+
+    private function itemsForJob(int $jobId): array
+    {
+        if (! Schema::hasTable('operation_job_items')) {
+            return [];
+        }
+
+        $columns = Schema::getColumnListing('operation_job_items');
+
+        $query = DB::table('operation_job_items');
+
+        if (in_array('operation_job_id', $columns, true)) {
+            $query->where('operation_job_id', $jobId);
+        } elseif (in_array('job_id', $columns, true)) {
+            $query->where('job_id', $jobId);
+        } else {
+            return [];
+        }
+
+        if (in_array('id', $columns, true)) {
+            $query->orderBy('id');
+        }
+
+        return $query->limit(50)->get()->map(fn ($row) => (array) $row)->all();
+    }
+
+    private function auditsForJob(int $jobId, ?array $job): array
+    {
+        if (! Schema::hasTable('audit_logs')) {
+            return [];
+        }
+
+        $columns = Schema::getColumnListing('audit_logs');
+        $query = DB::table('audit_logs');
+
+        $matched = false;
+
+        if (in_array('target_id', $columns, true) && $job) {
+            $targetId = $job['target_id'] ?? $job['id'] ?? null;
+
+            if ($targetId !== null) {
+                $query->where(function ($q) use ($targetId, $jobId) {
+                    $q->where('target_id', $targetId)
+                        ->orWhere('target_id', $jobId);
+                });
+
+                $matched = true;
+            }
+        }
+
+        if (! $matched && in_array('metadata', $columns, true)) {
+            $query->where('metadata', 'like', '%"target_id":'.$jobId.'%');
+            $matched = true;
+        }
+
+        if (! $matched) {
+            return [];
+        }
+
+        if (in_array('created_at', $columns, true)) {
+            $query->orderByDesc('created_at');
+        } else {
+            $query->orderByDesc('id');
+        }
+
+        return $query->limit(20)->get()->map(fn ($row) => (array) $row)->all();
+    }
+
+    private function commandsForJob(int $jobId, ?array $job): array
+    {
+        if (! Schema::hasTable('command_executions')) {
+            return [];
+        }
+
+        $columns = Schema::getColumnListing('command_executions');
+        $query = DB::table('command_executions');
+
+        $matched = false;
+
+        if (in_array('target_id', $columns, true) && $job) {
+            $targetId = $job['target_id'] ?? null;
+
+            if ($targetId !== null) {
+                $query->where('target_id', $targetId);
+                $matched = true;
+            }
+        }
+
+        if (! $matched && in_array('metadata', $columns, true)) {
+            $query->where('metadata', 'like', '%"target_id":'.$jobId.'%');
+            $matched = true;
+        }
+
+        if (! $matched) {
+            return [];
+        }
+
+        if (in_array('created_at', $columns, true)) {
+            $query->orderByDesc('created_at');
+        } else {
+            $query->orderByDesc('id');
+        }
+
+        return $query->limit(20)->get()->map(fn ($row) => (array) $row)->all();
+    }
+
+    public function formatArray(?array $data): string
+    {
+        if (! $data) {
+            return 'N/A';
+        }
+
+        return json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    public function shortRows(array $rows, int $limit = 10): string
+    {
+        if ($rows === []) {
+            return 'No records.';
+        }
+
+        $rows = array_slice($rows, 0, $limit);
+
+        return json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+}

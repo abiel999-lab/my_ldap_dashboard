@@ -1,0 +1,295 @@
+<?php
+
+namespace App\Models\Operations;
+
+use App\Models\Directory\LdapConnection;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class LdapTransferBatch extends Model
+{
+    protected $table = 'ldap_transfer_batches';
+
+    protected $guarded = [];
+
+    protected function casts(): array
+    {
+        return [
+            'options' => 'array',
+            'metadata' => 'array',
+            'include_operational_attributes' => 'boolean',
+            'delete_source_after_copy' => 'boolean',
+            'preview_only' => 'boolean',
+            'safe_mode' => 'boolean',
+            'destructive' => 'boolean',
+            'size_limit' => 'integer',
+            'page_size' => 'integer',
+            'total_entries' => 'integer',
+            'success_entries' => 'integer',
+            'failed_entries' => 'integer',
+            'skipped_entries' => 'integer',
+            'planned_entries' => 'integer',
+            'transferred_entries' => 'integer',
+            'output_size_bytes' => 'integer',
+            'started_at' => 'datetime',
+            'finished_at' => 'datetime',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (LdapTransferBatch $batch): void {
+            $batch->setDefault('uuid', (string) Str::uuid());
+
+            $batch->setDefault('status', 'draft');
+
+            $batch->setDefault('mode', 'copy');
+            $batch->setDefault('transfer_mode', 'copy');
+
+            $batch->setDefault('source_input_mode', 'ldap_query');
+            $batch->setDefault('source_mode', 'ldap_query');
+
+            $batch->setDefault('transfer_scope', 'custom_dn');
+
+            $searchScope = $batch->safeString($batch->getRawOriginal('search_scope') ?: $batch->getRawOriginal('scope') ?: 'sub');
+            $batch->setDefault('search_scope', $searchScope);
+            $batch->setDefault('scope', $searchScope);
+
+            $filter = $batch->safeString($batch->getRawOriginal('filter') ?: $batch->getRawOriginal('ldap_filter') ?: '(objectClass=*)');
+            $batch->setDefault('filter', $filter);
+            $batch->setDefault('ldap_filter', $filter);
+
+            $batch->setDefault('attributes', '*');
+
+            $targetDn = $batch->safeString(
+                $batch->getRawOriginal('target_parent_dn')
+                ?: $batch->getRawOriginal('target_dn')
+                ?: $batch->getRawOriginal('target_base_dn')
+            );
+
+            if ($targetDn !== '') {
+                $batch->setDefault('target_parent_dn', $targetDn);
+                $batch->setDefault('target_dn', $targetDn);
+                $batch->setDefault('target_base_dn', $targetDn);
+            }
+
+            $batch->setDefault('target_dn_strategy', 'flatten');
+            $batch->setDefault('target_dn_mode', 'auto');
+
+            $batch->setDefault('if_target_exists', 'skip');
+            $batch->setDefault('collision_strategy', 'skip');
+
+            $batch->setDefault('excluded_attributes', 'userPassword entryUUID entryCSN createTimestamp creatorsName modifyTimestamp modifiersName structuralObjectClass');
+            $batch->setDefault('include_operational_attributes', false);
+            $batch->setDefault('delete_source_after_copy', false);
+
+            $batch->setDefault('size_limit', 1000);
+            $batch->setDefault('page_size', 500);
+
+            $batch->setDefault('preview_only', true);
+            $batch->setDefault('safe_mode', true);
+            $batch->setDefault('destructive', false);
+
+            $batch->setDefault('total_entries', 0);
+            $batch->setDefault('success_entries', 0);
+            $batch->setDefault('failed_entries', 0);
+            $batch->setDefault('skipped_entries', 0);
+            $batch->setDefault('planned_entries', 0);
+            $batch->setDefault('transferred_entries', 0);
+
+            $batch->setDefault('created_by', Auth::id());
+            $batch->setDefault('updated_by', Auth::id());
+
+            $batch->removeAttributesWithoutColumns();
+        });
+
+        static::updating(function (LdapTransferBatch $batch): void {
+            $batch->setDefault('updated_by', Auth::id());
+
+            $filter = $batch->safeString($batch->getRawOriginal('filter') ?: $batch->getRawOriginal('ldap_filter') ?: '(objectClass=*)');
+            $batch->setDefault('filter', $filter);
+            $batch->setDefault('ldap_filter', $filter);
+
+            $searchScope = $batch->safeString($batch->getRawOriginal('search_scope') ?: $batch->getRawOriginal('scope') ?: 'sub');
+            $batch->setDefault('search_scope', $searchScope);
+            $batch->setDefault('scope', $searchScope);
+
+            $targetDn = $batch->safeString(
+                $batch->getRawOriginal('target_parent_dn')
+                ?: $batch->getRawOriginal('target_dn')
+                ?: $batch->getRawOriginal('target_base_dn')
+            );
+
+            if ($targetDn !== '') {
+                $batch->setDefault('target_parent_dn', $targetDn);
+                $batch->setDefault('target_dn', $targetDn);
+                $batch->setDefault('target_base_dn', $targetDn);
+            }
+
+            $batch->setDefault('preview_only', true);
+            $batch->setDefault('safe_mode', true);
+            $batch->setDefault('destructive', false);
+
+            $batch->removeAttributesWithoutColumns();
+        });
+    }
+
+    public function sourceLdapConnection(): BelongsTo
+    {
+        return $this->belongsTo(LdapConnection::class, 'source_ldap_connection_id');
+    }
+
+    public function targetLdapConnection(): BelongsTo
+    {
+        return $this->belongsTo(LdapConnection::class, 'target_ldap_connection_id');
+    }
+
+    public function operationJob(): BelongsTo
+    {
+        return $this->belongsTo(OperationJob::class);
+    }
+
+    protected function effectiveSourceDn(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $baseDn = $this->safeString($this->getRawOriginal('source_base_dn'));
+                $scope = $this->safeString($this->getRawOriginal('transfer_scope') ?: 'custom_dn');
+
+                if ($scope === 'custom_dn') {
+                    return $this->safeString($this->getRawOriginal('custom_source_dn'));
+                }
+
+                if ($scope === 'full') {
+                    return $baseDn;
+                }
+
+                if (in_array($scope, ['ou', 'cn', 'uid'], true)) {
+                    $attr = $this->safeString($this->getRawOriginal('source_rdn_attribute') ?: $scope);
+                    $value = $this->safeString($this->getRawOriginal('source_rdn_value'));
+
+                    if ($attr === '' || $value === '' || $baseDn === '') {
+                        return '';
+                    }
+
+                    if (str_contains($value, '=')) {
+                        return $value.','.$baseDn;
+                    }
+
+                    return $attr.'='.$value.','.$baseDn;
+                }
+
+                return $baseDn;
+            }
+        );
+    }
+
+    protected function attributeList(): Attribute
+    {
+        return Attribute::make(
+            get: function (): array {
+                $value = $this->getRawOriginal('attributes');
+
+                if ($value === null || trim((string) $value) === '') {
+                    return ['*'];
+                }
+
+                return collect(preg_split('/[\s,]+/', (string) $value) ?: [])
+                    ->map(fn ($item): string => trim((string) $item))
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+            }
+        );
+    }
+
+    protected function displayOutputSize(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $bytes = (int) ($this->output_size_bytes ?? 0);
+
+                if ($bytes <= 0) {
+                    return 'N/A';
+                }
+
+                if ($bytes >= 1024 * 1024) {
+                    return round($bytes / 1024 / 1024, 2).' MB';
+                }
+
+                return round($bytes / 1024, 2).' KB';
+            }
+        );
+    }
+
+    public function hasOutputFile(): bool
+    {
+        return filled($this->output_path) && Storage::disk('local')->exists((string) $this->output_path);
+    }
+
+    public function readOutputContent(int $maxBytes = 60000): string
+    {
+        if ($this->hasOutputFile()) {
+            $content = Storage::disk('local')->get((string) $this->output_path);
+
+            return strlen($content) > $maxBytes
+                ? substr($content, 0, $maxBytes)."\n\n--- FILE TRUNCATED IN UI. DOWNLOAD FULL FILE TO VIEW ALL CONTENT. ---"
+                : $content;
+        }
+
+        if (filled($this->preview_ldif)) {
+            return (string) $this->preview_ldif;
+        }
+
+        return 'Transfer preview plan output file is missing.';
+    }
+
+    public function setDefault(string $key, mixed $value): void
+    {
+        if (! Schema::hasColumn($this->getTable(), $key)) {
+            return;
+        }
+
+        if ($this->getAttribute($key) === null || $this->getAttribute($key) === '') {
+            $this->setAttribute($key, $value);
+        }
+    }
+
+    public function removeAttributesWithoutColumns(): void
+    {
+        $columns = Schema::getColumnListing($this->getTable());
+        $allowed = array_flip($columns);
+
+        $this->setRawAttributes(
+            array_intersect_key($this->getAttributes(), $allowed),
+            true
+        );
+    }
+
+    public function safeString(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if (is_string($value)) {
+            return trim($value);
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_scalar($value)) {
+            return trim((string) $value);
+        }
+
+        return '';
+    }
+}

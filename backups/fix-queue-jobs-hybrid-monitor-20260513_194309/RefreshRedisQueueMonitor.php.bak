@@ -1,0 +1,97 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\Operations\QueueMonitorJob;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Redis;
+use Throwable;
+
+class RefreshRedisQueueMonitor extends Command
+{
+    protected $signature = 'queue:monitor-refresh
+        {--queues=export,import,schema,operations,default : Comma separated queue names}';
+
+    protected $description = 'Refresh Redis queue monitor snapshot into queue_monitor_jobs table.';
+
+    public function handle(): int
+    {
+        $queues = collect(explode(',', (string) $this->option('queues')))
+            ->map(fn (string $queue): string => trim($queue))
+            ->filter()
+            ->unique()
+            ->values();
+
+        QueueMonitorJob::query()->delete();
+
+        $total = 0;
+
+        foreach ($queues as $queue) {
+            $total += $this->snapshotPending($queue);
+            $total += $this->snapshotSortedSet($queue, 'delayed');
+            $total += $this->snapshotSortedSet($queue, 'reserved');
+        }
+
+        $this->info("Queue monitor refreshed. {$total} Redis jobs detected.");
+
+        return self::SUCCESS;
+    }
+
+    private function snapshotPending(string $queue): int
+    {
+        $key = "queues:{$queue}";
+        $items = Redis::connection()->lrange($key, 0, 500);
+
+        $count = 0;
+
+        foreach ($items as $rawPayload) {
+            $this->storePayload($queue, 'pending', (string) $rawPayload, null);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    private function snapshotSortedSet(string $queue, string $status): int
+    {
+        $key = "queues:{$queue}:{$status}";
+        $items = Redis::connection()->zrange($key, 0, 500, ['withscores' => true]);
+
+        $count = 0;
+
+        foreach ($items as $rawPayload => $score) {
+            $this->storePayload($queue, $status, (string) $rawPayload, (int) $score);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    private function storePayload(string $queue, string $status, string $rawPayload, ?int $score): void
+    {
+        try {
+            $payload = json_decode($rawPayload, true, 512, JSON_THROW_ON_ERROR);
+        } catch (Throwable) {
+            $payload = [
+                'raw' => $rawPayload,
+            ];
+        }
+
+        $jobClass = $payload['displayName']
+            ?? $payload['data']['commandName']
+            ?? $payload['job']
+            ?? 'Unknown Job';
+
+        QueueMonitorJob::query()->create([
+            'queue' => $queue,
+            'redis_status' => $status,
+            'job_uuid' => $payload['uuid'] ?? $payload['id'] ?? null,
+            'job_class' => is_string($jobClass) ? $jobClass : 'Unknown Job',
+            'attempts' => (int) ($payload['attempts'] ?? 0),
+            'available_at' => $status === 'delayed' && $score ? now()->setTimestamp($score) : null,
+            'reserved_at' => $status === 'reserved' && $score ? now()->setTimestamp($score) : null,
+            'payload_hash' => hash('sha256', $rawPayload),
+            'payload' => $payload,
+        ]);
+    }
+}

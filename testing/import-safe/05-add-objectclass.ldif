@@ -1,0 +1,8 @@
+dn: uid=imp-test-002,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id
+changetype: modify
+add: objectClass
+objectClass: domainRelatedObject
+-
+add: associatedDomain
+associatedDomain: imp-test-002.petra.ac.id
+-

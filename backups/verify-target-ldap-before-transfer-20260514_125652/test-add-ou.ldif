@@ -1,0 +1,5 @@
+dn: ou=transfer-write-test,dc=petra,dc=ac,dc=id
+objectClass: top
+objectClass: organizationalUnit
+ou: transfer-write-test
+description: Temporary write test from My LDAP Dashboard before transfer testing

@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportBatchResource\Pages;
+
+use App\Filament\Resources\Operations\ImportApplyPlanResource;
+use App\Filament\Resources\Operations\ImportBatchResource;
+use App\Filament\Resources\Operations\ImportTemplateResource;
+use App\Models\Operations\ImportBatch;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
+
+class ListImportBatches extends ListRecords
+{
+    protected static string $resource = ImportBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('createImportModal')
+                ->label('New LDAP Import')
+                ->icon('heroicon-o-plus-circle')
+                ->color('primary')
+                ->modalHeading('Create LDAP Import')
+                ->modalSubmitActionLabel('Create Import')
+                ->form(fn (): array => ImportBatchResource::getCreateModalSchema())
+                ->action(function (array $data): void {
+                    $data['status'] = $data['status'] ?? 'draft';
+
+                    if (empty($data['name'])) {
+                        $data['name'] = 'LDAP Import '.now()->format('Y-m-d H:i:s');
+                    }
+
+                    /** @var ImportBatch $record */
+                    $record = ImportBatch::query()->create($data);
+
+                    Notification::make()
+                        ->title('LDAP import created')
+                        ->body('Open the import record to generate preview or apply.')
+                        ->success()
+                        ->send();
+
+                    $this->redirect(ImportBatchResource::getUrl('view', ['record' => $record]));
+                }),
+
+            Action::make('openTemplates')
+                ->label('Templates')
+                ->icon('heroicon-o-document-duplicate')
+                ->color('gray')
+                ->url(fn (): string => ImportTemplateResource::getUrl('index')),
+
+            Action::make('openApplyPlans')
+                ->label('Apply Plans')
+                ->icon('heroicon-o-document-check')
+                ->color('gray')
+                ->url(fn (): string => ImportApplyPlanResource::getUrl('index')),
+        ];
+    }
+}

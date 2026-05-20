@@ -1,0 +1,4 @@
+action,dn,uid
+delete,"uid=imp-test-001-renamed,ou=import-archive,ou=test-dom,dc=petra,dc=ac,dc=id",imp-test-001-renamed
+delete,"uid=imp-test-002,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id",imp-test-002
+delete,"uid=imp-test-003,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id",imp-test-003

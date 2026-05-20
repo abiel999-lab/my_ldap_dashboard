@@ -1,0 +1,362 @@
+<?php
+
+namespace App\Services\Operations;
+
+use App\Models\Operations\ImportApplyPlan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
+
+class FastImportApplyService
+{
+    public function apply(ImportApplyPlan $plan): array
+    {
+        $plan = $plan->fresh();
+
+        if (! $plan) {
+            return [
+                'ok' => false,
+                'message' => 'Import apply plan record was not found.',
+            ];
+        }
+
+        $validation = $this->validatePlan($plan);
+
+        if (! ($validation['ok'] ?? false)) {
+            $this->markFailed($plan, $validation['message'] ?? 'Import apply plan is not valid.');
+
+            return $validation;
+        }
+
+        try {
+            $hasDelete = (bool) ($validation['has_delete'] ?? false);
+
+            DB::transaction(function () use ($plan, $hasDelete): void {
+                $updates = [
+                    'safe_mode' => true,
+                    'dry_run' => true,
+                    'destructive' => $hasDelete,
+                    'approval_status' => 'approved',
+                    'apply_blocked_reason' => null,
+                    'real_apply_error_message' => null,
+                    'message' => 'Fast import real apply started.',
+                ];
+
+                $updates = $this->onlyExistingColumns($updates);
+
+                if ($this->hasColumn('approved_at')) {
+                    $updates['approved_at'] = now();
+                }
+
+                if ($this->hasColumn('approval_note')) {
+                    $updates['approval_note'] = 'Auto-approved by simplified import flow.';
+                }
+
+                if ($this->hasColumn('approved_by_user_id')) {
+                    $updates['approved_by_user_id'] = auth()->id();
+                }
+
+                if ($this->hasColumn('approved_by')) {
+                    $updates['approved_by'] = auth()->id();
+                }
+
+                if ($this->hasColumn('approved_by_user')) {
+                    $updates['approved_by_user'] = auth()->id();
+                }
+
+                $plan->forceFill($updates)->save();
+            });
+
+            $plan = $plan->fresh();
+
+            $result = $this->runExecutor($plan);
+
+            $plan = $plan->fresh();
+
+            if ($this->resultLooksSuccessful($result, $plan)) {
+                return [
+                    'ok' => true,
+                    'message' => 'Import applied successfully.',
+                    'plan_id' => $plan->id,
+                    'executor_result' => $result,
+                ];
+            }
+
+            return [
+                'ok' => false,
+                'message' => $this->extractMessage($result, $plan) ?: 'Real apply failed. Check Command Executions.',
+                'plan_id' => $plan->id,
+                'executor_result' => $result,
+            ];
+        } catch (Throwable $exception) {
+            $this->markFailed($plan, $exception->getMessage());
+
+            report($exception);
+
+            return [
+                'ok' => false,
+                'message' => $exception->getMessage(),
+                'plan_id' => $plan->id,
+            ];
+        }
+    }
+
+    public function validatePlan(ImportApplyPlan $plan): array
+    {
+        if (! $plan->ldap_connection_id) {
+            return [
+                'ok' => false,
+                'message' => 'LDAP connection is required before real apply.',
+            ];
+        }
+
+        if (! $plan->output_path) {
+            return [
+                'ok' => false,
+                'message' => 'Apply plan output LDIF path is missing.',
+            ];
+        }
+
+        $content = $this->readLdif($plan);
+
+        if (trim($content) === '') {
+            return [
+                'ok' => false,
+                'message' => 'Apply plan LDIF file is missing or empty.',
+            ];
+        }
+
+        $normalized = strtolower($content);
+
+        $hasAdd = str_contains($normalized, 'changetype: add');
+        $hasModify = str_contains($normalized, 'changetype: modify');
+        $hasDelete = str_contains($normalized, 'changetype: delete');
+
+        if (! $hasAdd && ! $hasModify && ! $hasDelete) {
+            return [
+                'ok' => false,
+                'message' => 'Apply plan LDIF does not contain changetype: add, modify, or delete.',
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'message' => 'Apply plan is valid.',
+            'has_add' => $hasAdd,
+            'has_modify' => $hasModify,
+            'has_delete' => $hasDelete,
+        ];
+    }
+
+    public function readLdif(ImportApplyPlan $plan): string
+    {
+        $outputPath = trim((string) $plan->output_path);
+
+        if ($outputPath === '') {
+            return '';
+        }
+
+        $paths = [
+            base_path($outputPath),
+            storage_path('app/private/'.$outputPath),
+            storage_path('app/'.$outputPath),
+            $outputPath,
+        ];
+
+        foreach ($paths as $path) {
+            if (is_file($path)) {
+                return (string) file_get_contents($path);
+            }
+        }
+
+        return '';
+    }
+
+    private function runExecutor(ImportApplyPlan $plan): mixed
+    {
+        $executor = app(LdapRealApplyExecutor::class);
+
+        $methods = [
+            'apply',
+            'execute',
+            'run',
+            'handle',
+            'realApply',
+            'applyReal',
+            'realApplyNow',
+            'executeRealApply',
+        ];
+
+        foreach ($methods as $method) {
+            if (! method_exists($executor, $method)) {
+                continue;
+            }
+
+            $reflection = new \ReflectionMethod($executor, $method);
+            $args = $this->buildExecutorArguments($reflection, $plan);
+
+            return $reflection->invokeArgs($executor, $args);
+        }
+
+        throw new \RuntimeException('No supported real apply method found in '.get_class($executor).'.');
+    }
+
+    private function buildExecutorArguments(\ReflectionMethod $method, ImportApplyPlan $plan): array
+    {
+        $args = [];
+
+        foreach ($method->getParameters() as $index => $parameter) {
+            if ($index === 0) {
+                $args[] = $plan;
+                continue;
+            }
+
+            if ($parameter->isDefaultValueAvailable()) {
+                $args[] = $parameter->getDefaultValue();
+                continue;
+            }
+
+            $name = strtolower($parameter->getName());
+            $type = $parameter->hasType() ? strtolower((string) $parameter->getType()) : '';
+
+            if (str_contains($type, 'bool')) {
+                // For real apply, second boolean usually means dry-run/preview mode.
+                // We pass false so ldapmodify really applies the LDIF.
+                $args[] = false;
+                continue;
+            }
+
+            if (str_contains($type, 'int')) {
+                $args[] = auth()->id() ?: 1;
+                continue;
+            }
+
+            if (str_contains($type, 'array')) {
+                $args[] = [
+                    'source' => 'fast_import_apply',
+                    'mode' => 'real_apply',
+                ];
+                continue;
+            }
+
+            if (str_contains($type, 'string')) {
+                if (str_contains($name, 'note')) {
+                    $args[] = 'Fast import real apply.';
+                    continue;
+                }
+
+                if (str_contains($name, 'mode')) {
+                    $args[] = 'real_apply';
+                    continue;
+                }
+
+                if (str_contains($name, 'reason')) {
+                    $args[] = 'Fast import real apply.';
+                    continue;
+                }
+
+                $args[] = 'APPLY LDAP';
+                continue;
+            }
+
+            if (str_contains($name, 'user')) {
+                $args[] = auth()->id() ?: 1;
+                continue;
+            }
+
+            if (str_contains($name, 'dry') || str_contains($name, 'preview')) {
+                $args[] = false;
+                continue;
+            }
+
+            if (str_contains($name, 'force') || str_contains($name, 'real')) {
+                $args[] = true;
+                continue;
+            }
+
+            $args[] = null;
+        }
+
+        return $args;
+    }
+
+    private function resultLooksSuccessful(mixed $result, ImportApplyPlan $plan): bool
+    {
+        if (is_array($result)) {
+            if (($result['ok'] ?? null) === true) {
+                return true;
+            }
+
+            if (($result['success'] ?? null) === true) {
+                return true;
+            }
+
+            if (strtolower((string) ($result['status'] ?? '')) === 'success') {
+                return true;
+            }
+        }
+
+        $status = strtolower((string) $plan->status);
+
+        return in_array($status, [
+            'success',
+            'applied',
+            'applied_verified',
+            'applied_and_verified',
+            'applied & verified',
+            'success_applied',
+        ], true);
+    }
+
+    private function extractMessage(mixed $result, ImportApplyPlan $plan): ?string
+    {
+        if (is_array($result)) {
+            return $result['message']
+                ?? $result['error']
+                ?? $result['error_message']
+                ?? null;
+        }
+
+        return $plan->real_apply_error_message
+            ?: $plan->apply_blocked_reason
+            ?: $plan->message;
+    }
+
+    private function markFailed(ImportApplyPlan $plan, string $message): void
+    {
+        $updates = [
+            'status' => 'failed',
+            'apply_blocked_reason' => null,
+            'real_apply_error_message' => $message,
+            'message' => $message,
+        ];
+
+        $updates = $this->onlyExistingColumns($updates);
+
+        if ($this->hasColumn('finished_at')) {
+            $updates['finished_at'] = now();
+        }
+
+        $plan->forceFill($updates)->save();
+    }
+
+    private function onlyExistingColumns(array $updates): array
+    {
+        return collect($updates)
+            ->filter(fn ($value, string $column): bool => $this->hasColumn($column))
+            ->all();
+    }
+
+    private function hasColumn(string $column): bool
+    {
+        static $columns = null;
+
+        if ($columns === null) {
+            $columns = collect(Schema::getColumnListing('import_apply_plans'))
+                ->flip()
+                ->all();
+        }
+
+        return array_key_exists($column, $columns);
+    }
+}

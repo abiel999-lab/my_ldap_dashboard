@@ -1,0 +1,8 @@
+[
+  {
+    "action": "schema_modify",
+    "schema_type": "objectClass",
+    "name": "petraJsonSafeObject",
+    "description": "UPDATED Petra JSON safe objectClass"
+  }
+]

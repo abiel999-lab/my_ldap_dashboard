@@ -1,0 +1,12 @@
+[
+  {
+    "action": "schema_delete",
+    "schema_type": "objectClass",
+    "name": "petraJsonSafeObject"
+  },
+  {
+    "action": "schema_delete",
+    "schema_type": "attributeType",
+    "name": "petraJsonSafeCode"
+  }
+]

@@ -1,0 +1,187 @@
+<?php
+
+namespace App\Services\Operations;
+
+use App\Models\Operations\OperationJob;
+use App\Models\Operations\OperationJobLog;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+
+class OperationJobFactory
+{
+    public function createQueued(array $data): OperationJob
+    {
+        $payload = $data['payload'] ?? [];
+        $metadata = $data['metadata'] ?? [];
+
+        $row = [
+            'uuid' => (string) Str::uuid(),
+            'module' => $data['module'] ?? 'operations',
+            'operation_type' => $data['operation_type'] ?? $data['type'] ?? 'operation',
+            'operation_action' => $data['operation_action'] ?? $data['action'] ?? 'execute',
+            'title' => $data['title'] ?? $data['name'] ?? 'Operation Job',
+            'description' => $data['description'] ?? null,
+            'status' => 'queued',
+            'queue_name' => $data['queue_name'] ?? $data['queue'] ?? 'operations',
+            'total_items' => (int) ($data['total_items'] ?? 1),
+            'pending_items' => (int) ($data['pending_items'] ?? 1),
+            'running_items' => 0,
+            'processed_items' => 0,
+            'success_items' => 0,
+            'failed_items' => 0,
+            'skipped_items' => 0,
+            'conflict_items' => 0,
+            'progress_percent' => 0,
+            'payload' => $this->json($payload),
+            'metadata' => $this->json($metadata),
+            'preview_summary' => isset($data['preview_summary']) ? $this->json($data['preview_summary']) : null,
+            'result_summary' => isset($data['result_summary']) ? $this->json($data['result_summary']) : null,
+            'last_error' => null,
+            'queued_at' => now(),
+            'created_by' => $data['created_by'] ?? Auth::id(),
+            'updated_by' => $data['updated_by'] ?? Auth::id(),
+            'source' => $data['source'] ?? 'filament',
+            'target_type' => $data['target_type'] ?? null,
+            'target_key' => $data['target_key'] ?? null,
+            'target_dn' => $data['target_dn'] ?? null,
+            'ldap_connection_id' => $data['ldap_connection_id'] ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        $job = OperationJob::query()->create($this->filterColumns('operation_jobs', $row));
+
+        $this->log($job, 'info', 'Operation job queued.', [
+            'operation_type' => $row['operation_type'],
+            'operation_action' => $row['operation_action'],
+            'queue_name' => $row['queue_name'],
+            'target_dn' => $row['target_dn'],
+        ]);
+
+        return $job;
+    }
+
+    public function markRunning(OperationJob $job, array $context = []): void
+    {
+        $job->forceFill($this->filterColumns('operation_jobs', [
+            'status' => 'running',
+            'pending_items' => 0,
+            'running_items' => 1,
+            'started_at' => now(),
+            'updated_at' => now(),
+        ]))->save();
+
+        $this->log($job, 'info', 'Operation job started.', $context);
+    }
+
+    public function markSuccess(OperationJob $job, array $result = []): void
+    {
+        $total = (int) ($result['total_items'] ?? $result['total_entries'] ?? $job->total_items ?? 1);
+        $processed = (int) ($result['processed_items'] ?? $result['total_entries'] ?? $total);
+        $success = (int) ($result['success_items'] ?? $result['created_entries'] ?? $result['updated_entries'] ?? $processed);
+        $failed = (int) ($result['failed_items'] ?? $result['failed_entries'] ?? 0);
+
+        if (array_key_exists('created_entries', $result) || array_key_exists('updated_entries', $result)) {
+            $success = (int) ($result['created_entries'] ?? 0) + (int) ($result['updated_entries'] ?? 0);
+        }
+
+        $oldMetadata = $this->toArray($job->metadata ?? []);
+
+        $job->forceFill($this->filterColumns('operation_jobs', [
+            'status' => $failed > 0 ? 'partial_success' : 'success',
+            'pending_items' => 0,
+            'running_items' => 0,
+            'total_items' => $total,
+            'processed_items' => $processed,
+            'success_items' => $success,
+            'failed_items' => $failed,
+            'progress_percent' => 100,
+            'result_summary' => $this->json($result),
+            'metadata' => $this->json(array_merge($oldMetadata, $result)),
+            'last_error' => null,
+            'finished_at' => now(),
+            'updated_at' => now(),
+        ]))->save();
+
+        $this->log($job, $failed > 0 ? 'warning' : 'info', 'Operation job finished.', $result);
+    }
+
+    public function markFailed(OperationJob $job, string $message, array $context = []): void
+    {
+        $oldMetadata = $this->toArray($job->metadata ?? []);
+
+        $job->forceFill($this->filterColumns('operation_jobs', [
+            'status' => 'failed',
+            'pending_items' => 0,
+            'running_items' => 0,
+            'processed_items' => (int) ($context['processed_items'] ?? $job->processed_items ?? 0),
+            'failed_items' => max(1, (int) ($context['failed_items'] ?? $job->failed_items ?? 1)),
+            'last_error' => $message,
+            'result_summary' => $this->json($context),
+            'metadata' => $this->json(array_merge($oldMetadata, $context)),
+            'finished_at' => now(),
+            'updated_at' => now(),
+        ]))->save();
+
+        $this->log($job, 'error', $message, $context);
+    }
+
+    public function log(OperationJob $job, string $level, string $message, array $context = []): void
+    {
+        if (! Schema::hasTable('operation_job_logs')) {
+            return;
+        }
+
+        OperationJobLog::query()->create($this->filterColumns('operation_job_logs', [
+            'uuid' => (string) Str::uuid(),
+            'operation_job_id' => $job->id,
+            'level' => $level,
+            'event' => $context['event'] ?? 'operation_job',
+            'message' => $message,
+            'context' => $this->json($context),
+            'created_at' => now(),
+        ]));
+    }
+
+    private function filterColumns(string $table, array $data): array
+    {
+        if (! Schema::hasTable($table)) {
+            return $data;
+        }
+
+        $columns = Schema::getColumnListing($table);
+
+        return collect($data)
+            ->filter(fn ($value, string $key): bool => in_array($key, $columns, true))
+            ->toArray();
+    }
+
+    private function json(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value)) {
+            return $value;
+        }
+
+        return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    private function toArray(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+}

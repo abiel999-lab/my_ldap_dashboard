@@ -1,0 +1,348 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportBatchResource\Pages;
+
+use App\Filament\Resources\Operations\ImportBatchResource;
+use App\Filament\Resources\Operations\ImportTemplateResource;
+use App\Models\Operations\ImportBatch;
+use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Section;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class ListImportBatches extends ListRecords
+{
+    protected static string $resource = ImportBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('createImportModal')
+                ->label('New LDAP Import')
+                ->icon('heroicon-o-plus-circle')
+                ->color('primary')
+                ->modalHeading('Create LDAP Import')
+                ->modalSubmitActionLabel('Create Import')
+                ->form([
+                    Section::make('1. Import Identity')
+                        ->description('Buat batch import LDAP. Belum ada perubahan ke LDAP sebelum preview/apply dijalankan.')
+                        ->schema([
+                            TextInput::make('name')
+                                ->label('Import Name')
+                                ->placeholder('Auto generated if empty')
+                                ->maxLength(255),
+
+                            Select::make('ldap_connection_id')
+                                ->label('Target LDAP')
+                                ->relationship('ldapConnection', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->required(),
+
+                            Select::make('import_type')
+                                ->label('Import Mode')
+                                ->options([
+                                    'csv' => 'CSV Import',
+                                    'ldif' => 'LDIF Import',
+                                    'json' => 'JSON Import',
+                                ])
+                                ->default('csv')
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('2. Template')
+                        ->description('Template optional. Jika dipilih, aturan DN, objectClass, attribute mapping, dan safety akan ikut disimpan ke import.')
+                        ->schema([
+                            Select::make('import_template_id')
+                                ->label('Use Template')
+                                ->options(fn (): array => DB::table('import_templates')
+                                    ->orderBy('id')
+                                    ->pluck('name', 'id')
+                                    ->toArray())
+                                ->searchable()
+                                ->preload()
+                                ->placeholder('No template / Manual import')
+                                ->helperText('Pilih template jika ingin import mengikuti aturan template. Bisa dikosongkan.'),
+
+                            Select::make('operation_mode')
+                                ->label('Operation Mode')
+                                ->options([
+                                    'create' => 'Create only',
+                                    'update' => 'Update / Edit existing',
+                                    'upsert' => 'Upsert: create or update',
+                                    'delete' => 'Delete',
+                                ])
+                                ->default('create')
+                                ->required(),
+
+                            Select::make('dn_strategy')
+                                ->label('DN Strategy')
+                                ->options([
+                                    'rdn_parent' => 'RDN Attribute + Parent/Base DN',
+                                    'dn_template' => 'Static DN Template',
+                                    'preserve_ldif_dn' => 'Preserve DN from LDIF',
+                                    'replace_base_dn' => 'Replace Base DN',
+                                    'multi_rules' => 'Multiple DN Rules',
+                                ])
+                                ->default('rdn_parent')
+                                ->required(),
+
+                            Select::make('if_target_exists')
+                                ->label('If Target Exists')
+                                ->options([
+                                    'skip' => 'Skip existing target',
+                                    'update' => 'Update existing target',
+                                    'fail' => 'Fail on existing target',
+                                    'replace' => 'Replace target attributes',
+                                ])
+                                ->default('skip')
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('3. Source Data')
+                        ->description('Upload file sumber import.')
+                        ->schema([
+                            FileUpload::make('file_path')
+                                ->label('Upload CSV / LDIF / JSON')
+                                ->disk('local')
+                                ->directory('imports/uploads')
+                                ->preserveFilenames()
+                                ->required()
+                                ->acceptedFileTypes([
+                                    'text/csv',
+                                    'text/plain',
+                                    'application/json',
+                                    'application/ldif',
+                                ]),
+
+                            TextInput::make('original_filename')
+                                ->label('Original Filename')
+                                ->placeholder('Optional, auto-filled if empty')
+                                ->maxLength(255),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('4. LDAP Mapping')
+                        ->description('Mapping dibuat generic supaya bisa dipakai untuk banyak LDAP.')
+                        ->schema([
+                            TextInput::make('base_dn')
+                                ->label('Target Base DN')
+                                ->placeholder('dc=petra,dc=ac,dc=id')
+                                ->required(),
+
+                            TextInput::make('target_parent_dn')
+                                ->label('Target Parent DN / OU Path')
+                                ->placeholder('ou=people,{base_dn}'),
+
+                            TextInput::make('identifier_attribute')
+                                ->label('Identifier / RDN Attribute')
+                                ->placeholder('uid / cn / ou')
+                                ->default('uid')
+                                ->required(),
+
+                            TextInput::make('dn_template')
+                                ->label('DN Template')
+                                ->placeholder('uid={uid},ou=people,{base_dn}')
+                                ->helperText('Gunakan placeholder sesuai kolom CSV/JSON, contoh {uid}, {cn}, {ou}, {base_dn}.'),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('5. Safety')
+                        ->description('Tahap awal tetap aman: preview dulu, apply belakangan.')
+                        ->schema([
+                            Select::make('safe_mode')
+                                ->label('Safe Mode')
+                                ->options([
+                                    '1' => 'Enabled',
+                                    '0' => 'Disabled',
+                                ])
+                                ->default('1')
+                                ->required(),
+
+                            Select::make('preview_only')
+                                ->label('Preview Only')
+                                ->options([
+                                    '1' => 'Enabled',
+                                    '0' => 'Disabled',
+                                ])
+                                ->default('1')
+                                ->required(),
+
+                            Select::make('allow_destructive')
+                                ->label('Allow Destructive Operation')
+                                ->options([
+                                    '0' => 'No',
+                                    '1' => 'Yes',
+                                ])
+                                ->default('0')
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 3]),
+                ])
+                ->action(function (array $data): void {
+                    $columns = Schema::getColumnListing('import_batches');
+
+                    $filePath = $data['file_path'] ?? null;
+
+                    if (is_array($filePath)) {
+                        $filePath = reset($filePath) ?: null;
+                    }
+
+                    $data['file_path'] = $filePath;
+                    $data['file_disk'] = $data['file_disk'] ?? 'local';
+
+                    if (blank($data['original_filename'] ?? null) && filled($filePath)) {
+                        $data['original_filename'] = basename((string) $filePath);
+                    }
+
+                    if (filled($filePath) && Storage::disk($data['file_disk'])->exists((string) $filePath)) {
+                        $absolutePath = Storage::disk($data['file_disk'])->path((string) $filePath);
+                        $data['file_size_bytes'] = filesize($absolutePath) ?: null;
+                        $data['file_hash'] = hash_file('sha256', $absolutePath) ?: null;
+                    }
+
+                    $template = null;
+                    $templateMetadata = null;
+
+                    if (filled($data['import_template_id'] ?? null)) {
+                        $template = DB::table('import_templates')
+                            ->where('id', (int) $data['import_template_id'])
+                            ->first();
+
+                        if ($template && isset($template->metadata)) {
+                            $decoded = json_decode((string) $template->metadata, true);
+                            $templateMetadata = is_array($decoded) ? $decoded : null;
+                        }
+                    }
+
+                    if (blank($data['name'] ?? null)) {
+                        $target = $data['ldap_connection_id'] ? ('LDAP #'.$data['ldap_connection_id']) : 'LDAP';
+                        $templateName = $template?->name ? (' using '.$template->name) : '';
+                        $data['name'] = strtoupper((string) ($data['import_type'] ?? 'import')).' Import to '.$target.$templateName.' - '.now()->format('Y-m-d H:i:s');
+                    }
+
+                    $safeMode = ((string) ($data['safe_mode'] ?? '1')) === '1';
+                    $previewOnly = ((string) ($data['preview_only'] ?? '1')) === '1';
+                    $allowDestructive = ((string) ($data['allow_destructive'] ?? '0')) === '1';
+
+                    $metadata = [
+                        'source' => 'ldap_import_center_modal',
+                        'created_from' => 'list_modal',
+                        'phase' => 'template_linked_import',
+                        'template' => [
+                            'id' => $template?->id ?? null,
+                            'name' => $template?->name ?? null,
+                            'metadata' => $templateMetadata,
+                        ],
+                        'operation' => [
+                            'mode' => $data['operation_mode'] ?? ($templateMetadata['operation_mode'] ?? 'create'),
+                            'if_target_exists' => $data['if_target_exists'] ?? ($templateMetadata['safety_rules']['if_target_exists'] ?? 'skip'),
+                        ],
+                        'dn_rules' => [
+                            'dn_strategy' => $data['dn_strategy'] ?? ($templateMetadata['dn_rules']['dn_strategy'] ?? 'rdn_parent'),
+                            'base_dn' => $data['base_dn'] ?? ($templateMetadata['dn_rules']['base_dn'] ?? null),
+                            'target_parent_dn' => $data['target_parent_dn'] ?? ($templateMetadata['dn_rules']['target_parent_dn'] ?? null),
+                            'identifier_attribute' => $data['identifier_attribute'] ?? ($templateMetadata['dn_rules']['rdn_attribute'] ?? 'uid'),
+                            'dn_template' => $data['dn_template'] ?? ($templateMetadata['dn_rules']['dn_template'] ?? null),
+                            'multi_dn_rules' => $templateMetadata['dn_rules']['multi_dn_rules'] ?? null,
+                        ],
+                        'safety' => [
+                            'safe_mode' => $safeMode,
+                            'preview_only' => $previewOnly,
+                            'allow_destructive' => $allowDestructive,
+                        ],
+                    ];
+
+                    $record = [
+                        'uuid' => (string) Str::uuid(),
+                        'name' => $data['name'],
+                        'ldap_connection_id' => $data['ldap_connection_id'] ?? null,
+                        'import_type' => $data['import_type'] ?? 'csv',
+                        'file_path' => $data['file_path'] ?? null,
+                        'file_disk' => $data['file_disk'] ?? 'local',
+                        'original_filename' => $data['original_filename'] ?? null,
+                        'file_size_bytes' => $data['file_size_bytes'] ?? null,
+                        'file_hash' => $data['file_hash'] ?? null,
+                        'base_dn' => $data['base_dn'] ?? null,
+                        'identifier_attribute' => $data['identifier_attribute'] ?? 'uid',
+                        'dn_template' => $data['dn_template'] ?? null,
+                        'status' => 'draft',
+                        'total_rows' => 0,
+                        'valid_rows' => 0,
+                        'invalid_rows' => 0,
+                        'duplicate_rows' => 0,
+                        'conflict_rows' => 0,
+                        'will_create_rows' => 0,
+                        'will_update_rows' => 0,
+                        'will_skip_rows' => 0,
+                        'will_fail_rows' => 0,
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                        'metadata' => $metadata,
+                    ];
+
+                    /*
+                     * Alias untuk struktur kolom lama/baru.
+                     * Kolom yang tidak ada akan otomatis dibuang.
+                     */
+                    $aliases = [
+                        'import_template_id' => $data['import_template_id'] ?? null,
+                        'template_id' => $data['import_template_id'] ?? null,
+                        'operation_mode' => $metadata['operation']['mode'] ?? 'create',
+                        'dn_strategy' => $metadata['dn_rules']['dn_strategy'] ?? 'rdn_parent',
+                        'target_parent_dn' => $metadata['dn_rules']['target_parent_dn'] ?? null,
+                        'if_target_exists' => $metadata['operation']['if_target_exists'] ?? 'skip',
+                        'safe_mode' => $safeMode,
+                        'preview_only' => $previewOnly,
+                        'allow_destructive' => $allowDestructive,
+                        'destructive' => $allowDestructive,
+                    ];
+
+                    foreach ($aliases as $key => $value) {
+                        $record[$key] = $value;
+                    }
+
+                    $clean = [];
+
+                    foreach ($record as $key => $value) {
+                        if (! in_array($key, $columns, true)) {
+                            continue;
+                        }
+
+                        if (is_array($value)) {
+                            $value = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                        }
+
+                        $clean[$key] = $value;
+                    }
+
+                    /** @var ImportBatch $created */
+                    $created = ImportBatch::query()->create($clean);
+
+                    Notification::make()
+                        ->title('LDAP import created')
+                        ->body($template ? 'Import dibuat dengan template: '.$template->name : 'Import dibuat tanpa template.')
+                        ->success()
+                        ->send();
+
+                    $this->redirect(ImportBatchResource::getUrl('view', ['record' => $created]));
+                }),
+
+            Action::make('openTemplates')
+                ->label('Templates')
+                ->icon('heroicon-o-document-duplicate')
+                ->color('gray')
+                ->url(fn (): string => ImportTemplateResource::getUrl('index')),
+        ];
+    }
+}

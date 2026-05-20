@@ -1,0 +1,679 @@
+<?php
+
+namespace App\Services\Operations;
+
+use App\Models\Operations\ImportTemplate;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class ImportTemplateGeneratorService
+{
+    public function generate(ImportTemplate $template): array
+    {
+        $format = strtolower((string) $template->file_format);
+
+        $content = match ($format) {
+            'csv' => $this->generateCsv($template),
+            'ldif' => $this->generateLdif($template),
+            'json' => $this->generateJson($template),
+            default => throw new \InvalidArgumentException('Unsupported template format: '.$format),
+        };
+
+        $extension = match ($format) {
+            'csv' => 'csv',
+            'ldif' => 'ldif',
+            'json' => 'json',
+            default => 'txt',
+        };
+
+        $safeName = Str::slug($template->name ?: 'import-template');
+        $filename = $safeName.'_'.$template->template_purpose.'_'.$template->entry_type.'.'.$extension;
+        $path = 'import-templates/'.$filename;
+
+        Storage::disk('local')->put($path, $content);
+
+        $privatePath = storage_path('app/private/'.$path);
+        File::ensureDirectoryExists(dirname($privatePath));
+        file_put_contents($privatePath, $content);
+
+        $appPath = storage_path('app/'.$path);
+        File::ensureDirectoryExists(dirname($appPath));
+        file_put_contents($appPath, $content);
+
+        $template->forceFill([
+            'output_disk' => 'local',
+            'output_path' => $path,
+            'output_filename' => $filename,
+            'output_size_bytes' => strlen($content),
+            'output_hash' => hash('sha256', $content),
+            'status' => 'generated',
+            'message' => 'Template generated successfully.',
+            'metadata' => array_merge($template->metadata ?? [], [
+                'generated_at' => now()->toDateTimeString(),
+                'format' => $format,
+                'purpose' => $template->template_purpose,
+                'entry_type' => $template->entry_type,
+            ]),
+        ])->save();
+
+        return [
+            'ok' => true,
+            'message' => 'Template generated successfully.',
+            'path' => $path,
+            'filename' => $filename,
+        ];
+    }
+
+    private function purpose(ImportTemplate $template): string
+    {
+        return strtolower(trim((string) $template->template_purpose));
+    }
+
+    private function baseDn(ImportTemplate $template): string
+    {
+        return trim((string) ($template->base_dn ?: 'dc=petra,dc=ac,dc=id'));
+    }
+
+    private function parentDn(ImportTemplate $template): string
+    {
+        $baseDn = $this->baseDn($template);
+        $targetOu = trim((string) $template->target_ou);
+
+        if ($targetOu === '') {
+            return match ((string) $template->entry_type) {
+                'group' => 'ou=groups,'.$baseDn,
+                'ou' => $baseDn,
+                default => 'ou=people,'.$baseDn,
+            };
+        }
+
+        if (str_contains($targetOu, '=')) {
+            return $targetOu;
+        }
+
+        return 'ou='.ltrim($targetOu, 'ou=').','.$baseDn;
+    }
+
+    private function rdnAttribute(ImportTemplate $template): string
+    {
+        return trim((string) ($template->rdn_attribute ?: match ((string) $template->entry_type) {
+            'group' => 'cn',
+            'ou' => 'ou',
+            default => 'uid',
+        }));
+    }
+
+    private function sampleDn(ImportTemplate $template, int $index): string
+    {
+        $rdn = $this->rdnAttribute($template);
+
+        return $rdn.'='.$this->sampleValue($template, $rdn, $index).','.$this->parentDn($template);
+    }
+
+    private function renamedDn(ImportTemplate $template, int $index): string
+    {
+        $rdn = $this->rdnAttribute($template);
+
+        return $rdn.'='.$this->sampleValue($template, $rdn, $index).'-renamed,'.$this->parentDn($template);
+    }
+
+    private function newRdn(ImportTemplate $template, int $index): string
+    {
+        $rdn = $this->rdnAttribute($template);
+
+        return $rdn.'='.$this->sampleValue($template, $rdn, $index).'-renamed';
+    }
+
+    private function newSuperior(ImportTemplate $template): string
+    {
+        $baseDn = $this->baseDn($template);
+
+        return match ((string) $template->entry_type) {
+            'group' => 'ou=groups,'.$baseDn,
+            'ou' => $baseDn,
+            default => 'ou=alumni,'.$baseDn,
+        };
+    }
+
+    private function objectClasses(ImportTemplate $template): array
+    {
+        $classes = $template->object_classes;
+
+        if (is_string($classes)) {
+            $classes = $this->splitList($classes);
+        }
+
+        if (! is_array($classes) || $classes === []) {
+            $classes = match ((string) $template->entry_type) {
+                'group' => ['top', 'groupOfNames'],
+                'ou' => ['top', 'organizationalUnit'],
+                default => ['top', 'person', 'organizationalPerson', 'inetOrgPerson'],
+            };
+        }
+
+        return collect($classes)
+            ->map(fn ($item): string => trim((string) $item))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function customAttributes(ImportTemplate $template): array
+    {
+        $attributes = $template->attributes;
+
+        if (is_string($attributes)) {
+            $attributes = $this->splitList($attributes);
+        }
+
+        if (! is_array($attributes)) {
+            return [];
+        }
+
+        return collect($attributes)
+            ->map(fn ($item): string => trim((string) $item))
+            ->filter()
+            ->reject(fn (string $item): bool => in_array($item, [
+                'action',
+                'operation',
+                'dn',
+                'target_dn',
+                'current_dn',
+                'new_rdn',
+                'new_superior',
+                'new_parent_dn',
+                'delete_old_rdn',
+                'objectClass',
+                'objectclass',
+                $this->rdnAttribute($template),
+            ], true))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function createAttributes(ImportTemplate $template): array
+    {
+        $default = match ((string) $template->entry_type) {
+            'group' => ['cn', 'description'],
+            'ou' => ['ou', 'description'],
+            default => ['cn', 'sn', 'givenName', 'mail', 'userPassword', 'description'],
+        };
+
+        return array_values(array_unique(array_merge($default, $this->customAttributes($template))));
+    }
+
+    private function editableAttributes(ImportTemplate $template): array
+    {
+        $default = match ((string) $template->entry_type) {
+            'group' => ['description'],
+            'ou' => ['description'],
+            default => ['cn', 'sn', 'givenName', 'mail', 'description'],
+        };
+
+        return array_values(array_unique(array_merge($default, $this->customAttributes($template))));
+    }
+
+    private function csvHeaders(ImportTemplate $template): array
+    {
+        $purpose = $this->purpose($template);
+        $rdn = $this->rdnAttribute($template);
+
+        return match ($purpose) {
+            'delete' => ['action', 'dn', $rdn],
+
+            'update', 'edit', 'modify' => array_values(array_unique(array_merge(
+                ['action', 'dn', $rdn],
+                $this->editableAttributes($template),
+            ))),
+
+            'rename_dn', 'rename', 'modrdn' => [
+                'action',
+                'dn',
+                'new_rdn',
+                'delete_old_rdn',
+            ],
+
+            'move_dn', 'move', 'rename_or_move_dn' => [
+                'action',
+                'dn',
+                'new_superior',
+            ],
+
+            'add_objectclass', 'add_object_class' => [
+                'action',
+                'dn',
+                'objectClass',
+                'associatedDomain',
+                'description',
+            ],
+
+            'schema_create', 'schema_add' => [
+                'action',
+                'schema_type',
+                'name',
+                'oid',
+                'description',
+                'syntax',
+                'equality',
+                'single_value',
+                'sup',
+                'kind',
+                'may',
+                'must',
+            ],
+
+            'schema_modify', 'schema_update' => [
+                'action',
+                'schema_type',
+                'name',
+                'operation',
+                'description',
+                'may',
+                'must',
+            ],
+
+            'schema_delete' => [
+                'action',
+                'schema_type',
+                'name',
+            ],
+
+            default => array_values(array_unique(array_merge(
+                ['action', 'dn', $rdn, 'objectClass'],
+                $this->createAttributes($template),
+            ))),
+        };
+    }
+
+    private function generateCsv(ImportTemplate $template): string
+    {
+        $headers = $this->csvHeaders($template);
+        $sampleRows = max(1, min((int) $template->sample_rows, 20));
+
+        $rows = [];
+        $rows[] = $this->csvLine($headers);
+
+        for ($i = 1; $i <= $sampleRows; $i++) {
+            $rows[] = $this->csvLine(
+                collect($headers)
+                    ->map(fn (string $header): string => $this->sampleValue($template, $header, $i))
+                    ->all()
+            );
+        }
+
+        return implode("\n", $rows)."\n";
+    }
+
+    private function generateJson(ImportTemplate $template): string
+    {
+        $purpose = $this->purpose($template);
+        $sampleRows = max(1, min((int) $template->sample_rows, 20));
+        $items = [];
+
+        for ($i = 1; $i <= $sampleRows; $i++) {
+            $dn = $this->sampleDn($template, $i);
+
+            $items[] = match ($purpose) {
+                'delete' => [
+                    'action' => 'delete',
+                    'dn' => $dn,
+                    'identifier' => $this->sampleValue($template, $this->rdnAttribute($template), $i),
+                ],
+
+                'update', 'edit', 'modify' => [
+                    'action' => 'update',
+                    'dn' => $dn,
+                    'attributes' => $this->jsonAttributes($template, $i, false),
+                ],
+
+                'rename_dn', 'rename', 'modrdn' => [
+                    'action' => 'rename_dn',
+                    'dn' => $dn,
+                    'new_rdn' => $this->newRdn($template, $i),
+                    'delete_old_rdn' => true,
+                ],
+
+                'move_dn', 'move', 'rename_or_move_dn' => [
+                    'action' => 'move_dn',
+                    'dn' => $dn,
+                    'new_superior' => $this->newSuperior($template),
+                ],
+
+                'add_objectclass', 'add_object_class' => [
+                    'action' => 'add_objectclass',
+                    'dn' => $dn,
+                    'objectClass' => ['domainRelatedObject'],
+                    'attributes' => [
+                        'associatedDomain' => 'template'.$i.'.petra.ac.id',
+                    ],
+                ],
+
+                'schema_create', 'schema_add' => [
+                    'action' => 'schema_create',
+                    'schema_type' => 'attributeType',
+                    'name' => 'petraTemplateCode'.$i,
+                    'oid' => '1.3.6.1.4.1.99999.100.'.$i,
+                    'description' => 'Petra template test attribute '.$i,
+                    'syntax' => '1.3.6.1.4.1.1466.115.121.1.15',
+                    'equality' => 'caseIgnoreMatch',
+                    'single_value' => true,
+                ],
+
+                'schema_modify', 'schema_update' => [
+                    'action' => 'schema_modify',
+                    'schema_type' => 'attributeType',
+                    'name' => 'petraTemplateCode'.$i,
+                    'operation' => 'replace_description',
+                    'description' => 'Updated Petra template test attribute '.$i,
+                ],
+
+                'schema_delete' => [
+                    'action' => 'schema_delete',
+                    'schema_type' => 'attributeType',
+                    'name' => 'petraTemplateCode'.$i,
+                ],
+
+                default => [
+                    'action' => 'create',
+                    'dn' => $dn,
+                    'objectClass' => $this->objectClasses($template),
+                    'attributes' => $this->jsonAttributes($template, $i, true),
+                ],
+            };
+        }
+
+        return json_encode($items, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
+    }
+
+    private function jsonAttributes(ImportTemplate $template, int $index, bool $create): array
+    {
+        $attributes = [];
+
+        foreach ($create ? $this->createAttributes($template) : $this->editableAttributes($template) as $attribute) {
+            if (in_array($attribute, ['objectClass', 'objectclass'], true)) {
+                continue;
+            }
+
+            $attributes[$attribute] = $this->sampleValue($template, $attribute, $index);
+        }
+
+        return $attributes;
+    }
+
+    private function generateLdif(ImportTemplate $template): string
+    {
+        $purpose = $this->purpose($template);
+        $sampleRows = max(1, min((int) $template->sample_rows, 20));
+        $blocks = [];
+
+        for ($i = 1; $i <= $sampleRows; $i++) {
+            $dn = $this->sampleDn($template, $i);
+
+            $blocks[] = match ($purpose) {
+                'delete' => implode("\n", [
+                    'dn: '.$dn,
+                    'changetype: delete',
+                ]),
+
+                'update', 'edit', 'modify' => $this->modifyLdifBlock($template, $dn, $i),
+
+                'rename_dn', 'rename', 'modrdn' => implode("\n", [
+                    'dn: '.$dn,
+                    'changetype: modrdn',
+                    'newrdn: '.$this->newRdn($template, $i),
+                    'deleteoldrdn: 1',
+                ]),
+
+                'move_dn', 'move', 'rename_or_move_dn' => implode("\n", [
+                    'dn: '.$dn,
+                    'changetype: modrdn',
+                    'newrdn: '.$this->rdnAttribute($template).'='.$this->sampleValue($template, $this->rdnAttribute($template), $i),
+                    'deleteoldrdn: 1',
+                    'newsuperior: '.$this->newSuperior($template),
+                ]),
+
+                'add_objectclass', 'add_object_class' => implode("\n", [
+                    'dn: '.$dn,
+                    'changetype: modify',
+                    'add: objectClass',
+                    'objectClass: domainRelatedObject',
+                    '-',
+                    'add: associatedDomain',
+                    'associatedDomain: template'.$i.'.petra.ac.id',
+                ]),
+
+                'schema_create', 'schema_add' => implode("\n", [
+                    'dn: cn=schema',
+                    'changetype: modify',
+                    'add: olcAttributeTypes',
+                    "olcAttributeTypes: ( 1.3.6.1.4.1.99999.100.$i NAME 'petraTemplateCode$i' DESC 'Petra template test attribute $i' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )",
+                ]),
+
+                'schema_modify', 'schema_update' => implode("\n", [
+                    '# Schema modify sample',
+                    '# Usually requires replacing full olcAttributeTypes / olcObjectClasses value.',
+                    '# Prefer JSON template for schema_modify.',
+                    'dn: cn=schema',
+                    'changetype: modify',
+                    'replace: olcAttributeTypes',
+                    "olcAttributeTypes: ( 1.3.6.1.4.1.99999.100.$i NAME 'petraTemplateCode$i' DESC 'Updated Petra template test attribute $i' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )",
+                ]),
+
+                'schema_delete' => implode("\n", [
+                    '# Schema delete sample',
+                    '# WARNING: schema delete is destructive.',
+                    '# Prefer JSON template for schema_delete so preview engine can validate name/type.',
+                    'dn: cn=schema',
+                    'changetype: modify',
+                    'delete: olcAttributeTypes',
+                    "olcAttributeTypes: ( 1.3.6.1.4.1.99999.100.$i NAME 'petraTemplateCode$i' DESC 'Petra template test attribute $i' EQUALITY caseIgnoreMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )",
+                ]),
+
+                default => $this->addLdifBlock($template, $dn, $i),
+            };
+        }
+
+        return implode("\n\n", $blocks)."\n";
+    }
+
+    private function addLdifBlock(ImportTemplate $template, string $dn, int $index): string
+    {
+        $lines = [
+            'dn: '.$dn,
+            'changetype: add',
+        ];
+
+        foreach ($this->objectClasses($template) as $objectClass) {
+            $lines[] = 'objectClass: '.$objectClass;
+        }
+
+        foreach ($this->createAttributes($template) as $attribute) {
+            $lines[] = $attribute.': '.$this->sampleValue($template, $attribute, $index);
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function modifyLdifBlock(ImportTemplate $template, string $dn, int $index): string
+    {
+        $lines = [
+            'dn: '.$dn,
+            'changetype: modify',
+        ];
+
+        foreach ($this->editableAttributes($template) as $attribute) {
+            $lines[] = 'replace: '.$attribute;
+            $lines[] = $attribute.': '.$this->sampleValue($template, $attribute, $index);
+            $lines[] = '-';
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function sampleValue(ImportTemplate $template, string $attribute, int $index): string
+    {
+        $purpose = $this->purpose($template);
+        $attribute = trim($attribute);
+        $lower = strtolower($attribute);
+        $number = str_pad((string) $index, 3, '0', STR_PAD_LEFT);
+
+        if (in_array($lower, ['action', 'operation'], true)) {
+            return match ($purpose) {
+                'delete' => 'delete',
+                'update', 'edit', 'modify' => 'update',
+                'rename_dn', 'rename', 'modrdn' => 'rename_dn',
+                'move_dn', 'move', 'rename_or_move_dn' => 'move_dn',
+                'add_objectclass', 'add_object_class' => 'add_objectclass',
+                'schema_create', 'schema_add' => 'schema_create',
+                'schema_modify', 'schema_update' => 'schema_modify',
+                'schema_delete' => 'schema_delete',
+                default => 'create',
+            };
+        }
+
+        if (in_array($lower, ['dn', 'current_dn', 'target_dn'], true)) {
+            return $this->sampleDn($template, $index);
+        }
+
+        if ($lower === 'new_rdn') {
+            return $this->newRdn($template, $index);
+        }
+
+        if (in_array($lower, ['new_superior', 'new_parent_dn', 'target_parent_dn'], true)) {
+            return $this->newSuperior($template);
+        }
+
+        if ($lower === 'delete_old_rdn') {
+            return 'true';
+        }
+
+        if (in_array($lower, ['objectclass', 'object_class'], true)) {
+            return $purpose === 'add_objectclass'
+                ? 'domainRelatedObject'
+                : implode(';', $this->objectClasses($template));
+        }
+
+        if ($lower === 'associateddomain') {
+            return 'template'.$number.'.petra.ac.id';
+        }
+
+        if ($lower === 'schema_type') {
+            return 'attributeType';
+        }
+
+        if ($lower === 'name') {
+            return 'petraTemplateCode'.$number;
+        }
+
+        if ($lower === 'oid') {
+            return '1.3.6.1.4.1.99999.100.'.((int) $index);
+        }
+
+        if ($lower === 'syntax') {
+            return '1.3.6.1.4.1.1466.115.121.1.15';
+        }
+
+        if ($lower === 'equality') {
+            return 'caseIgnoreMatch';
+        }
+
+        if ($lower === 'single_value') {
+            return 'true';
+        }
+
+        if ($lower === 'sup') {
+            return 'top';
+        }
+
+        if ($lower === 'kind') {
+            return 'AUXILIARY';
+        }
+
+        if ($lower === 'may') {
+            return 'description';
+        }
+
+        if ($lower === 'must') {
+            return '';
+        }
+
+        if ($lower === 'uid') {
+            return 'template.user'.$number;
+        }
+
+        if ($lower === 'cn') {
+            return match ((string) $template->entry_type) {
+                'group' => 'Template Group '.$number,
+                default => 'Template User '.$number,
+            };
+        }
+
+        if ($lower === 'ou') {
+            return 'template-ou-'.$number;
+        }
+
+        if ($lower === 'sn') {
+            return 'User '.$number;
+        }
+
+        if ($lower === 'givenname') {
+            return 'Template';
+        }
+
+        if ($lower === 'mail') {
+            return 'template.user'.$number.'@petra.ac.id';
+        }
+
+        if ($lower === 'userpassword') {
+            return 'SeongJinWoo999!';
+        }
+
+        if ($lower === 'description') {
+            return 'Generated from Import Template Maker';
+        }
+
+        if (str_contains($lower, 'nrp')) {
+            return '1122'.$number;
+        }
+
+        if (str_contains($lower, 'affiliation')) {
+            return 'student';
+        }
+
+        if (str_contains($lower, 'faculty')) {
+            return 'Informatics';
+        }
+
+        if (str_contains($lower, 'department')) {
+            return 'Information Systems';
+        }
+
+        return 'sample_'.$attribute.'_'.$number;
+    }
+
+    private function splitList(string $value): array
+    {
+        return preg_split('/[\n,;|]+/', $value) ?: [];
+    }
+
+    private function csvLine(array $values): string
+    {
+        return implode(',', array_map(function ($value): string {
+            $value = (string) $value;
+            $value = str_replace('"', '""', $value);
+
+            if (
+                str_contains($value, ',') ||
+                str_contains($value, '"') ||
+                str_contains($value, "\n")
+            ) {
+                return '"'.$value.'"';
+            }
+
+            return $value;
+        }, $values));
+    }
+}

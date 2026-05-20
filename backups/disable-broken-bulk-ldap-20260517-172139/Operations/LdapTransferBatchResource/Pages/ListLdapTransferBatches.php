@@ -1,0 +1,101 @@
+<?php
+
+namespace App\Filament\Resources\Operations\LdapTransferBatchResource\Pages;
+
+use Filament\Schemas\Components\Section;
+
+use Filament\Forms\Components\Toggle;
+
+use Filament\Forms\Components\Textarea;
+
+use Filament\Forms\Components\TextInput;
+
+use Filament\Forms\Components\Select;
+
+use App\Filament\Resources\Operations\LdapTransferBatchResource;
+use Filament\Actions;
+use Filament\Resources\Pages\ListRecords;
+
+class ListLdapTransferBatches extends ListRecords
+{
+    protected static string $resource = LdapTransferBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\CreateAction::make()
+                    ->modalHeading('Create LDAP Transfer Preview')
+                    ->modalWidth('5xl')
+                    
+                    ->modalSubmitActionLabel('Create Transfer')
+                    ->modalWidth('5xl')
+                    
+                    ->createAnother(false)
+                    ->mutateFormDataUsing(function (array $data): array {
+                        // finalTransferCreateDataFix
+                        $data['status'] = 'draft';
+
+                        $data['mode'] = $data['mode'] ?? 'copy';
+                        $data['source_input_mode'] = 'ldap_query';
+
+                        $data['scope'] = $data['search_scope'] ?? $data['scope'] ?? 'sub';
+                        $data['ldap_filter'] = $data['filter'] ?? $data['ldap_filter'] ?? '(objectClass=*)';
+
+                        $data['target_dn'] = $data['target_parent_dn'] ?? $data['target_dn'] ?? $data['target_base_dn'] ?? null;
+                        $data['target_base_dn'] = $data['target_parent_dn'] ?? $data['target_base_dn'] ?? $data['target_dn'] ?? null;
+                        $data['target_dn_mode'] = $data['target_dn_mode'] ?? 'auto';
+
+                        $data['collision_strategy'] = $data['if_target_exists'] ?? $data['collision_strategy'] ?? 'skip';
+
+                        $data['source_dns_text'] = $data['custom_source_dn'] ?? null;
+                        $data['source_file_path'] = null;
+
+                        $data['include_operational_attributes'] = (bool) ($data['include_operational_attributes'] ?? false);
+                        $data['delete_source_after_copy'] = false;
+
+                        $data['preview_only'] = true;
+                        $data['safe_mode'] = true;
+                        $data['destructive'] = false;
+
+                        $data['total_entries'] = 0;
+                        $data['success_entries'] = 0;
+                        $data['failed_entries'] = 0;
+                        $data['skipped_entries'] = 0;
+                        $data['planned_entries'] = 0;
+                        $data['transferred_entries'] = 0;
+
+                        $data['preview_ldif'] = null;
+                        $data['stdout'] = null;
+                        $data['stderr'] = null;
+                        $data['error_message'] = null;
+                        
+                        if (isset($data['excluded_attributes']) && is_string($data['excluded_attributes'])) {
+                            $data['excluded_attributes'] = collect(preg_split('/[\\s,]+/', $data['excluded_attributes']) ?: [])
+                                ->map(fn ($item) => trim((string) $item))
+                                ->filter()
+                                ->values()
+                                ->all();
+                        }
+
+                        if (blank($data['excluded_attributes'] ?? null)) {
+                            $data['excluded_attributes'] = [
+                                'userPassword',
+                                'entryUUID',
+                                'entryCSN',
+                                'createTimestamp',
+                                'creatorsName',
+                                'modifyTimestamp',
+                                'modifiersName',
+                                'structuralObjectClass',
+                            ];
+                        }
+
+                        $data['message'] = 'Transfer draft created. Queue preview to generate LDIF plan.';
+
+                        return $data;
+                    })
+                ->label('New LDAP Transfer')
+                ->icon('heroicon-o-plus-circle'),
+        ];
+    }
+}

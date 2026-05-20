@@ -1,0 +1,289 @@
+<?php
+
+namespace App\Filament\Resources\Operations;
+
+use App\Filament\Resources\Operations\UniversalLdapTransferBatchResource\Pages;
+use App\Jobs\Operations\ExecuteUniversalLdapTransferJob;
+use App\Models\Directory\LdapConnection;
+use App\Models\Operations\OperationJob;
+use App\Models\Operations\UniversalLdapTransferBatch;
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
+use UnitEnum;
+
+class UniversalLdapTransferBatchResource extends Resource
+{
+    protected static ?string $model = UniversalLdapTransferBatch::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrows-right-left';
+
+    protected static string|UnitEnum|null $navigationGroup = '2. OPERATIONS';
+
+    protected static ?string $navigationLabel = 'LDAP Transfer Center';
+
+    protected static ?string $modelLabel = 'LDAP Transfer';
+
+    protected static ?string $pluralModelLabel = 'LDAP Transfer Center';
+
+    protected static ?int $navigationSort = 9;
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->columns(2)
+            ->components([
+                Section::make('LDAP Connections')
+                    ->schema([
+                        TextInput::make('name')->required()->maxLength(255),
+
+                        Select::make('source_ldap_connection_id')
+                            ->label('Source LDAP')
+                            ->options(fn (): array => LdapConnection::query()->active()->orderBy('name')->pluck('name', 'id')->all())
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+
+                        Select::make('target_ldap_connection_id')
+                            ->label('Target LDAP')
+                            ->options(fn (): array => LdapConnection::query()->active()->orderBy('name')->pluck('name', 'id')->all())
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                    ])
+                    ->columns(3)
+                    ->columnSpanFull(),
+
+                Section::make('Source Target')
+                    ->schema([
+                        TextInput::make('source_base_dn')
+                            ->label('Source Base DN')
+                            ->required()
+                            ->default(fn (): ?string => LdapConnection::query()->active()->where('is_default', true)->value('base_dn')),
+
+                        Select::make('transfer_scope')
+                            ->label('Transfer What?')
+                            ->options([
+                                'full' => 'Full Base DN',
+                                'ou' => 'Specific OU',
+                                'cn' => 'Specific CN',
+                                'uid' => 'Specific UID',
+                                'custom_dn' => 'Custom DN',
+                            ])
+                            ->default('custom_dn')
+                            ->required(),
+
+                        TextInput::make('source_rdn_attribute')
+                            ->label('Source RDN Attribute')
+                            ->placeholder('ou / cn / uid'),
+
+                        TextInput::make('source_rdn_value')
+                            ->label('Source RDN Value')
+                            ->placeholder('students / admin / abiel'),
+
+                        Textarea::make('custom_source_dn')
+                            ->label('Custom Source DN')
+                            ->rows(2)
+                            ->columnSpanFull(),
+
+                        Textarea::make('target_parent_dn')
+                            ->label('Target Parent DN')
+                            ->required()
+                            ->rows(2)
+                            ->columnSpanFull(),
+
+                        Select::make('search_scope')
+                            ->label('Search Scope')
+                            ->options([
+                                'base' => 'Base only',
+                                'one' => 'One level',
+                                'sub' => 'Full subtree',
+                            ])
+                            ->default('sub')
+                            ->required(),
+
+                        TextInput::make('filter')
+                            ->label('LDAP Filter')
+                            ->required()
+                            ->default('(objectClass=*)'),
+
+                        TextInput::make('attributes')
+                            ->label('Attributes')
+                            ->placeholder('* or dn cn uid mail objectClass'),
+
+                        TextInput::make('size_limit')
+                            ->label('Size Limit')
+                            ->numeric()
+                            ->default(1000)
+                            ->required(),
+
+                        TextInput::make('page_size')
+                            ->label('Page Size')
+                            ->numeric()
+                            ->default(500)
+                            ->required(),
+
+                        Select::make('status')
+                            ->options(['draft' => 'Draft'])
+                            ->default('draft')
+                            ->hidden(),
+                    ])
+                    ->columns(2)
+                    ->columnSpanFull(),
+            ]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Transfer Target')
+                    ->schema([
+                        TextEntry::make('id'),
+                        TextEntry::make('name'),
+                        TextEntry::make('status')->badge(),
+                        TextEntry::make('sourceLdapConnection.name')->label('Source LDAP'),
+                        TextEntry::make('targetLdapConnection.name')->label('Target LDAP'),
+                        TextEntry::make('effective_source_dn')->label('Effective Source DN')->columnSpanFull(),
+                        TextEntry::make('target_parent_dn')->label('Target Parent DN')->columnSpanFull(),
+                        TextEntry::make('filter')->label('Filter'),
+                        TextEntry::make('search_scope')->label('Search Scope'),
+                    ])
+                    ->columns(2),
+
+                Section::make('Result')
+                    ->schema([
+                        TextEntry::make('total_entries')->label('Total'),
+                        TextEntry::make('planned_entries')->label('Planned'),
+                        TextEntry::make('transferred_entries')->label('Transferred'),
+                        TextEntry::make('failed_entries')->label('Failed'),
+                        TextEntry::make('output_path')->label('Output Path')->columnSpanFull(),
+                        TextEntry::make('display_output_size')->label('Output Size'),
+                        TextEntry::make('output_hash')->label('SHA256')->columnSpanFull(),
+                        TextEntry::make('message')->label('Message')->columnSpanFull(),
+                        TextEntry::make('readOutputContent')
+                            ->label('Transfer Plan Preview')
+                            ->state(fn (UniversalLdapTransferBatch $record): string => $record->readOutputContent())
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(4),
+
+                Section::make('Safety')
+                    ->schema([
+                        IconEntry::make('preview_only')->boolean(),
+                        IconEntry::make('safe_mode')->boolean(),
+                        IconEntry::make('destructive')->boolean(),
+                    ])
+                    ->columns(3),
+
+                Section::make('Logs')
+                    ->schema([
+                        TextEntry::make('operation_job_id')->label('Operation Job ID'),
+                        TextEntry::make('started_at')->dateTime(),
+                        TextEntry::make('finished_at')->dateTime(),
+                    ])
+                    ->columns(3),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->defaultSort('id', 'desc')
+            ->columns([
+                TextColumn::make('id')->sortable(),
+                TextColumn::make('name')->searchable()->weight('semibold')->limit(35),
+                TextColumn::make('status')->badge()->sortable(),
+                TextColumn::make('sourceLdapConnection.name')->label('Source')->limit(20),
+                TextColumn::make('targetLdapConnection.name')->label('Target')->limit(20),
+                TextColumn::make('effective_source_dn')->label('Source DN')->limit(45),
+                TextColumn::make('target_parent_dn')->label('Target Parent')->limit(45),
+                TextColumn::make('total_entries')->label('Total'),
+                TextColumn::make('planned_entries')->label('Planned'),
+                TextColumn::make('created_at')->dateTime()->sortable(),
+            ])
+            ->headerActions([
+                CreateAction::make()
+                    ->label('New LDAP Transfer')
+                    ->icon('heroicon-o-plus-circle')
+                    ->modalHeading('Create LDAP Transfer')
+                    ->modalSubmitActionLabel('Create Transfer')
+                    ->modalWidth('7xl')
+                    ->createAnother(false),
+            ])
+            ->recordActions([
+                ViewAction::make(),
+
+                Action::make('queueTransfer')
+                    ->label('Queue Transfer Preview')
+                    ->icon('heroicon-o-play')
+                    ->color('success')
+                    ->visible(fn (UniversalLdapTransferBatch $record): bool => in_array($record->status, ['draft', 'failed'], true))
+                    ->requiresConfirmation()
+                    ->action(function (UniversalLdapTransferBatch $record): void {
+                        if (blank($record->effective_source_dn)) {
+                            Notification::make()->title('Effective Source DN is empty')->danger()->send();
+                            return;
+                        }
+
+                        $operationJob = OperationJob::query()->create([
+                            'operation_type' => 'universal_ldap_transfer',
+                            'name' => 'LDAP Transfer - '.$record->name,
+                            'module' => 'operations.transfer',
+                            'operation_action' => 'generate_transfer_preview',
+                            'action' => 'generate_transfer_preview',
+                            'status' => 'queued',
+                            'source' => 'filament',
+                            'target_type' => UniversalLdapTransferBatch::class,
+                            'target_key' => (string) $record->id,
+                            'target_dn' => $record->effective_source_dn,
+                            'ldap_connection_id' => $record->source_ldap_connection_id,
+                            'created_by' => Auth::id(),
+                            'metadata' => [
+                                'transfer_batch_id' => $record->id,
+                                'source_ldap_connection_id' => $record->source_ldap_connection_id,
+                                'target_ldap_connection_id' => $record->target_ldap_connection_id,
+                                'effective_source_dn' => $record->effective_source_dn,
+                                'target_parent_dn' => $record->target_parent_dn,
+                                'preview_only' => true,
+                            ],
+                        ]);
+
+                        $record->forceFill([
+                            'status' => 'queued',
+                            'operation_job_id' => $operationJob->id,
+                            'message' => 'LDAP transfer preview queued.',
+                        ])->save();
+
+                        ExecuteUniversalLdapTransferJob::dispatch($operationJob->id, $record->id);
+
+                        Notification::make()
+                            ->title('LDAP transfer preview queued')
+                            ->body('Operation Job #'.$operationJob->id.' created.')
+                            ->success()
+                            ->send();
+                    }),
+            ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListUniversalLdapTransferBatches::route('/'),
+            'view' => Pages\ViewUniversalLdapTransferBatch::route('/{record}'),
+        ];
+    }
+}

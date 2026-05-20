@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Filament\Resources\Directory\LdapServerResource\Pages;
+
+use App\Filament\Resources\Directory\LdapServerResource;
+use App\Services\Directory\LdapServerProvisioningService;
+use App\Services\Observability\UnifiedActivityLogger;
+use Filament\Actions\DeleteAction;
+use Filament\Resources\Pages\EditRecord;
+
+class EditLdapServer extends EditRecord
+{
+    protected static string $resource = LdapServerResource::class;
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return LdapServerResource::mutateFormDataBeforeSave($data);
+    }
+
+    protected function afterSave(): void
+    {
+        app(LdapServerProvisioningService::class)->refreshGeneratedArtifacts($this->record);
+
+        app(UnifiedActivityLogger::class)->success(
+            module: 'directory.ldap_servers',
+            action: 'update_ldap_server',
+            message: 'LDAP server updated successfully.',
+            context: $this->logContext('update_ldap_server'),
+        );
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            DeleteAction::make()
+                ->before(function (): void {
+                    app(UnifiedActivityLogger::class)->warning(
+                        module: 'directory.ldap_servers',
+                        action: 'delete_ldap_server',
+                        message: 'LDAP server delete requested.',
+                        context: $this->logContext('delete_ldap_server_requested'),
+                    );
+                }),
+        ];
+    }
+
+    private function logContext(string $event): array
+    {
+        return [
+            'operation_type' => 'ldap_server',
+            'command_type' => 'ldap_server',
+            'event' => $event,
+            'target_type' => 'ldap_server',
+            'target_id' => $this->record?->getKey(),
+            'target_label' => $this->record?->name ?? $this->record?->host ?? null,
+            'host' => $this->record?->host ?? null,
+            'port' => $this->record?->port ?? null,
+            'status' => $this->record?->status ?? null,
+            'total' => 1,
+            'success' => 1,
+            'failed' => 0,
+            'skipped' => 0,
+            'source' => 'filament',
+        ];
+    }
+}

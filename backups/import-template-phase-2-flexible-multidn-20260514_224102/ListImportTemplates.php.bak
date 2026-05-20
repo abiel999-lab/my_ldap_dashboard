@@ -1,0 +1,305 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportTemplateResource\Pages;
+
+use App\Filament\Resources\Operations\ImportTemplateResource;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Section;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+
+class ListImportTemplates extends ListRecords
+{
+    protected static string $resource = ImportTemplateResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('createGenericTemplateModal')
+                ->label('New Generic Template')
+                ->icon('heroicon-o-plus-circle')
+                ->color('primary')
+                ->modalHeading('Create Generic LDAP Import Template')
+                ->modalSubmitActionLabel('Create Template')
+                ->form([
+                    Section::make('1. Template Identity')
+                        ->description('Template generic untuk create, update, delete, atau upsert LDAP object.')
+                        ->schema([
+                            TextInput::make('name')
+                                ->label('Template Name')
+                                ->placeholder('Generic LDAP Object Template')
+                                ->required()
+                                ->maxLength(255),
+
+                            Select::make('operation_mode')
+                                ->label('Operation Mode')
+                                ->options([
+                                    'create' => 'Create only',
+                                    'update' => 'Update / Edit existing',
+                                    'upsert' => 'Upsert: create or update',
+                                    'delete' => 'Delete',
+                                ])
+                                ->default('create')
+                                ->required(),
+
+                            Select::make('file_format')
+                                ->label('File Format')
+                                ->options([
+                                    'csv' => 'CSV',
+                                    'ldif' => 'LDIF',
+                                    'json' => 'JSON',
+                                ])
+                                ->default('csv')
+                                ->required(),
+
+                            Select::make('entry_type')
+                                ->label('Entry Type')
+                                ->options([
+                                    'generic' => 'Generic LDAP Object',
+                                    'user' => 'User / inetOrgPerson',
+                                    'group' => 'Group',
+                                    'ou' => 'Organizational Unit',
+                                    'service' => 'Service / Application Object',
+                                    'policy' => 'Policy Object',
+                                    'custom' => 'Custom Object',
+                                ])
+                                ->default('generic')
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('2. DN Rules')
+                        ->description('Aturan DN dibuat fleksibel supaya bisa dipakai untuk banyak LDAP.')
+                        ->schema([
+                            Select::make('dn_strategy')
+                                ->label('DN Strategy')
+                                ->options([
+                                    'rdn_parent' => 'RDN Attribute + Parent/Base DN',
+                                    'dn_template' => 'Static DN Template',
+                                    'preserve_ldif_dn' => 'Preserve DN from LDIF',
+                                    'replace_base_dn' => 'Replace Base DN',
+                                    'multi_rules' => 'Multiple DN Rules',
+                                ])
+                                ->default('rdn_parent')
+                                ->required(),
+
+                            TextInput::make('base_dn')
+                                ->label('Base DN')
+                                ->placeholder('dc=example,dc=local')
+                                ->required(),
+
+                            TextInput::make('target_parent_dn')
+                                ->label('Target Parent DN / OU Path')
+                                ->placeholder('ou=people,{base_dn} atau ou=groups,{base_dn}')
+                                ->helperText('Bisa pakai {base_dn}. Contoh: ou=people,{base_dn}.'),
+
+                            TextInput::make('rdn_attribute')
+                                ->label('RDN / Identifier Attribute')
+                                ->placeholder('uid / cn / ou')
+                                ->default('uid')
+                                ->required(),
+
+                            TextInput::make('dn_template')
+                                ->label('DN Template')
+                                ->placeholder('uid={uid},ou=people,{base_dn}')
+                                ->helperText('Gunakan placeholder dari CSV/JSON, contoh {uid}, {cn}, {ou}, {base_dn}.'),
+
+                            Textarea::make('multi_dn_rules')
+                                ->label('Multiple DN Rules')
+                                ->rows(7)
+                                ->placeholder("user: uid={uid},ou=people,{base_dn}\ngroup: cn={cn},ou=groups,{base_dn}\nou: ou={ou},{base_dn}\nservice: cn={cn},ou=services,{base_dn}")
+                                ->helperText('Satu rule per baris. Format: name: dn-template. Dipakai nanti untuk import campuran banyak DN.'),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('3. Object & Attribute Rules')
+                        ->description('Aturan objectClass dan attribute dibuat generic, bukan khusus Petra.')
+                        ->schema([
+                            Textarea::make('object_classes')
+                                ->label('Object Classes')
+                                ->rows(6)
+                                ->default("top\nperson\norganizationalPerson\ninetOrgPerson")
+                                ->helperText('Satu per baris. Untuk OU bisa top + organizationalUnit. Untuk group bisa top + groupOfNames.'),
+
+                            Textarea::make('required_attributes')
+                                ->label('Required Attributes')
+                                ->rows(5)
+                                ->placeholder("uid\ncn\nsn")
+                                ->helperText('Attribute wajib untuk validasi preview.'),
+
+                            Textarea::make('optional_attributes')
+                                ->label('Optional Attributes')
+                                ->rows(5)
+                                ->placeholder("mail\ndisplayName\ngivenName\nou")
+                                ->helperText('Attribute opsional dari file import.'),
+
+                            Textarea::make('default_values')
+                                ->label('Default Values')
+                                ->rows(5)
+                                ->placeholder("objectClass=top;person;organizationalPerson;inetOrgPerson\nstatus=active")
+                                ->helperText('Format sederhana: attribute=value. Multi value pisahkan dengan separator.'),
+
+                            Textarea::make('attribute_mapping')
+                                ->label('Attribute Mapping')
+                                ->rows(7)
+                                ->placeholder("uid=uid\ncn=cn\nsn=sn\nmail=email\ndisplayName=display_name")
+                                ->helperText('Format: ldapAttribute=sourceColumn. Dipakai untuk CSV/JSON.'),
+
+                            TextInput::make('multi_value_separator')
+                                ->label('Multi-value Separator')
+                                ->default(';')
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('4. Safety Rules')
+                        ->description('Safety policy bawaan template. Import tetap harus preview dulu sebelum apply.')
+                        ->schema([
+                            Select::make('if_target_exists')
+                                ->label('If Target Exists')
+                                ->options([
+                                    'skip' => 'Skip existing target',
+                                    'update' => 'Update existing target',
+                                    'fail' => 'Fail on existing target',
+                                    'replace' => 'Replace target attributes',
+                                ])
+                                ->default('skip')
+                                ->required(),
+
+                            Select::make('allow_destructive')
+                                ->label('Allow Destructive Operation')
+                                ->options([
+                                    false => 'No',
+                                    true => 'Yes',
+                                ])
+                                ->default(false)
+                                ->required(),
+
+                            Textarea::make('excluded_attributes')
+                                ->label('Excluded Attributes')
+                                ->rows(4)
+                                ->default("userPassword\nentryUUID\nentryCSN\ncreateTimestamp\ncreatorsName\nmodifyTimestamp\nmodifiersName")
+                                ->helperText('Attribute yang tidak ikut di-create/update.'),
+
+                            TextInput::make('sample_rows')
+                                ->label('Sample Rows')
+                                ->numeric()
+                                ->default(3)
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+                ])
+                ->action(function (array $data): void {
+                    $columns = Schema::getColumnListing('import_templates');
+
+                    $metadata = [
+                        'version' => 2,
+                        'source' => 'ldap_import_template_modal',
+                        'operation_mode' => $data['operation_mode'] ?? 'create',
+                        'file_format' => $data['file_format'] ?? 'csv',
+                        'entry_type' => $data['entry_type'] ?? 'generic',
+
+                        'dn_rules' => [
+                            'dn_strategy' => $data['dn_strategy'] ?? 'rdn_parent',
+                            'base_dn' => $data['base_dn'] ?? null,
+                            'target_parent_dn' => $data['target_parent_dn'] ?? null,
+                            'rdn_attribute' => $data['rdn_attribute'] ?? null,
+                            'dn_template' => $data['dn_template'] ?? null,
+                            'multi_dn_rules' => $data['multi_dn_rules'] ?? null,
+                        ],
+
+                        'object_rules' => [
+                            'object_classes' => $data['object_classes'] ?? null,
+                            'required_attributes' => $data['required_attributes'] ?? null,
+                            'optional_attributes' => $data['optional_attributes'] ?? null,
+                            'default_values' => $data['default_values'] ?? null,
+                            'attribute_mapping' => $data['attribute_mapping'] ?? null,
+                            'multi_value_separator' => $data['multi_value_separator'] ?? ';',
+                        ],
+
+                        'safety_rules' => [
+                            'if_target_exists' => $data['if_target_exists'] ?? 'skip',
+                            'allow_destructive' => (bool) ($data['allow_destructive'] ?? false),
+                            'excluded_attributes' => $data['excluded_attributes'] ?? null,
+                            'sample_rows' => (int) ($data['sample_rows'] ?? 3),
+                        ],
+                    ];
+
+                    $record = [
+                        'uuid' => (string) Str::uuid(),
+                        'name' => $data['name'] ?? ('Generic LDAP Template '.now()->format('Y-m-d H:i:s')),
+                        'status' => 'draft',
+                        'metadata' => $metadata,
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+
+                    /*
+                     * Alias ke kolom lama agar table existing tetap jalan.
+                     * Kolom yang tidak ada akan otomatis dibuang.
+                     */
+                    $aliases = [
+                        'purpose' => $data['operation_mode'] ?? 'create',
+                        'template_purpose' => $data['operation_mode'] ?? 'create',
+                        'operation_mode' => $data['operation_mode'] ?? 'create',
+
+                        'format' => $data['file_format'] ?? 'csv',
+                        'file_format' => $data['file_format'] ?? 'csv',
+
+                        'entry' => $data['entry_type'] ?? 'generic',
+                        'entry_type' => $data['entry_type'] ?? 'generic',
+
+                        'base_dn' => $data['base_dn'] ?? null,
+                        'target_base_dn' => $data['base_dn'] ?? null,
+
+                        'target_ou' => $data['target_parent_dn'] ?? null,
+                        'parent_dn' => $data['target_parent_dn'] ?? null,
+
+                        'rdn_attribute' => $data['rdn_attribute'] ?? null,
+                        'identifier_attribute' => $data['rdn_attribute'] ?? null,
+
+                        'dn_template' => $data['dn_template'] ?? null,
+                        'object_classes' => $data['object_classes'] ?? null,
+                        'additional_attributes' => trim(($data['required_attributes'] ?? '')."\n".($data['optional_attributes'] ?? '')),
+                        'multi_value_separator' => $data['multi_value_separator'] ?? ';',
+                        'sample_rows' => (int) ($data['sample_rows'] ?? 3),
+                    ];
+
+                    foreach ($aliases as $key => $value) {
+                        $record[$key] = $value;
+                    }
+
+                    $clean = [];
+
+                    foreach ($record as $key => $value) {
+                        if (! in_array($key, $columns, true)) {
+                            continue;
+                        }
+
+                        if (is_array($value)) {
+                            $value = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                        }
+
+                        $clean[$key] = $value;
+                    }
+
+                    DB::table('import_templates')->insert($clean);
+
+                    Notification::make()
+                        ->title('Import template created')
+                        ->body('Template fleksibel berhasil dibuat dan siap dipakai di LDAP Import Center.')
+                        ->success()
+                        ->send();
+                }),
+        ];
+    }
+}

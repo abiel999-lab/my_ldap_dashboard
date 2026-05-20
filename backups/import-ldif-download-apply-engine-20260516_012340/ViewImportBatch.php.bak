@@ -1,0 +1,98 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportBatchResource\Pages;
+
+use App\Filament\Resources\Operations\ImportBatchResource;
+use App\Services\Operations\LdapImportDependencyGraphService;
+use App\Services\Operations\LdapImportApplyService;
+use App\Services\Operations\LdapImportPreviewService;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Storage;
+
+class ViewImportBatch extends ViewRecord
+{
+    protected static string $resource = ImportBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('previewAsLdif')
+                ->label('Preview')
+                ->icon('heroicon-o-eye')
+                ->color('primary')
+                ->action(function (): void {
+                    $record = $this->getRecord();
+
+                    try {
+                        /*
+                         * Final simplified import flow:
+                         * CSV / JSON / LDIF upload tetap boleh.
+                         * Setelah Preview, sistem langsung generate LDIF internal plan.
+                         * Admin tidak perlu klik Repair / Deps / LDIF / Build LDIF.
+                         */
+                        app(\App\Services\Operations\LdapImportPreviewService::class)
+                            ->preview($record);
+
+                        $summary = app(\App\Services\Operations\LdapImportLdifPlanService::class)
+                            ->buildForBatch((int) $record->getKey());
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Preview generated')
+                            ->body('LDIF plan: Add '.($summary['add_rows'] ?? 0).' | Modify '.($summary['modify_rows'] ?? 0).' | Delete '.($summary['delete_rows'] ?? 0).' | Failed '.($summary['failed_rows'] ?? 0))
+                            ->success()
+                            ->send();
+
+                        $this->redirect(static::getResource()::getUrl('view', [
+                            'record' => $record->getKey(),
+                        ]));
+                    } catch (\Throwable $exception) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Preview failed')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            \Filament\Actions\Action::make('rollbackImport')
+                ->label('Rollback')
+                ->icon('heroicon-o-arrow-uturn-left')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Rollback LDAP Import')
+                ->modalDescription('Rollback akan membatalkan entry yang pernah dibuat oleh batch import ini. Untuk update/delete, rollback penuh membutuhkan snapshot.')
+                ->action(function (): void {
+                    $record = $this->getRecord();
+
+                    try {
+                        $summary = app(\App\Services\Operations\LdapImportRollbackService::class)
+                            ->rollback((int) $record->getKey());
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Rollback completed')
+                            ->body('Rolled back '.($summary['rolled_back'] ?? 0).' | Failed '.($summary['failed'] ?? 0).' | Skipped '.($summary['skipped'] ?? 0))
+                            ->success()
+                            ->send();
+
+                        $this->redirect(static::getResource()::getUrl('view', [
+                            'record' => $record->getKey(),
+                        ]));
+                    } catch (\Throwable $exception) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Rollback failed')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            \Filament\Actions\Action::make('backToImports')
+                ->label('Back')
+                ->icon('heroicon-o-arrow-left')
+                ->color('gray')
+                ->url(static::getResource()::getUrl('index')),
+        ];
+    }
+}

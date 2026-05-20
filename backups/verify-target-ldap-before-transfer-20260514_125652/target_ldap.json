@@ -1,0 +1,10 @@
+{
+    "id": 1,
+    "name": "Local Test LDAP",
+    "host": "127.0.0.1",
+    "port": 389,
+    "base_dn": "dc=petra,dc=ac,dc=id",
+    "bind_dn": null,
+    "bind_password": null,
+    "uri": "ldap://127.0.0.1:389"
+}

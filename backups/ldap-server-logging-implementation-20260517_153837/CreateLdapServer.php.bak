@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Filament\Resources\Directory\LdapServerResource\Pages;
+
+use App\Filament\Resources\Directory\LdapServerResource;
+use App\Services\Directory\LdapServerProvisioningService;
+use App\Services\Observability\UnifiedActivityLogger;
+use Filament\Resources\Pages\CreateRecord;
+
+class CreateLdapServer extends CreateRecord
+{
+    protected static string $resource = LdapServerResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return LdapServerResource::mutateFormDataBeforeCreate($data);
+    }
+
+    protected function afterCreate(): void
+    {
+        app(LdapServerProvisioningService::class)->refreshGeneratedArtifacts($this->record);
+
+        app(UnifiedActivityLogger::class)->success(
+            module: 'directory.ldap_servers',
+            action: 'create_ldap_server',
+            message: 'LDAP server created successfully.',
+            context: $this->logContext('create_ldap_server'),
+        );
+    }
+
+    private function logContext(string $event): array
+    {
+        return [
+            'operation_type' => 'ldap_server',
+            'command_type' => 'ldap_server',
+            'event' => $event,
+            'target_type' => 'ldap_server',
+            'target_id' => $this->record?->getKey(),
+            'target_label' => $this->record?->name ?? $this->record?->host ?? null,
+            'host' => $this->record?->host ?? null,
+            'port' => $this->record?->port ?? null,
+            'status' => $this->record?->status ?? null,
+            'total' => 1,
+            'success' => 1,
+            'failed' => 0,
+            'skipped' => 0,
+            'source' => 'filament',
+        ];
+    }
+}

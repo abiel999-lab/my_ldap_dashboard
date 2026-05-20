@@ -1,0 +1,38 @@
+app/Filament/Resources/Operations/LdapCrudOperationResource.php:40:    protected static ?string $navigationLabel = 'LDAP Transfer Center';
+app/Filament/Resources/Operations/LdapCrudOperationResource.php:42:    protected static ?string $modelLabel = 'LDAP Transfer Center Operation';
+app/Filament/Resources/Operations/LdapCrudOperationResource.php:44:    protected static ?string $pluralModelLabel = 'LDAP Transfer Center';
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php:5:use App\Filament\Resources\Operations\UniversalLdapTransferBatchResource\Pages;
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php:32:class UniversalLdapTransferBatchResource extends Resource
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php:40:    protected static ?string $navigationLabel = 'LDAP Transfer Center';
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php:44:    protected static ?string $pluralModelLabel = 'LDAP Transfer Center';
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php:236:                    ->label('New LDAP Transfer')
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php:372:                    ->url(fn (UniversalLdapTransferBatch $record): string => route('filament.admin.resources.operations.universal-ldap-transfer-batches.view', ['record' => $record])),
+app/Filament/Resources/Operations/LdapTransferBatchResource.php:5:use App\Filament\Resources\Operations\LdapTransferBatchResource\Pages;
+app/Filament/Resources/Operations/LdapTransferBatchResource.php:28:class LdapTransferBatchResource extends Resource
+app/Filament/Resources/Operations/LdapTransferBatchResource.php:34:    protected static ?string $navigationLabel = 'LDAP Transfer Center';
+app/Filament/Resources/Operations/LdapTransferBatchResource.php:38:    protected static ?string $pluralModelLabel = 'LDAP Transfer Center';
+app/Filament/Resources/Operations/LdapTransferBatchResource.php:74:                        ->label('Source Input Mode')
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/EditLdapTransferBatch.php:3:namespace App\Filament\Resources\Operations\LdapTransferBatchResource\Pages;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/EditLdapTransferBatch.php:5:use App\Filament\Resources\Operations\LdapTransferBatchResource;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/EditLdapTransferBatch.php:11:    protected static string $resource = LdapTransferBatchResource::class;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/EditLdapTransferBatch.php:21:                ->action(fn () => LdapTransferBatchResource::queueTransfer($this->record, 'preview')),
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/EditLdapTransferBatch.php:28:                ->action(fn () => LdapTransferBatchResource::queueTransfer($this->record, 'execute')),
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/CreateLdapTransferBatch.php:3:namespace App\Filament\Resources\Operations\LdapTransferBatchResource\Pages;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/CreateLdapTransferBatch.php:5:use App\Filament\Resources\Operations\LdapTransferBatchResource;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/CreateLdapTransferBatch.php:11:    protected static string $resource = LdapTransferBatchResource::class;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ViewLdapTransferBatch.php:3:namespace App\Filament\Resources\Operations\LdapTransferBatchResource\Pages;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ViewLdapTransferBatch.php:5:use App\Filament\Resources\Operations\LdapTransferBatchResource;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ViewLdapTransferBatch.php:15:    protected static string $resource = LdapTransferBatchResource::class;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ViewLdapTransferBatch.php:25:                ->action(fn () => LdapTransferBatchResource::queueTransfer($this->record, 'preview')),
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ViewLdapTransferBatch.php:32:                ->action(fn () => LdapTransferBatchResource::queueTransfer($this->record, 'execute')),
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ListLdapTransferBatches.php:3:namespace App\Filament\Resources\Operations\LdapTransferBatchResource\Pages;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ListLdapTransferBatches.php:5:use App\Filament\Resources\Operations\LdapTransferBatchResource;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ListLdapTransferBatches.php:11:    protected static string $resource = LdapTransferBatchResource::class;
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ListLdapTransferBatches.php:17:                ->label('New LDAP Transfer')
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ViewUniversalLdapTransferBatch.php:3:namespace App\Filament\Resources\Operations\UniversalLdapTransferBatchResource\Pages;
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ViewUniversalLdapTransferBatch.php:5:use App\Filament\Resources\Operations\UniversalLdapTransferBatchResource;
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ViewUniversalLdapTransferBatch.php:15:    protected static string $resource = UniversalLdapTransferBatchResource::class;
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ListUniversalLdapTransferBatches.php:3:namespace App\Filament\Resources\Operations\UniversalLdapTransferBatchResource\Pages;
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ListUniversalLdapTransferBatches.php:5:use App\Filament\Resources\Operations\UniversalLdapTransferBatchResource;
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ListUniversalLdapTransferBatches.php:10:    protected static string $resource = UniversalLdapTransferBatchResource::class;
+app/Filament/Pages/Miscellaneous/UserManual.php:43:            '7. Operations digunakan untuk menjalankan pekerjaan administratif seperti Operation Jobs, Operation Job Items, LDIF Exports, Import Template Maker, LDAP Transfer Center, Imports CRUD Operations, Import Apply Plans, Command Executions, dan Queue Jobs.',

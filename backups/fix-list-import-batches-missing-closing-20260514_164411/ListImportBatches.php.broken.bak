@@ -1,0 +1,209 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportBatchResource\Pages;
+
+use App\Filament\Resources\Operations\ImportBatchResource;
+use App\Filament\Resources\Operations\ImportTemplateResource;
+use App\Models\Operations\ImportBatch;
+use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Section;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class ListImportBatches extends ListRecords
+{
+    protected static string $resource = ImportBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('createImportModal')
+                ->label('New LDAP Import')
+                ->icon('heroicon-o-plus-circle')
+                ->color('primary')
+                ->modalHeading('Create LDAP Import')
+                ->modalSubmitActionLabel('Create Import')
+                ->form([
+                    Section::make('1. Import Identity')
+                        ->description('Buat batch import LDAP. Belum ada perubahan ke LDAP sebelum preview/apply dijalankan.')
+                        ->schema([
+                            TextInput::make('name')
+                                ->label('Import Name')
+                                ->placeholder('Auto generated if empty')
+                                ->maxLength(255),
+
+                            Select::make('ldap_connection_id')
+                                ->label('Target LDAP')
+                                ->relationship('ldapConnection', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->required(),
+
+                            Select::make('import_type')
+                                ->label('Import Mode')
+                                ->options([
+                                    'csv' => 'CSV Import',
+                                    'ldif' => 'LDIF Import',
+                                    'json' => 'JSON Import',
+                                ])
+                                ->default('csv')
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('2. Source Data')
+                        ->description('Upload file sumber import.')
+                        ->schema([
+                            FileUpload::make('file_path')
+                                ->label('Upload CSV / LDIF / JSON')
+                                ->disk('local')
+                                ->directory('imports/uploads')
+                                ->preserveFilenames()
+                                ->required()
+                                ->acceptedFileTypes([
+                                    'text/csv',
+                                    'text/plain',
+                                    'application/json',
+                                    'application/ldif',
+                                ]),
+
+                            TextInput::make('original_filename')
+                                ->label('Original Filename')
+                                ->placeholder('Optional, auto-filled if empty')
+                                ->maxLength(255),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('3. LDAP Mapping')
+                        ->description('Mapping dibuat generic supaya bisa dipakai untuk banyak LDAP.')
+                        ->schema([
+                            TextInput::make('base_dn')
+                                ->label('Target Base DN')
+                                ->placeholder('dc=petra,dc=ac,dc=id')
+                                ->required(),
+
+                            TextInput::make('identifier_attribute')
+                                ->label('Identifier / RDN Attribute')
+                                ->placeholder('uid / cn / ou')
+                                ->default('uid')
+                                ->required(),
+
+                            TextInput::make('dn_template')
+                                ->label('DN Template')
+                                ->placeholder('uid={uid},ou=people,dc=petra,dc=ac,dc=id')
+                                ->helperText('Gunakan placeholder sesuai kolom CSV/JSON, contoh {uid}, {cn}, {ou}.'),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('4. Safety')
+                        ->description('Tahap awal tetap aman: preview dulu, apply belakangan.')
+                        ->schema([
+                            Select::make('safe_mode')
+                                ->label('Safe Mode')
+                                ->options([
+                                    true => 'Enabled',
+                                    false => 'Disabled',
+                                ])
+                                ->default(true)
+                                ->required(),
+
+                            Select::make('preview_only')
+                                ->label('Preview Only')
+                                ->options([
+                                    true => 'Enabled',
+                                    false => 'Disabled',
+                                ])
+                                ->default(true)
+                                ->required(),
+
+                            Select::make('destructive')
+                                ->label('Allow Destructive Operation')
+                                ->options([
+                                    false => 'No',
+                                    true => 'Yes',
+                                ])
+                                ->default(false)
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 3]),
+                ])
+                ->action(function (array $data): void {
+                    $columns = Schema::getColumnListing('import_batches');
+
+                    $filePath = $data['file_path'] ?? null;
+
+                    if (is_array($filePath)) {
+                        $filePath = reset($filePath) ?: null;
+                    }
+
+                    $data['file_path'] = $filePath;
+                    $data['file_disk'] = $data['file_disk'] ?? 'local';
+
+                    if (blank($data['original_filename'] ?? null) && filled($filePath)) {
+                        $data['original_filename'] = basename((string) $filePath);
+                    }
+
+                    if (filled($filePath) && Storage::disk($data['file_disk'])->exists((string) $filePath)) {
+                        $absolutePath = Storage::disk($data['file_disk'])->path((string) $filePath);
+                        $data['file_size_bytes'] = filesize($absolutePath) ?: null;
+                        $data['file_hash'] = hash_file('sha256', $absolutePath) ?: null;
+                    }
+
+                    if (blank($data['name'] ?? null)) {
+                        $target = $data['ldap_connection_id'] ? ('LDAP #'.$data['ldap_connection_id']) : 'LDAP';
+                        $data['name'] = strtoupper((string) ($data['import_type'] ?? 'import')).' Import to '.$target.' - '.now()->format('Y-m-d H:i:s');
+                    }
+
+                    $data['uuid'] = (string) Str::uuid();
+                    $data['status'] = 'draft';
+                    $data['total_rows'] = 0;
+                    $data['valid_rows'] = 0;
+                    $data['invalid_rows'] = 0;
+                    $data['duplicate_rows'] = 0;
+                    $data['conflict_rows'] = 0;
+                    $data['will_create_rows'] = 0;
+                    $data['will_update_rows'] = 0;
+                    $data['will_skip_rows'] = 0;
+                    $data['will_fail_rows'] = 0;
+                    $data['created_by'] = Auth::id();
+                    $data['updated_by'] = Auth::id();
+                    $data['metadata'] = [
+                        'source' => 'ldap_import_center_modal',
+                        'created_from' => 'list_modal',
+                    ];
+
+                    $clean = [];
+
+                    foreach ($data as $key => $value) {
+                        if (! in_array($key, $columns, true)) {
+                            continue;
+                        }
+
+                        $clean[$key] = $value;
+                    }
+
+                    /** @var ImportBatch $record */
+                    $record = ImportBatch::query()->create($clean);
+
+                    Notification::make()
+                        ->title('LDAP import created')
+                        ->body('Open the import record to generate preview or apply.')
+                        ->success()
+                        ->send();
+
+                    $this->redirect(ImportBatchResource::getUrl('view', ['record' => $record]));
+                }),
+
+            Action::make('openTemplates')
+                ->label('Templates')
+                ->icon('heroicon-o-document-duplicate')
+                ->color('gray')
+                ->url(fn (): string => ImportTemplateResource::getUrl('index')),
+

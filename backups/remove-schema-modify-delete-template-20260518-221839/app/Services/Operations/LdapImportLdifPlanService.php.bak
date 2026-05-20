@@ -1,0 +1,1731 @@
+<?php
+
+namespace App\Services\Operations;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+
+class LdapImportLdifPlanService
+{
+    private array $reservedPayloadKeys = [
+        'action',
+        'operation',
+        'changetype',
+        'dn',
+        'DN',
+        'identifier',
+        'target_dn',
+        'target_identifier',
+        'plan',
+        'status',
+        'message',
+        'conflict',
+        'conflict_reason',
+        'validation_errors',
+        'warnings',
+        'row_number',
+        'add',
+        'replace',
+        'delete',
+        'newrdn',
+        'deleteoldrdn',
+        'newsuperior',
+        'new_rdn',
+        'new_superior',
+    ];
+
+    private array $updateBlockedAttributes = [
+        'objectClass',
+        'objectclass',
+        'entryUUID',
+        'entryCSN',
+        'creatorsName',
+        'createTimestamp',
+        'modifiersName',
+        'modifyTimestamp',
+        'structuralObjectClass',
+        'subschemaSubentry',
+        'hasSubordinates',
+    ];
+
+    public function buildForBatch(int $batchId): array
+    {
+        $batch = DB::table('import_batches')->where('id', $batchId)->first();
+
+        if (! $batch) {
+            throw new \RuntimeException('Import batch not found: '.$batchId);
+        }
+
+        if ((strtolower((string) ($batch->type ?? $batch->file_type ?? '')) === 'ldif' || strtolower(pathinfo((string) ($batch->file_path ?? ''), PATHINFO_EXTENSION)) === 'ldif')) {
+            return $this->buildRawLdifPreviewForBatch($batch);
+        }
+
+        $rowTable = $this->detectRowTable($batchId);
+
+        if (! $rowTable) {
+            throw new \RuntimeException('Import rows table not found for batch '.$batchId);
+        }
+
+        $rows = $this->rowsForBatch($rowTable, $batchId);
+        $columns = Schema::getColumnListing($rowTable);
+
+        $summary = [
+            'batch_id' => $batchId,
+            'row_table' => $rowTable,
+            'total_rows' => count($rows),
+            'valid_rows' => 0,
+            'invalid_rows' => 0,
+            'add_rows' => 0,
+            'modify_rows' => 0,
+            'delete_rows' => 0,
+            'schema_rows' => 0,
+            'failed_rows' => 0,
+            'preview_ldif_path' => null,
+            'preview_ldif_hash' => null,
+            'messages' => [],
+        ];
+
+        $allLdif = [];
+
+        foreach ($rows as $row) {
+            $payload = $this->payloadFromRow($row);
+            $operation = $this->detectOperation($payload, $row);
+            $dn = $this->targetDn($payload, $row);
+
+            if (strtolower((string) ($batch->file_type ?? $batch->type ?? '')) === 'ldif') {
+                $result = $this->buildRawLdifResultFromRow($batch, $row, $payload, $operation, $dn);
+            } else {
+                $result = $this->buildRowLdif($operation, $dn, $payload);
+            }
+
+            $status = $result['valid'] ? 'valid' : 'invalid';
+            $plan = $result['plan'];
+            $message = $result['message'];
+
+            if ($result['valid']) {
+                $summary['valid_rows']++;
+                $allLdif[] = $result['generated_ldif'];
+
+                if ($plan === 'create') {
+                    $summary['add_rows']++;
+                } elseif (in_array($plan, ['update', 'add_objectclass', 'schema_modify'], true)) {
+                    $summary['modify_rows']++;
+                } elseif (in_array($plan, ['delete', 'schema_delete'], true)) {
+                    $summary['delete_rows']++;
+                } elseif ($plan === 'schema_create') {
+                    $summary['schema_rows']++;
+                } elseif (in_array($plan, ['rename_dn', 'move_dn'], true)) {
+                    $summary['modify_rows']++;
+                }
+            } else {
+                $summary['invalid_rows']++;
+                $summary['failed_rows']++;
+            }
+
+            $summary['messages'][] = '[ROW '.($row->row_number ?? $row->id ?? '?').'] '.$message;
+
+            $this->updateRow($rowTable, $columns, $row, [
+                'status' => $status,
+                'plan' => $plan,
+                'changetype' => $result['changetype'],
+                'target_dn' => $result['dn'],
+                'target_identifier' => $this->identifierFromPayloadOrDn($payload, $result['dn']),
+                'message' => $message,
+                'conflict_reason' => $result['valid'] ? null : $message,
+                'validation_errors' => $result['valid'] ? [] : [$message],
+                'mapped_payload' => $payload,
+                'generated_ldif' => $result['generated_ldif'],
+                'reverse_ldif' => $result['reverse_ldif'],
+                'ldif_hash' => $result['generated_ldif'] !== '' ? hash('sha256', $result['generated_ldif']) : null,
+            ]);
+        }
+
+        $previewLdif = implode(PHP_EOL.PHP_EOL, array_filter($allLdif)).PHP_EOL;
+
+        if (trim($previewLdif) !== '') {
+            $path = 'imports/preview-ldif/import-batch-'.$batchId.'.ldif';
+            Storage::disk('local')->put($path, $previewLdif);
+
+            $summary['preview_ldif_path'] = $path;
+            $summary['preview_ldif_hash'] = hash('sha256', $previewLdif);
+        }
+
+        $this->updateBatch($batchId, $summary);
+
+        return $summary;
+    }
+
+    private function buildRawLdifResultFromRow(object $batch, object $row, array $payload, string $operation, string $dn): array
+    {
+        $raw = '';
+
+        $filePath = (string) ($batch->file_path ?? '');
+
+        if ($filePath !== '') {
+            foreach ([
+                $filePath,
+                'private/'.$filePath,
+                storage_path('app/'.$filePath),
+                storage_path('app/private/'.$filePath),
+            ] as $candidate) {
+                if (is_string($candidate) && $candidate !== '' && file_exists($candidate)) {
+                    $raw = (string) file_get_contents($candidate);
+                    break;
+                }
+
+                if (is_string($candidate) && $candidate !== '' && \Illuminate\Support\Facades\Storage::disk('local')->exists($candidate)) {
+                    $raw = \Illuminate\Support\Facades\Storage::disk('local')->get($candidate);
+                    break;
+                }
+            }
+        }
+
+        if (trim($raw) === '') {
+            $raw = (string) (
+                $row->raw_payload
+                ?? $row->raw_payload_json
+                ?? $row->mapped_payload
+                ?? $row->mapped_payload_json
+                ?? ''
+            );
+        }
+
+        $decoded = json_decode($raw, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $raw = (string) (
+                $decoded['ldif']
+                ?? $decoded['raw_ldif']
+                ?? $decoded['content']
+                ?? $decoded['data']
+                ?? ''
+            );
+
+            if ($raw === '' && isset($decoded['lines']) && is_array($decoded['lines'])) {
+                $raw = implode(PHP_EOL, $decoded['lines']);
+            }
+        }
+
+        $raw = trim(str_replace(["\r\n", "\r"], "\n", $raw));
+
+        if ($raw === '') {
+            return $this->invalidResult('ldif', 'unknown', $dn, 'Raw LDIF content is empty.');
+        }
+
+        $parsed = $this->parseRawLdifMeta($raw);
+        $parsedDn = $parsed['dn'] ?: $dn;
+        $changeType = $parsed['changetype'] ?: 'add';
+
+        $plan = match ($changeType) {
+            'delete' => 'delete',
+            'modify' => $this->rawLdifModifyPlan($raw),
+            'modrdn', 'moddn' => str_contains(strtolower($raw), 'newsuperior:') ? 'move_dn' : 'rename_dn',
+            'add' => 'create',
+            default => $operation ?: $changeType,
+        };
+
+        return [
+            'valid' => true,
+            'plan' => $plan,
+            'changetype' => $changeType,
+            'dn' => $parsedDn,
+            'message' => 'Raw LDIF accepted without regeneration.',
+            'generated_ldif' => $raw,
+            'reverse_ldif' => implode(PHP_EOL, [
+                '# Reverse LDIF for raw LDIF import requires snapshot.',
+                '# Original plan: '.$plan,
+                '# DN: '.$parsedDn,
+            ]),
+        ];
+    }
+
+    private function parseRawLdifMeta(string $ldif): array
+    {
+        $dn = '';
+        $changetype = 'add';
+
+        foreach (preg_split('/\n/', $ldif) as $line) {
+            $line = trim((string) $line);
+
+            if ($line === '' || str_starts_with($line, '#') || ! str_contains($line, ':')) {
+                continue;
+            }
+
+            [$key, $value] = explode(':', $line, 2);
+            $key = strtolower(trim($key));
+            $value = ltrim($value);
+
+            if ($key === 'dn') {
+                $dn = $value;
+            }
+
+            if ($key === 'changetype') {
+                $changetype = strtolower($value);
+            }
+        }
+
+        return [
+            'dn' => $dn,
+            'changetype' => $changetype,
+        ];
+    }
+
+    private function rawLdifModifyPlan(string $ldif): string
+    {
+        $lower = strtolower($ldif);
+
+        if (str_contains($lower, 'add: objectclass')) {
+            return 'add_objectclass';
+        }
+
+        if (
+            str_contains($lower, 'olcattributetypes') ||
+            str_contains($lower, 'olcobjectclasses') ||
+            str_contains($lower, 'cn=schema')
+        ) {
+            return 'schema_modify';
+        }
+
+        return 'update';
+    }
+
+    private function buildRawLdifPreviewForBatch(object $batch): array
+    {
+        $filePath = trim((string) ($batch->file_path ?? ''));
+
+        $raw = '';
+
+        foreach ([
+            storage_path('app/'.$filePath),
+            storage_path('app/private/'.$filePath),
+            storage_path('app/public/'.$filePath),
+            base_path($filePath),
+        ] as $candidate) {
+            if ($filePath !== '' && file_exists($candidate)) {
+                $raw = (string) file_get_contents($candidate);
+                break;
+            }
+        }
+
+        if (trim($raw) === '') {
+            throw new \RuntimeException('Uploaded LDIF file not found or empty: '.$filePath);
+        }
+
+        $raw = trim(str_replace(["\r\n", "\r"], "\n", $raw))."\n";
+
+        $blocks = preg_split("/\n\s*\n/", trim($raw)) ?: [];
+        $blocks = array_values(array_filter(array_map('trim', $blocks)));
+
+        $rowTable = $this->detectRowTable((int) $batch->id);
+
+        if (! $rowTable) {
+            throw new \RuntimeException('Import rows table not found for batch '.$batch->id);
+        }
+
+        $columns = Schema::getColumnListing($rowTable);
+
+        $rows = $this->rowsForBatch($rowTable, (int) $batch->id);
+
+        if (count($rows) === 0) {
+            throw new \RuntimeException('No import rows found for LDIF batch '.$batch->id);
+        }
+
+        $summary = [
+            'batch_id' => (int) $batch->id,
+            'row_table' => $rowTable,
+            'total_rows' => count($blocks),
+            'valid_rows' => count($blocks),
+            'invalid_rows' => 0,
+            'add_rows' => 0,
+            'modify_rows' => 0,
+            'delete_rows' => 0,
+            'schema_rows' => 0,
+            'failed_rows' => 0,
+            'preview_ldif_path' => null,
+            'preview_ldif_hash' => null,
+            'messages' => [],
+        ];
+
+        foreach ($blocks as $i => $block) {
+            $dn = '';
+            $changetype = 'add';
+
+            foreach (preg_split('/\n/', $block) as $line) {
+                $line = trim((string) $line);
+
+                if ($line === '' || str_starts_with($line, '#') || ! str_contains($line, ':')) {
+                    continue;
+                }
+
+                [$key, $value] = explode(':', $line, 2);
+                $key = strtolower(trim($key));
+                $value = ltrim($value);
+
+                if ($key === 'dn' && $dn === '') {
+                    $dn = $value;
+                }
+
+                if ($key === 'changetype') {
+                    $changetype = strtolower($value);
+                }
+            }
+
+            $plan = match ($changetype) {
+                'delete' => 'delete',
+                'modify' => str_contains(strtolower($block), 'add: objectclass') ? 'add_objectclass' : 'update',
+                'modrdn', 'moddn' => str_contains(strtolower($block), 'newsuperior:') ? 'move_dn' : 'rename_dn',
+                'add' => 'create',
+                default => $changetype,
+            };
+
+            if ($plan === 'create') {
+                $summary['add_rows']++;
+            } elseif (in_array($plan, ['update', 'add_objectclass', 'rename_dn', 'move_dn'], true)) {
+                $summary['modify_rows']++;
+            } elseif ($plan === 'delete') {
+                $summary['delete_rows']++;
+            } elseif (str_starts_with($plan, 'schema')) {
+                $summary['schema_rows']++;
+            }
+
+            $row = $rows[$i] ?? $rows[0];
+
+            $this->updateRow($rowTable, $columns, $row, [
+                'status' => 'valid',
+                'plan' => $plan,
+                'changetype' => $changetype,
+                'target_dn' => $dn,
+                'target_identifier' => $this->identifierFromPayloadOrDn([], $dn),
+                'message' => 'Raw LDIF accepted without regeneration.',
+                'conflict_reason' => null,
+                'validation_errors' => [],
+                'mapped_payload' => ['raw_ldif' => true],
+                'generated_ldif' => $block."\n",
+                'reverse_ldif' => '# Reverse LDIF for raw LDIF requires snapshot.'."\n",
+                'ldif_hash' => hash('sha256', $block."\n"),
+            ]);
+
+            $summary['messages'][] = '[ROW '.($i + 1).'] Raw LDIF accepted without regeneration.';
+        }
+
+        $path = 'imports/preview-ldif/import-batch-'.$batch->id.'.ldif';
+        Storage::disk('local')->put($path, $raw);
+
+        $summary['preview_ldif_path'] = $path;
+        $summary['preview_ldif_hash'] = hash('sha256', $raw);
+
+        $this->updateBatch((int) $batch->id, $summary);
+
+        return $summary;
+    }
+
+    public function buildRowLdif(string $operation, string $dn, array $payload): array
+    {
+        $operation = strtolower(trim($operation));
+        $payload = $this->normalizeSchemaPayload($operation, $dn, $payload);
+
+        return match ($operation) {
+            'delete' => $this->buildDeleteLdif($dn),
+            'update', 'modify' => $this->buildModifyLdif($dn, $payload),
+            'rename_dn', 'rename', 'modrdn' => $this->buildModRdnLdif($dn, $payload, true),
+            'move_dn', 'move', 'rename_or_move_dn' => $this->buildModRdnLdif($dn, $payload, true),
+            'add_objectclass', 'add_object_class' => $this->buildAddObjectClassLdif($dn, $payload),
+            'schema_create', 'schema_add' => $this->buildSchemaCreateLdif('cn=schema,cn=config', $payload),
+            'schema_modify', 'schema_update' => $this->buildSchemaModifyLdif('cn=schema,cn=config', $payload),
+            'schema_delete' => $this->buildSchemaDeleteLdif('cn=schema,cn=config', $payload),
+            default => $this->buildAddLdif($dn, $payload),
+        };
+    }
+
+    private function invalidResult(string $plan, string $changetype, string $dn, string $message): array
+    {
+        return [
+            'valid' => false,
+            'plan' => $plan,
+            'changetype' => $changetype,
+            'dn' => $dn,
+            'message' => $message,
+            'generated_ldif' => '',
+            'reverse_ldif' => '',
+        ];
+    }
+
+    private function normalizeSchemaPayload(string $operation, string $dn, array $payload): array
+    {
+        if (! str_starts_with($operation, 'schema_')) {
+            return $payload;
+        }
+
+        $schemaType = strtolower(trim((string) (
+            $payload['schema_type']
+            ?? $payload['type']
+            ?? $payload['schemaType']
+            ?? ''
+        )));
+
+        if ($schemaType === 'attributetype' || $schemaType === 'attribute_type' || $schemaType === 'attribute') {
+            $schemaType = 'attributeType';
+        } elseif ($schemaType === 'objectclass' || $schemaType === 'object_class') {
+            $schemaType = 'objectClass';
+        }
+
+        if ($schemaType !== '') {
+            $payload['type'] = $schemaType;
+            $payload['schema_type'] = $schemaType;
+        }
+
+        $name = trim((string) (
+            $payload['name']
+            ?? $payload['schema_name']
+            ?? $payload['schemaName']
+            ?? ''
+        ));
+
+        if ($name !== '') {
+            $payload['name'] = $name;
+            $payload['schema_name'] = $name;
+            $payload['schemaName'] = $name;
+        }
+
+        if (! isset($payload['dn']) && $dn !== '') {
+            $payload['dn'] = $dn;
+        }
+
+        if (! isset($payload['attribute']) && $schemaType !== '') {
+            $payload['attribute'] = $schemaType === 'objectClass'
+                ? 'olcObjectClasses'
+                : 'olcAttributeTypes';
+        }
+
+        if ($operation === 'schema_create' || $operation === 'schema_add') {
+            $oid = trim((string) ($payload['oid'] ?? ''));
+            $description = trim((string) ($payload['description'] ?? 'Generated schema definition from import'));
+            $syntax = trim((string) ($payload['syntax'] ?? '1.3.6.1.4.1.1466.115.121.1.15'));
+            $equality = trim((string) ($payload['equality'] ?? 'caseIgnoreMatch'));
+            $singleValue = filter_var($payload['single_value'] ?? $payload['singleValue'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            if ($schemaType === 'attributeType' && $name !== '' && $oid !== '' && ! isset($payload['olcAttributeTypes'])) {
+                $definition = "( {$oid} NAME '{$name}' DESC '{$description}'";
+
+                if ($equality !== '') {
+                    $definition .= " EQUALITY {$equality}";
+                }
+
+                $definition .= " SYNTAX {$syntax}";
+
+                if ($singleValue) {
+                    $definition .= " SINGLE-VALUE";
+                }
+
+                $definition .= " )";
+
+                $payload['olcAttributeTypes'] = $definition;
+            }
+
+            if ($schemaType === 'objectClass' && $name !== '' && $oid !== '' && ! isset($payload['olcObjectClasses'])) {
+                $sup = trim((string) ($payload['sup'] ?? 'top'));
+                $kind = strtoupper(trim((string) ($payload['kind'] ?? 'AUXILIARY')));
+                $must = trim((string) ($payload['must'] ?? ''));
+                $may = trim((string) ($payload['may'] ?? 'description'));
+
+                $definition = "( {$oid} NAME '{$name}' DESC '{$description}' SUP {$sup} {$kind}";
+
+                if ($must !== '') {
+                    $definition .= " MUST ( {$must} )";
+                }
+
+                if ($may !== '') {
+                    $definition .= " MAY ( {$may} )";
+                }
+
+                $definition .= " )";
+
+                $payload['olcObjectClasses'] = $definition;
+            }
+        }
+
+        if ($operation === 'schema_modify' || $operation === 'schema_update') {
+            $payload['operation'] = $payload['operation'] ?? 'replace_description';
+
+            if (! isset($payload['description']) && isset($payload['new_description'])) {
+                $payload['description'] = $payload['new_description'];
+            }
+        }
+
+        if ($operation === 'schema_delete') {
+            if (! isset($payload['schema_name']) && $name !== '') {
+                $payload['schema_name'] = $name;
+            }
+
+            if (! isset($payload['name']) && $name !== '') {
+                $payload['name'] = $name;
+            }
+        }
+
+        return $payload;
+    }
+
+    private function buildAddLdif(string $dn, array $payload): array
+    {
+        if ($dn === '') {
+            return $this->invalidResult('create', 'add', '', 'Create requires dn.');
+        }
+
+        $entry = $this->entryAttributesForAdd($payload);
+
+        if (! isset($entry['objectClass']) && ! isset($entry['objectclass'])) {
+            return $this->invalidResult('create', 'add', $dn, 'Create requires objectClass.');
+        }
+
+        $ldif = [];
+        $ldif[] = 'dn: '.$this->escapeLdifValue($dn);
+        $ldif[] = 'changetype: add';
+
+        foreach ($entry as $attribute => $value) {
+            foreach ($this->valueList($value, $attribute) as $item) {
+                $ldif[] = $attribute.': '.$this->escapeLdifValue($item);
+            }
+        }
+
+        $generated = implode(PHP_EOL, $ldif);
+
+        $reverse = implode(PHP_EOL, [
+            '# Reverse LDIF generated from create operation',
+            'dn: '.$this->escapeLdifValue($dn),
+            'changetype: delete',
+        ]);
+
+        return [
+            'valid' => true,
+            'plan' => 'create',
+            'changetype' => 'add',
+            'dn' => $dn,
+            'message' => 'LDIF add generated.',
+            'generated_ldif' => $generated,
+            'reverse_ldif' => $reverse,
+        ];
+    }
+
+    private function buildModifyLdif(string $dn, array $payload): array
+    {
+        if ($dn === '') {
+            return $this->invalidResult('update', 'modify', '', 'Update requires dn.');
+        }
+
+        $entry = $this->entryAttributesForModify($payload);
+
+        if ($entry === []) {
+            return $this->invalidResult('update', 'modify', $dn, 'Update requires at least one modifiable attribute.');
+        }
+
+        $ldif = [];
+        $ldif[] = 'dn: '.$this->escapeLdifValue($dn);
+        $ldif[] = 'changetype: modify';
+
+        foreach ($entry as $attribute => $value) {
+            $ldif[] = 'replace: '.$attribute;
+
+            foreach ($this->valueList($value, $attribute) as $item) {
+                $ldif[] = $attribute.': '.$this->escapeLdifValue($item);
+            }
+
+            $ldif[] = '-';
+        }
+
+        $generated = implode(PHP_EOL, $ldif);
+
+        $reverse = implode(PHP_EOL, [
+            '# Reverse LDIF for update requires old snapshot.',
+            '# Snapshot engine will be added in rollback phase.',
+            'dn: '.$this->escapeLdifValue($dn),
+            '# changetype: modify',
+        ]);
+
+        return [
+            'valid' => true,
+            'plan' => 'update',
+            'changetype' => 'modify',
+            'dn' => $dn,
+            'message' => 'LDIF modify generated.',
+            'generated_ldif' => $generated,
+            'reverse_ldif' => $reverse,
+        ];
+    }
+
+    private function buildDeleteLdif(string $dn): array
+    {
+        if ($dn === '') {
+            return $this->invalidResult('delete', 'delete', '', 'Delete requires dn.');
+        }
+
+        $generated = implode(PHP_EOL, [
+            'dn: '.$this->escapeLdifValue($dn),
+            'changetype: delete',
+        ]);
+
+        $reverse = implode(PHP_EOL, [
+            '# Reverse LDIF for delete requires full old entry snapshot.',
+            '# Snapshot engine will be added in rollback phase.',
+            'dn: '.$this->escapeLdifValue($dn),
+            '# changetype: add',
+        ]);
+
+        return [
+            'valid' => true,
+            'plan' => 'delete',
+            'changetype' => 'delete',
+            'dn' => $dn,
+            'message' => 'LDIF delete generated.',
+            'generated_ldif' => $generated,
+            'reverse_ldif' => $reverse,
+        ];
+    }
+
+
+    private function getSchemaDefinitionFromOpenldap(string $schemaType, string $name): ?string
+    {
+        $attr = $schemaType === 'objectClass' ? 'olcObjectClasses' : 'olcAttributeTypes';
+
+        $cmd = "microk8s kubectl -n petra-iam exec deploy/openldap -- bash -lc "
+            . escapeshellarg("ldapsearch -Y EXTERNAL -H ldapi:/// -LLL -o ldif-wrap=no -b cn=schema,cn=config '$attr=*".$name."*' $attr");
+
+        exec($cmd.' 2>/dev/null', $out, $code);
+
+        if ($code !== 0) {
+            return null;
+        }
+
+        $text = implode("\n", $out);
+
+        foreach (explode("\n", $text) as $line) {
+            if (str_starts_with($line, $attr.':') && str_contains($line, "NAME '".$name."'")) {
+                return trim(substr($line, strlen($attr) + 1));
+            }
+        }
+
+        return null;
+    }
+
+
+    private function stripSchemaValuePrefix(string $definition): string
+    {
+        return trim(preg_replace('/^\{\d+\}/', '', trim($definition)));
+    }
+
+
+    private function replaceSchemaDescription(string $definition, string $description): string
+    {
+        if (preg_match("/DESC '[^']*'/", $definition)) {
+            return preg_replace("/DESC '[^']*'/", "DESC '".$description."'", $definition);
+        }
+
+        return preg_replace('/\s*\)$/', " DESC '".$description."' )", $definition);
+    }
+
+
+    private function buildSchemaCreateLdif(string $dn, array $payload): array
+    {
+        $schemaType = strtolower((string) (
+            $payload['schema_type']
+            ?? $payload['type']
+            ?? $payload['schemaType']
+            ?? ''
+        ));
+
+        $name = trim((string) ($payload['name'] ?? $payload['schema_name'] ?? ''));
+        $oid = trim((string) ($payload['oid'] ?? ''));
+        $description = trim((string) ($payload['description'] ?? 'Generated schema attribute'));
+        $syntax = trim((string) ($payload['syntax'] ?? '1.3.6.1.4.1.1466.115.121.1.15'));
+        $equality = trim((string) ($payload['equality'] ?? 'caseIgnoreMatch'));
+        $singleValue = filter_var($payload['single_value'] ?? $payload['singleValue'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if (in_array($schemaType, ['attributetype', 'attribute_type', 'attribute'], true)) {
+            $schemaType = 'attributeType';
+        }
+
+        if (in_array($schemaType, ['objectclass', 'object_class'], true)) {
+            $schemaType = 'objectClass';
+        }
+
+        if (! in_array($schemaType, ['attributeType', 'objectClass'], true)) {
+            return $this->invalidResult('schema_create', 'modify', 'cn=schema,cn=config', 'Schema create requires schema_type attributeType or objectClass.');
+        }
+
+        if ($name === '' || $oid === '') {
+            return $this->invalidResult('schema_create', 'modify', 'cn=schema,cn=config', 'Schema create requires name and oid.');
+        }
+
+        if ($schemaType === 'attributeType') {
+            $definition = "( {$oid} NAME '{$name}' DESC '{$description}'";
+
+            if ($equality !== '') {
+                $definition .= " EQUALITY {$equality}";
+            }
+
+            $definition .= " SYNTAX {$syntax}";
+
+            if ($singleValue) {
+                $definition .= " SINGLE-VALUE";
+            }
+
+            $definition .= " )";
+
+            $ldif = implode(PHP_EOL, [
+                'dn: cn=schema,cn=config',
+                'changetype: modify',
+                'add: olcAttributeTypes',
+                'olcAttributeTypes: '.$definition,
+                '-',
+            ]);
+        } else {
+            $sup = trim((string) ($payload['sup'] ?? 'top'));
+            $kind = strtoupper(trim((string) ($payload['kind'] ?? 'AUXILIARY')));
+            $may = trim((string) ($payload['may'] ?? 'description'));
+            $must = trim((string) ($payload['must'] ?? ''));
+
+            $definition = "( {$oid} NAME '{$name}' DESC '{$description}' SUP {$sup} {$kind}";
+
+            if ($must !== '') {
+                $definition .= " MUST ( {$must} )";
+            }
+
+            if ($may !== '') {
+                $definition .= " MAY ( {$may} )";
+            }
+
+            $definition .= " )";
+
+            $ldif = implode(PHP_EOL, [
+                'dn: cn=schema,cn=config',
+                'changetype: modify',
+                'add: olcObjectClasses',
+                'olcObjectClasses: '.$definition,
+                '-',
+            ]);
+        }
+
+        return [
+            'valid' => true,
+            'plan' => 'schema_create',
+            'changetype' => 'modify',
+            'dn' => 'cn=schema,cn=config',
+            'message' => 'JSON schema create converted to OpenLDAP cn=config LDIF.',
+            'generated_ldif' => $ldif,
+            'reverse_ldif' => '# Schema reverse requires exact existing schema value snapshot.'.PHP_EOL,
+        ];
+    }
+
+    private function buildOlcAttributeType(array $payload): ?string
+    {
+        $oid = trim((string) ($payload['oid'] ?? ''));
+        $name = trim((string) ($payload['name'] ?? ''));
+
+        if ($oid === '' || $name === '') {
+            return null;
+        }
+
+        $desc = trim((string) ($payload['description'] ?? $payload['desc'] ?? ''));
+        $syntax = trim((string) ($payload['syntax'] ?? '1.3.6.1.4.1.1466.115.121.1.15'));
+        $equality = trim((string) ($payload['equality'] ?? 'caseIgnoreMatch'));
+        $singleValue = (bool) ($payload['singleValue'] ?? $payload['single_value'] ?? false);
+
+        $line = "( {$oid} NAME '{$name}'";
+
+        if ($desc !== '') {
+            $line .= " DESC '".$this->escapeSchemaQuote($desc)."'";
+        }
+
+        if ($equality !== '') {
+            $line .= " EQUALITY {$equality}";
+        }
+
+        if ($syntax !== '') {
+            $line .= " SYNTAX {$syntax}";
+        }
+
+        if ($singleValue) {
+            $line .= " SINGLE-VALUE";
+        }
+
+        $line .= ' )';
+
+        return $line;
+    }
+
+    private function buildOlcObjectClass(array $payload): ?string
+    {
+        $oid = trim((string) ($payload['oid'] ?? ''));
+        $name = trim((string) ($payload['name'] ?? ''));
+
+        if ($oid === '' || $name === '') {
+            return null;
+        }
+
+        $desc = trim((string) ($payload['description'] ?? $payload['desc'] ?? ''));
+        $kind = strtoupper(trim((string) ($payload['kind'] ?? $payload['objectClassKind'] ?? 'AUXILIARY')));
+        $kind = in_array($kind, ['STRUCTURAL', 'AUXILIARY', 'ABSTRACT'], true) ? $kind : 'AUXILIARY';
+
+        $must = $this->schemaAttributeList($payload['must'] ?? []);
+        $may = $this->schemaAttributeList($payload['may'] ?? []);
+
+        $line = "( {$oid} NAME '{$name}'";
+
+        if ($desc !== '') {
+            $line .= " DESC '".$this->escapeSchemaQuote($desc)."'";
+        }
+
+        $line .= " {$kind}";
+
+        if ($must !== '') {
+            $line .= " MUST ( {$must} )";
+        }
+
+        if ($may !== '') {
+            $line .= " MAY ( {$may} )";
+        }
+
+        $line .= ' )';
+
+        return $line;
+    }
+
+    private function schemaAttributeList(mixed $value): string
+    {
+        if (is_string($value)) {
+            $items = str_contains($value, ';')
+                ? explode(';', $value)
+                : (str_contains($value, ',') ? explode(',', $value) : [$value]);
+        } elseif (is_array($value)) {
+            $items = $value;
+        } else {
+            $items = [];
+        }
+
+        $items = array_values(array_filter(array_map(
+            fn ($item) => trim((string) $item),
+            $items
+        )));
+
+        return implode(' $ ', $items);
+    }
+
+
+    private function buildModRdnLdif(string $dn, array $payload, bool $allowMove): array
+    {
+        $dn = $this->normalizeDn($dn);
+
+        if ($dn === '') {
+            return $this->invalidResult('rename_dn', 'modrdn', '', 'Rename/move requires dn.');
+        }
+
+        $newRdn = trim((string) (
+            $payload['newrdn']
+            ?? $payload['new_rdn']
+            ?? $payload['newRdn']
+            ?? ''
+        ));
+
+        $newSuperior = trim((string) (
+            $payload['newsuperior']
+            ?? $payload['new_superior']
+            ?? $payload['newSuperior']
+            ?? ''
+        ));
+
+        $newUid = trim((string) ($payload['new_uid'] ?? $payload['newUid'] ?? ''));
+        $newCn = trim((string) ($payload['new_cn'] ?? $payload['newCn'] ?? ''));
+        $newOu = trim((string) ($payload['new_ou'] ?? $payload['newOu'] ?? ''));
+
+        if ($newRdn === '') {
+            if ($newUid !== '') {
+                $newRdn = 'uid='.$newUid;
+            } elseif ($newCn !== '') {
+                $newRdn = 'cn='.$newCn;
+            } elseif ($newOu !== '') {
+                $newRdn = 'ou='.$newOu;
+            }
+        }
+
+        if ($newRdn === '') {
+            return $this->invalidResult('rename_dn', 'modrdn', $dn, 'Rename/move requires newrdn, new_uid, new_cn, or new_ou.');
+        }
+
+        if ($newSuperior !== '') {
+            $newSuperior = $this->normalizeDn($newSuperior);
+        }
+
+        $deleteOldRdn = (string) (
+            $payload['deleteoldrdn']
+            ?? $payload['delete_old_rdn']
+            ?? $payload['deleteOldRdn']
+            ?? '1'
+        );
+
+        $deleteOldRdn = in_array(strtolower($deleteOldRdn), ['0', 'false', 'no'], true) ? '0' : '1';
+
+        $ldif = [];
+        $ldif[] = 'dn: '.$this->escapeLdifValue($dn);
+        $ldif[] = 'changetype: modrdn';
+        $ldif[] = 'newrdn: '.$this->escapeLdifValue($newRdn);
+        $ldif[] = 'deleteoldrdn: '.$deleteOldRdn;
+
+        if ($allowMove && $newSuperior !== '') {
+            $ldif[] = 'newsuperior: '.$this->escapeLdifValue($newSuperior);
+        }
+
+        $generated = implode(PHP_EOL, $ldif);
+
+        $reverse = implode(PHP_EOL, [
+            '# Reverse LDIF for rename/move requires old DN snapshot.',
+            '# Snapshot engine will be added in rollback phase.',
+            'dn: '.$this->escapeLdifValue($dn),
+            '# changetype: modrdn',
+        ]);
+
+        return [
+            'valid' => true,
+            'plan' => $allowMove && $newSuperior !== '' ? 'move_dn' : 'rename_dn',
+            'changetype' => 'modrdn',
+            'dn' => $dn,
+            'message' => ($allowMove && $newSuperior !== '') ? 'LDIF move/rename generated.' : 'LDIF rename generated.',
+            'generated_ldif' => $generated,
+            'reverse_ldif' => $reverse,
+        ];
+    }
+
+    private function buildAddObjectClassLdif(string $dn, array $payload): array
+    {
+        $dn = $this->normalizeDn($dn);
+
+        if ($dn === '') {
+            return $this->invalidResult('add_objectclass', 'modify', '', 'Add objectClass requires dn.');
+        }
+
+        $objectClasses = $payload['objectClass']
+            ?? $payload['objectclass']
+            ?? $payload['add_objectClass']
+            ?? $payload['addObjectClass']
+            ?? '';
+
+        $objectClasses = $this->valueList($objectClasses, 'objectClass');
+
+        if ($objectClasses === []) {
+            return $this->invalidResult('add_objectclass', 'modify', $dn, 'Add objectClass requires objectClass.');
+        }
+
+        $attributes = $this->entryAttributesForModify($payload);
+        unset($attributes['objectClass'], $attributes['objectclass']);
+
+        $ldif = [];
+        $ldif[] = 'dn: '.$this->escapeLdifValue($dn);
+        $ldif[] = 'changetype: modify';
+        $ldif[] = 'add: objectClass';
+
+        foreach ($objectClasses as $objectClass) {
+            $ldif[] = 'objectClass: '.$this->escapeLdifValue($objectClass);
+        }
+
+        $ldif[] = '-';
+
+        foreach ($attributes as $attribute => $value) {
+            $ldif[] = 'add: '.$attribute;
+
+            foreach ($this->valueList($value, $attribute) as $item) {
+                $ldif[] = $attribute.': '.$this->escapeLdifValue($item);
+            }
+
+            $ldif[] = '-';
+        }
+
+        $generated = implode(PHP_EOL, $ldif);
+
+        $reverse = implode(PHP_EOL, [
+            '# Reverse LDIF for add_objectclass requires schema-aware snapshot.',
+            '# Snapshot engine will be added in rollback phase.',
+            'dn: '.$this->escapeLdifValue($dn),
+            '# changetype: modify',
+        ]);
+
+        return [
+            'valid' => true,
+            'plan' => 'add_objectclass',
+            'changetype' => 'modify',
+            'dn' => $dn,
+            'message' => 'LDIF add objectClass generated. Schema MUST validation should run before apply.',
+            'generated_ldif' => $generated,
+            'reverse_ldif' => $reverse,
+        ];
+    }
+
+    private function buildSchemaModifyLdif(string $dn, array $payload): array
+    {
+        $schemaType = strtolower((string) ($payload['schema_type'] ?? $payload['type'] ?? ''));
+        $name = trim((string) ($payload['name'] ?? $payload['schema_name'] ?? ''));
+        $description = trim((string) ($payload['description'] ?? ''));
+
+        if (in_array($schemaType, ['attributetype', 'attribute_type', 'attribute'], true)) {
+            $schemaType = 'attributeType';
+        }
+
+        if (in_array($schemaType, ['objectclass', 'object_class'], true)) {
+            $schemaType = 'objectClass';
+        }
+
+        if (in_array($schemaType, ['objectidentifier', 'object_identifier', 'oid'], true)) {
+            $schemaType = 'objectIdentifier';
+        }
+
+        if ($name === '' || ! in_array($schemaType, ['attributeType', 'objectClass', 'objectIdentifier'], true)) {
+            return $this->invalidResult('schema_modify', 'modify', 'cn=schema,cn=config', 'Schema modify requires schema_type and name.');
+        }
+
+        $attr = match ($schemaType) {
+            'objectClass' => 'olcObjectClasses',
+            'objectIdentifier' => 'olcObjectIdentifier',
+            default => 'olcAttributeTypes',
+        };
+
+        $old = $payload['old_definition'] ?? $payload['definition'] ?? null;
+        $new = $payload['new_definition'] ?? null;
+
+        if ($schemaType !== 'objectIdentifier' && (! is_string($old) || trim($old) === '')) {
+            $old = $this->getSchemaDefinitionFromOpenldap($schemaType, $name);
+        }
+
+        if (! is_string($old) || trim($old) === '') {
+            return $this->invalidResult('schema_modify', 'modify', 'cn=schema,cn=config', 'Existing schema definition not found: '.$name);
+        }
+
+        $old = $this->stripSchemaValuePrefix($old);
+
+        if (! is_string($new) || trim($new) === '') {
+            if ($schemaType === 'objectIdentifier') {
+                return $this->invalidResult('schema_modify', 'modify', 'cn=schema,cn=config', 'Schema objectIdentifier modify requires new_definition.');
+            }
+
+            if ($description === '') {
+                return $this->invalidResult('schema_modify', 'modify', 'cn=schema,cn=config', 'Schema modify requires description or new_definition.');
+            }
+
+            $new = $this->stripSchemaValuePrefix($this->replaceSchemaDescription($old, $description));
+        }
+
+        if ($schemaType !== 'objectIdentifier') {
+            $new = $this->stripSchemaValuePrefix($new);
+        }
+
+        $ldif = implode(PHP_EOL, [
+            'dn: cn=schema,cn=config',
+            'changetype: modify',
+            'delete: '.$attr,
+            $attr.': '.$old,
+            '-',
+            '',
+            'dn: cn=schema,cn=config',
+            'changetype: modify',
+            'add: '.$attr,
+            $attr.': '.$new,
+            '-',
+        ]);
+
+        return [
+            'valid' => true,
+            'plan' => 'schema_modify',
+            'changetype' => 'modify',
+            'dn' => 'cn=schema,cn=config',
+            'message' => 'JSON schema modify converted using cn=config LDIF.',
+            'generated_ldif' => $ldif,
+            'reverse_ldif' => implode(PHP_EOL, [
+                'dn: cn=schema,cn=config',
+                'changetype: modify',
+                'delete: '.$attr,
+                $attr.': '.$new,
+                '-',
+                '',
+                'dn: cn=schema,cn=config',
+                'changetype: modify',
+                'add: '.$attr,
+                $attr.': '.$old,
+                '-',
+            ]),
+        ];
+    }
+
+    private function buildSchemaDeleteLdif(string $dn, array $payload): array
+    {
+        $schemaType = strtolower((string) ($payload['schema_type'] ?? $payload['type'] ?? ''));
+        $name = trim((string) ($payload['name'] ?? $payload['schema_name'] ?? ''));
+
+        if (in_array($schemaType, ['attributetype', 'attribute_type', 'attribute'], true)) {
+            $schemaType = 'attributeType';
+        }
+
+        if (in_array($schemaType, ['objectclass', 'object_class'], true)) {
+            $schemaType = 'objectClass';
+        }
+
+        if (in_array($schemaType, ['objectidentifier', 'object_identifier', 'oid'], true)) {
+            $schemaType = 'objectIdentifier';
+        }
+
+        if ($name === '' || ! in_array($schemaType, ['attributeType', 'objectClass', 'objectIdentifier'], true)) {
+            return $this->invalidResult('schema_delete', 'modify', 'cn=schema,cn=config', 'Schema delete requires schema_type and name.');
+        }
+
+        $attr = match ($schemaType) {
+            'objectClass' => 'olcObjectClasses',
+            'objectIdentifier' => 'olcObjectIdentifier',
+            default => 'olcAttributeTypes',
+        };
+
+        $definition = $payload['definition'] ?? $payload['old_definition'] ?? null;
+
+        if ($schemaType !== 'objectIdentifier' && (! is_string($definition) || trim($definition) === '')) {
+            $definition = $this->getSchemaDefinitionFromOpenldap($schemaType, $name);
+        }
+
+        if (! is_string($definition) || trim($definition) === '') {
+            return $this->invalidResult('schema_delete', 'modify', 'cn=schema,cn=config', 'Existing schema definition not found: '.$name);
+        }
+
+        $definition = $this->stripSchemaValuePrefix($definition);
+
+        $ldif = implode(PHP_EOL, [
+            'dn: cn=schema,cn=config',
+            'changetype: modify',
+            'delete: '.$attr,
+            $attr.': '.$definition,
+            '-',
+        ]);
+
+        return [
+            'valid' => true,
+            'plan' => 'schema_delete',
+            'changetype' => 'modify',
+            'dn' => 'cn=schema,cn=config',
+            'message' => 'JSON schema delete converted using cn=config LDIF.',
+            'generated_ldif' => $ldif,
+            'reverse_ldif' => implode(PHP_EOL, [
+                'dn: cn=schema,cn=config',
+                'changetype: modify',
+                'add: '.$attr,
+                $attr.': '.$definition,
+                '-',
+            ]),
+        ];
+    }
+
+    private function entryAttributesForAdd(array $payload): array
+    {
+        $entry = [];
+
+        foreach ($payload as $attribute => $value) {
+            $attribute = trim((string) $attribute);
+
+            if ($attribute === '' || in_array($attribute, $this->reservedPayloadKeys, true)) {
+                continue;
+            }
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $entry[$attribute] = $this->normalizeValue($value, $attribute);
+        }
+
+        return $entry;
+    }
+
+    private function entryAttributesForModify(array $payload): array
+    {
+        $entry = [];
+
+        foreach ($payload as $attribute => $value) {
+            $attribute = trim((string) $attribute);
+
+            if ($attribute === '' || in_array($attribute, $this->reservedPayloadKeys, true)) {
+                continue;
+            }
+
+            if (in_array($attribute, $this->updateBlockedAttributes, true)) {
+                continue;
+            }
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $entry[$attribute] = $this->normalizeValue($value, $attribute);
+        }
+
+        return $entry;
+    }
+
+    private function normalizeValue(mixed $value, string $attribute): mixed
+    {
+        if (is_array($value)) {
+            $items = array_values(array_filter(array_map(
+                fn ($item) => trim((string) $item),
+                $value
+            )));
+
+            if (strtolower($attribute) === 'ou') {
+                $items = array_values(array_filter(array_map(
+                    fn ($item) => $this->normalizeOuAttributeValue((string) $item),
+                    $items
+                )));
+            }
+
+            return $items;
+        }
+
+        $value = trim((string) $value);
+
+        if (strtolower($attribute) === 'ou') {
+            return $this->normalizeOuAttributeValue($value);
+        }
+
+        if (str_contains($value, ';')) {
+            if (
+                strtolower($attribute) === 'objectclass'
+                || in_array($attribute, ['member', 'uniqueMember', 'owner', 'seeAlso', 'manager', 'roleOccupant', 'memberUid'], true)
+            ) {
+                return array_values(array_filter(array_map('trim', explode(';', $value))));
+            }
+        }
+
+        return $value;
+    }
+
+    private function valueList(mixed $value, string $attribute): array
+    {
+        if (is_array($value)) {
+            $items = array_values(array_filter(array_map(
+                fn ($item) => trim((string) $item),
+                $value
+            )));
+
+            if (strtolower($attribute) === 'ou') {
+                $items = array_values(array_filter(array_map(
+                    fn ($item) => $this->normalizeOuAttributeValue((string) $item),
+                    $items
+                )));
+            }
+
+            return $items;
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return [];
+        }
+
+        if (strtolower($attribute) === 'ou') {
+            $value = $this->normalizeOuAttributeValue($value);
+
+            return $value === '' ? [] : [$value];
+        }
+
+        if (
+            str_contains($value, ';')
+            && (
+                strtolower($attribute) === 'objectclass'
+                || in_array($attribute, ['member', 'uniqueMember', 'owner', 'seeAlso', 'manager', 'roleOccupant', 'memberUid'], true)
+            )
+        ) {
+            return array_values(array_filter(array_map('trim', explode(';', $value))));
+        }
+
+        return [$value];
+    }
+
+    private function detectOperation(array $payload, object $row): string
+    {
+        /*
+         * Raw payload action wins.
+         * This prevents old preview rows from forcing update/delete back to create.
+         */
+        $payloadAction = strtolower(trim((string) ($payload['action'] ?? $payload['operation'] ?? $payload['changetype'] ?? '')));
+
+        if ($payloadAction !== '') {
+            return match ($payloadAction) {
+                'add', 'create' => 'create',
+                'modify', 'replace', 'update', 'upsert' => 'update',
+                'delete', 'del' => 'delete',
+                'rename', 'rename_dn', 'modrdn' => 'rename_dn',
+                'move', 'move_dn', 'rename_or_move_dn' => 'move_dn',
+                'add_objectclass', 'add_object_class', 'objectclass_add' => 'add_objectclass',
+                'schema', 'schema_create', 'schema_add' => 'schema_create',
+                'schema_modify', 'schema_update' => 'schema_modify',
+                'schema_delete', 'schema_remove' => 'schema_delete',
+                default => 'create',
+            };
+        }
+
+        foreach (['action_plan', 'plan'] as $field) {
+            if (property_exists($row, $field) && filled($row->{$field})) {
+                $value = strtolower(trim((string) $row->{$field}));
+
+                return match ($value) {
+                    'create', 'add' => 'create',
+                    'update', 'modify', 'replace' => 'update',
+                    'delete', 'del' => 'delete',
+                    'rename', 'rename_dn', 'modrdn' => 'rename_dn',
+                    'move', 'move_dn', 'rename_or_move_dn' => 'move_dn',
+                    'add_objectclass', 'add_object_class', 'objectclass_add' => 'add_objectclass',
+                    'schema', 'schema_create', 'schema_add' => 'schema_create',
+                    'schema_modify', 'schema_update' => 'schema_modify',
+                    'schema_delete', 'schema_remove' => 'schema_delete',
+                    default => 'create',
+                };
+            }
+        }
+
+        return 'create';
+    }
+
+    private function targetDn(array $payload, object $row): string
+    {
+        /*
+         * DN source of truth:
+         * 1. Uploaded payload dn/DN wins.
+         * 2. Existing row target_dn is fallback.
+         * 3. Always normalize DN before generating LDIF.
+         *
+         * This prevents:
+         * uid=x,ou=people,dc=test,dc=local,dc=test,dc=local
+         * and:
+         * uid=x,ou=ou=people,dc=test,dc=local
+         */
+        $dn = '';
+
+        if (! empty($payload['dn'])) {
+            $dn = trim((string) $payload['dn']);
+        } elseif (! empty($payload['DN'])) {
+            $dn = trim((string) $payload['DN']);
+        } elseif (property_exists($row, 'target_dn') && filled($row->target_dn)) {
+            $dn = trim((string) $row->target_dn);
+        }
+
+        return $this->normalizeDn($dn);
+    }
+
+    private function normalizeDn(string $dn): string
+    {
+        $dn = trim($dn);
+
+        if ($dn === '') {
+            return '';
+        }
+
+        /*
+         * Normalize comma spacing.
+         */
+        $parts = array_values(array_filter(array_map(
+            fn ($part) => trim((string) $part),
+            explode(',', $dn)
+        ), fn ($part) => $part !== ''));
+
+        /*
+         * Fix bad RDN/path segment:
+         * ou=ou=people -> ou=people
+         */
+        foreach ($parts as $index => $part) {
+            $lower = strtolower($part);
+
+            if (str_starts_with($lower, 'ou=ou=')) {
+                $parts[$index] = 'ou='.substr($part, 6);
+            }
+
+            if (str_starts_with($lower, 'cn=cn=')) {
+                $parts[$index] = 'cn='.substr($part, 6);
+            }
+
+            if (str_starts_with($lower, 'uid=uid=')) {
+                $parts[$index] = 'uid='.substr($part, 8);
+            }
+        }
+
+        /*
+         * Remove duplicated trailing DC base.
+         *
+         * Example:
+         * uid=x,ou=people,dc=test,dc=local,dc=test,dc=local
+         * -> uid=x,ou=people,dc=test,dc=local
+         *
+         * Also handles longer dc chains by checking repeated trailing dc suffixes.
+         */
+        $changed = true;
+
+        while ($changed) {
+            $changed = false;
+            $count = count($parts);
+
+            for ($length = min(8, intdiv($count, 2)); $length >= 2; $length--) {
+                $tail = array_slice($parts, -$length);
+                $beforeTail = array_slice($parts, -($length * 2), $length);
+
+                if (count($tail) !== $length || count($beforeTail) !== $length) {
+                    continue;
+                }
+
+                $tailLower = array_map('strtolower', $tail);
+                $beforeLower = array_map('strtolower', $beforeTail);
+
+                $allDc = collect($tailLower)->every(fn ($part) => str_starts_with($part, 'dc='));
+
+                if ($allDc && $tailLower === $beforeLower) {
+                    array_splice($parts, -$length);
+                    $changed = true;
+                    break;
+                }
+            }
+        }
+
+        /*
+         * Extra safety for direct string duplicate:
+         * ...,dc=test,dc=local,dc=test,dc=local
+         */
+        $dn = implode(',', $parts);
+
+        return $dn;
+    }
+
+    private function payloadFromRow(object $row): array
+    {
+        foreach (['raw_payload', 'payload', 'mapped_payload'] as $field) {
+            if (! property_exists($row, $field)) {
+                continue;
+            }
+
+            $value = $row->{$field};
+
+            if (is_array($value)) {
+                return $value;
+            }
+
+            if (is_string($value) && trim($value) !== '') {
+                $decoded = json_decode($value, true);
+
+                if (is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+        }
+
+        return [];
+    }
+
+    private function updateRow(string $table, array $columns, object $row, array $data): void
+    {
+        if (! property_exists($row, 'id')) {
+            return;
+        }
+
+        $updates = [];
+
+        if (in_array('status', $columns, true)) {
+            $updates['status'] = $data['status'];
+        }
+
+        foreach (['action_plan', 'plan'] as $column) {
+            if (in_array($column, $columns, true)) {
+                $updates[$column] = $data['plan'];
+                break;
+            }
+        }
+
+        foreach ([
+            'changetype',
+            'target_dn',
+            'target_identifier',
+            'message',
+            'conflict_reason',
+            'generated_ldif',
+            'reverse_ldif',
+            'ldif_hash',
+        ] as $column) {
+            if (in_array($column, $columns, true)) {
+                $updates[$column] = $data[$column] ?? null;
+            }
+        }
+
+        if (in_array('validation_errors', $columns, true)) {
+            $updates['validation_errors'] = json_encode($data['validation_errors'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
+
+        if (in_array('mapped_payload', $columns, true)) {
+            $updates['mapped_payload'] = json_encode($data['mapped_payload'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
+
+        if (in_array('updated_at', $columns, true)) {
+            $updates['updated_at'] = now();
+        }
+
+        if ($updates !== []) {
+            DB::table($table)->where('id', $row->id)->update($updates);
+        }
+    }
+
+    private function updateBatch(int $batchId, array $summary): void
+    {
+        $columns = Schema::getColumnListing('import_batches');
+        $updates = [];
+
+        $map = [
+            'total_rows' => 'total_rows',
+            'rows_count' => 'total_rows',
+            'row_count' => 'total_rows',
+            'valid_rows' => 'valid_rows',
+            'invalid_rows' => 'invalid_rows',
+            'will_create' => 'add_rows',
+            'create_count' => 'add_rows',
+            'will_update' => 'modify_rows',
+            'update_count' => 'modify_rows',
+            'will_delete' => 'delete_rows',
+            'delete_count' => 'delete_rows',
+            'will_fail' => 'failed_rows',
+            'failed_rows' => 'failed_rows',
+            'fail_count' => 'failed_rows',
+        ];
+
+        foreach ($map as $column => $key) {
+            if (in_array($column, $columns, true)) {
+                $updates[$column] = $summary[$key] ?? 0;
+            }
+        }
+
+        if (in_array('preview_ldif_path', $columns, true)) {
+            $updates['preview_ldif_path'] = $summary['preview_ldif_path'];
+        }
+
+        if (in_array('preview_ldif_hash', $columns, true)) {
+            $updates['preview_ldif_hash'] = $summary['preview_ldif_hash'];
+        }
+
+        if (in_array('ldif_summary', $columns, true)) {
+            $updates['ldif_summary'] = json_encode($summary, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
+
+        if (in_array('status', $columns, true)) {
+            $updates['status'] = ($summary['invalid_rows'] ?? 0) > 0
+                ? 'ldif_preview_completed_with_issues'
+                : 'ldif_preview_completed';
+        }
+
+        if (in_array('message', $columns, true)) {
+            $updates['message'] = 'LDIF preview generated from uploaded file. Add: '.$summary['add_rows'].' | Modify: '.$summary['modify_rows'].' | Delete: '.$summary['delete_rows'].' | Schema: '.$summary['schema_rows'].' | Failed: '.$summary['failed_rows'];
+        }
+
+        if (in_array('updated_at', $columns, true)) {
+            $updates['updated_at'] = now();
+        }
+
+        if ($updates !== []) {
+            DB::table('import_batches')->where('id', $batchId)->update($updates);
+        }
+    }
+
+    private function detectRowTable(int $batchId): ?string
+    {
+        foreach (['import_rows', 'import_batch_rows', 'import_batch_items', 'import_items'] as $table) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
+            $columns = Schema::getColumnListing($table);
+
+            foreach (['import_batch_id', 'batch_id'] as $batchColumn) {
+                if (in_array($batchColumn, $columns, true) && DB::table($table)->where($batchColumn, $batchId)->exists()) {
+                    return $table;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function rowsForBatch(string $table, int $batchId): array
+    {
+        $columns = Schema::getColumnListing($table);
+        $batchColumn = in_array('import_batch_id', $columns, true) ? 'import_batch_id' : 'batch_id';
+
+        $query = DB::table($table)->where($batchColumn, $batchId);
+
+        if (in_array('row_number', $columns, true)) {
+            $query->orderBy('row_number');
+        } elseif (in_array('id', $columns, true)) {
+            $query->orderBy('id');
+        }
+
+        return $query->get()->all();
+    }
+
+    private function identifierFromPayloadOrDn(array $payload, string $dn): ?string
+    {
+        foreach (['identifier', 'uid', 'cn', 'ou'] as $key) {
+            if (! empty($payload[$key])) {
+                return (string) $payload[$key];
+            }
+        }
+
+        if ($dn === '' || ! str_contains($dn, '=')) {
+            return null;
+        }
+
+        $first = explode(',', $dn, 2)[0] ?? '';
+        $parts = explode('=', $first, 2);
+
+        return $parts[1] ?? null;
+    }
+
+    private function escapeLdifValue(string $value): string
+    {
+        return str_replace(["\r", "\n"], [' ', ' '], $value);
+    }
+
+    private function escapeSchemaQuote(string $value): string
+    {
+        return str_replace("'", "\\27", $value);
+    }
+    private function normalizeOuAttributeValue(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        /*
+         * If CSV uses "ou" column as parent path:
+         * ou=people,dc=test,dc=local
+         *
+         * Do not write that whole DN as LDAP attribute value.
+         * For inetOrgPerson it is safer to either extract "people" or skip.
+         * We extract the first ou value.
+         */
+        if (str_contains($value, ',') && preg_match('/(^|,)ou=([^,]+)/i', $value, $matches)) {
+            return trim((string) ($matches[2] ?? ''));
+        }
+
+        /*
+         * ou=people -> people
+         */
+        if (preg_match('/^ou=(.+)$/i', $value, $matches)) {
+            return trim((string) ($matches[1] ?? ''));
+        }
+
+        /*
+         * Prevent bad value:
+         * ou=ou=people -> people
+         */
+        if (preg_match('/^ou=ou=(.+)$/i', $value, $matches)) {
+            return trim((string) ($matches[1] ?? ''));
+        }
+
+        return $value;
+    }
+
+}

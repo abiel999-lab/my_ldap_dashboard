@@ -1,0 +1,144 @@
+<?php
+
+namespace App\Models\Operations;
+
+use App\Models\Directory\LdapConnection;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class ImportBatch extends Model
+{
+    protected $guarded = [];
+
+    protected function casts(): array
+    {
+        return [
+            'metadata' => 'array',
+            'safe_mode' => 'boolean',
+            'preview_only' => 'boolean',
+            'destructive' => 'boolean',
+            'total_rows' => 'integer',
+            'valid_rows' => 'integer',
+            'invalid_rows' => 'integer',
+            'duplicate_rows' => 'integer',
+            'conflict_rows' => 'integer',
+            'will_create_rows' => 'integer',
+            'will_update_rows' => 'integer',
+            'will_skip_rows' => 'integer',
+            'will_fail_rows' => 'integer',
+            'file_size_bytes' => 'integer',
+            'preview_started_at' => 'datetime',
+            'preview_finished_at' => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (ImportBatch $batch): void {
+            if (blank($batch->uuid)) {
+                $batch->uuid = (string) Str::uuid();
+            }
+
+            if (blank($batch->created_by)) {
+                $batch->created_by = Auth::id();
+            }
+
+            if (blank($batch->updated_by)) {
+                $batch->updated_by = Auth::id();
+            }
+
+            if (blank($batch->safe_mode)) {
+                $batch->safe_mode = true;
+            }
+
+            if (blank($batch->preview_only)) {
+                $batch->preview_only = true;
+            }
+
+            if (blank($batch->destructive)) {
+                $batch->destructive = false;
+            }
+        });
+
+        static::updating(function (ImportBatch $batch): void {
+            $batch->updated_by = Auth::id();
+        });
+    }
+
+    public function ldapConnection(): BelongsTo
+    {
+        return $this->belongsTo(LdapConnection::class);
+    }
+
+    public function operationJob(): BelongsTo
+    {
+        return $this->belongsTo(OperationJob::class);
+    }
+
+    public function rows(): HasMany
+    {
+        return $this->hasMany(ImportRow::class);
+    }
+
+    public function applyPlans(): HasMany
+    {
+        return $this->hasMany(ImportApplyPlan::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function hasUploadFile(): bool
+    {
+        return filled($this->file_path) && Storage::disk($this->file_disk ?: 'local')->exists((string) $this->file_path);
+    }
+
+    public function uploadedAbsolutePath(): ?string
+    {
+        if (! $this->hasUploadFile()) {
+            return null;
+        }
+
+        return Storage::disk($this->file_disk ?: 'local')->path((string) $this->file_path);
+    }
+
+    public function getDisplayFileSizeAttribute(): string
+    {
+        $bytes = (int) ($this->file_size_bytes ?? 0);
+
+        if ($bytes <= 0) {
+            return 'N/A';
+        }
+
+        if ($bytes >= 1024 * 1024) {
+            return round($bytes / 1024 / 1024, 2).' MB';
+        }
+
+        return round($bytes / 1024, 2).' KB';
+    }
+
+    public function getPreviewPercentAttribute(): int
+    {
+        if ($this->total_rows <= 0) {
+            return 0;
+        }
+
+        return (int) round(($this->valid_rows / max(1, $this->total_rows)) * 100);
+    }
+
+
+}

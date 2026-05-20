@@ -1,0 +1,5 @@
+dn: uid=imp-test-001-renamed,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id
+changetype: modrdn
+newrdn: uid=imp-test-001-renamed
+deleteoldrdn: 1
+newsuperior: ou=import-archive,ou=test-dom,dc=petra,dc=ac,dc=id

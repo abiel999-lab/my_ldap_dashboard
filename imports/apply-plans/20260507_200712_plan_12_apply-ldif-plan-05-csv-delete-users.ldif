@@ -1,0 +1,8 @@
+dn: uid=csv.user101,ou=people,dc=petra,dc=ac,dc=id
+changetype: delete
+
+dn: uid=csv.user102,ou=people,dc=petra,dc=ac,dc=id
+changetype: delete
+
+dn: uid=csv.user103,ou=people,dc=petra,dc=ac,dc=id
+changetype: delete

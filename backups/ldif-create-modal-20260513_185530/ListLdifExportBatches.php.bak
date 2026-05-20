@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Filament\Resources\Operations\LdifExportBatchResource\Pages;
+
+use App\Filament\Resources\Operations\LdifExportBatchResource;
+use Filament\Actions\CreateAction;
+use Filament\Resources\Pages\ListRecords;
+
+class ListLdifExportBatches extends ListRecords
+{
+    protected static string $resource = LdifExportBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            CreateAction::make()
+                ->label('New LDIF Export')
+                ->icon('heroicon-o-plus-circle'),
+        ];
+    }
+}

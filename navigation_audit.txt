@@ -1,0 +1,1214 @@
+=== 1. Navigation Labels ===
+app/Console/Commands/RefreshRedisQueueMonitor.php:16:    protected $description = 'Refresh Redis queue monitor snapshot and running Operation Jobs into queue_monitor_jobs table.';
+app/Console/Commands/Operations/OperationsAlignmentCheckCommand.php:74:        $this->line('✅ Logs: Command Executions + Failed Jobs + Operation Logs should show result.');
+app/Filament/Widgets/Dashboard/OperationsSummaryWidget.php:35:            Stat::make('Failed Queue Jobs', $this->countTable('failed_jobs'))
+app/Filament/Widgets/Dashboard/SecurityActivitySummaryWidget.php:20:            Stat::make('Audit Logs', $this->countTable('audit_logs'))
+app/Filament/Widgets/Dashboard/SecurityActivitySummaryWidget.php:25:            Stat::make('Command Executions', $this->countTable('command_executions'))
+app/Filament/Widgets/Dashboard/RecentOperationJobsWidget.php:20:            ->heading('Recent Operation Jobs')
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:53:            Stat::make('Audit Logs Today', $auditLogsToday)
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:58:            Stat::make('Queue Jobs', $pendingJobs)
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:63:            Stat::make('Operation Jobs', $operationJobs)
+app/Filament/Widgets/Dashboard/HealthOverviewWidget.php:5:use App\Models\Observability\HealthCheck;
+app/Filament/Widgets/Dashboard/RecentCommandExecutionsWidget.php:12:    protected static ?string $heading = 'Recent Command Executions';
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ListFailedQueueJobs.php:3:namespace App\Filament\Resources\Observability\FailedQueueJobResource\Pages;
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ListFailedQueueJobs.php:5:use App\Filament\Resources\Observability\FailedQueueJobResource;
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ViewFailedQueueJob.php:3:namespace App\Filament\Resources\Observability\FailedQueueJobResource\Pages;
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ViewFailedQueueJob.php:5:use App\Filament\Resources\Observability\FailedQueueJobResource;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ViewHealthCheck.php:3:namespace App\Filament\Resources\Observability\HealthCheckResource\Pages;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ViewHealthCheck.php:5:use App\Filament\Resources\Observability\HealthCheckResource;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:3:namespace App\Filament\Resources\Observability\HealthCheckResource\Pages;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:5:use App\Filament\Resources\Observability\HealthCheckResource;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:7:use App\Services\Observability\HealthCheckService;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:20:                ->label('Run Health Checks')
+app/Filament/Resources/Observability/AuditLogResource/Pages/ViewAuditLog.php:3:namespace App\Filament\Resources\Observability\AuditLogResource\Pages;
+app/Filament/Resources/Observability/AuditLogResource/Pages/ViewAuditLog.php:5:use App\Filament\Resources\Observability\AuditLogResource;
+app/Filament/Resources/Observability/AuditLogResource/Pages/ListAuditLogs.php:3:namespace App\Filament\Resources\Observability\AuditLogResource\Pages;
+app/Filament/Resources/Observability/AuditLogResource/Pages/ListAuditLogs.php:5:use App\Filament\Resources\Observability\AuditLogResource;
+app/Filament/Resources/Observability/AuditLogResource.php:3:namespace App\Filament\Resources\Observability;
+app/Filament/Resources/Observability/AuditLogResource.php:5:use App\Filament\Resources\Observability\AuditLogResource\Pages;
+app/Filament/Resources/Observability/AuditLogResource.php:26:    protected static ?string $navigationLabel = 'Audit Logs';
+app/Filament/Resources/Observability/AuditLogResource.php:30:    protected static ?string $pluralModelLabel = 'Audit Logs';
+app/Filament/Resources/Observability/FailedQueueJobResource.php:3:namespace App\Filament\Resources\Observability;
+app/Filament/Resources/Observability/FailedQueueJobResource.php:5:use App\Filament\Resources\Observability\FailedQueueJobResource\Pages;
+app/Filament/Resources/Observability/FailedQueueJobResource.php:31:    protected static ?string $navigationLabel = 'Failed Jobs';
+app/Filament/Resources/Observability/FailedQueueJobResource.php:35:    protected static ?string $pluralModelLabel = 'Failed Jobs';
+app/Filament/Resources/Observability/HealthCheckResource.php:3:namespace App\Filament\Resources\Observability;
+app/Filament/Resources/Observability/HealthCheckResource.php:5:use App\Filament\Resources\Observability\HealthCheckResource\Pages;
+app/Filament/Resources/Observability/HealthCheckResource.php:6:use App\Models\Observability\HealthCheck;
+app/Filament/Resources/Observability/HealthCheckResource.php:27:    protected static ?string $navigationLabel = 'Health Checks';
+app/Filament/Resources/Observability/HealthCheckResource.php:31:    protected static ?string $pluralModelLabel = 'Health Checks';
+app/Filament/Resources/Operations/SavedScriptResource/Pages/ViewSavedScript.php:49:                        ->body('Operation Job #'.$operationJob->id.' was created. Check Operation Jobs for progress.')
+app/Filament/Resources/Operations/BulkLdapOperationResource/Pages/ViewBulkLdapOperation.php:84:                ->modalDescription('This runs the selected bulk operation through Laravel Queue in the background. Create adds missing users. Delete removes matching test users. Already completed targets are marked already_applied. Check Bulk LDAP Items and Command Executions.')
+app/Filament/Resources/Operations/QueueJobResource.php:31:    protected static ?string $navigationLabel = 'Queue Jobs';
+app/Filament/Resources/Operations/QueueJobResource.php:35:    protected static ?string $pluralModelLabel = 'Queue Jobs';
+app/Filament/Resources/Operations/OperationJobLogResource.php:28:    protected static ?string $navigationLabel = 'Operation Job Logs';
+app/Filament/Resources/Operations/OperationJobLogResource.php:32:    protected static ?string $pluralModelLabel = 'Operation Job Logs';
+app/Filament/Resources/Operations/CommandExecutionResource.php:29:    protected static ?string $navigationLabel = 'Command Executions';
+app/Filament/Resources/Operations/CommandExecutionResource.php:33:    protected static ?string $pluralModelLabel = 'Command Executions';
+app/Filament/Resources/Operations/OperationJobResource.php:30:    protected static ?string $navigationLabel = 'Operation Jobs';
+app/Filament/Resources/Operations/OperationJobResource.php:34:    protected static ?string $pluralModelLabel = 'Operation Jobs';
+app/Filament/Resources/Operations/OperationJobItemResource.php:28:    protected static ?string $navigationLabel = 'Operation Job Items';
+app/Filament/Resources/Operations/OperationJobItemResource.php:32:    protected static ?string $pluralModelLabel = 'Operation Job Items';
+app/Filament/Resources/Operations/SavedScriptResource.php:306:                            ->body('Operation Job #'.$operationJob->id.' was created. Check Operation Jobs for progress.')
+app/Filament/Resources/Operations/ImportApplyPlanResource.php:211:                            ->label('Related Audit Logs')
+app/Filament/Resources/Operations/ImportApplyPlanResource.php:212:                            ->state('Open Audit Logs')
+app/Filament/Resources/Operations/ImportApplyPlanResource/Pages/ViewImportApplyPlan.php:55:                                ->body($result['message'] ?? 'Real apply failed. Check Command Executions.')
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ViewLdapUserEntry.php:37:                ->modalDescription('Sync user ini akan masuk ke LDAP Sync Center, Operation Jobs, dan Operation Job Logs.')
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ListLdapUserEntries.php:35:                ->modalDescription('Sync ini memakai Universal LDAP Sync Engine yang sama dengan LDAP Sync Center. Data akan masuk queue, Operation Jobs, dan Operation Job Logs.')
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:266:                        ->modalDescription('Entry akan dihapus dari LDAP lewat queue dan tercatat di Command Executions.')
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:280:                    ->modalDescription('Entry akan dihapus dari LDAP lewat queue. Semua hasil masuk Command Executions.')
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:334:                    ->modalDescription('Semua entry terpilih akan dihapus dari LDAP lewat queue. Hasilnya masuk Command Executions.')
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:44:                ->modalDescription('Sync object ini akan masuk ke LDAP Sync Center, Operation Jobs, dan Operation Job Logs.')
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:155:                    ->modalDescription('Object akan dihapus dari LDAP lewat queue dan tercatat di Command Executions.')
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:170:                    ->modalDescription('Object akan dihapus dari LDAP lewat queue dan tercatat di Command Executions.')
+app/Filament/Resources/Directory/LdapSchemaEntryResource/Pages/ViewLdapSchemaEntry.php:31:                ->modalDescription('Sync schema item ini akan masuk ke LDAP Sync Center, Operation Jobs, dan Operation Job Logs.')
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:253:                        ->modalDescription('Entry akan dihapus dari LDAP lewat queue dan tercatat di Command Executions.')
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:267:                    ->modalDescription('Entry akan dihapus dari LDAP lewat queue. Semua hasil masuk Command Executions.')
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:321:                    ->modalDescription('Semua entry terpilih akan dihapus dari LDAP lewat queue. Hasilnya masuk Command Executions.')
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:265:                        ->modalDescription('Entry akan dihapus dari LDAP lewat queue dan tercatat di Command Executions.')
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:279:                    ->modalDescription('Entry akan dihapus dari LDAP lewat queue. Semua hasil masuk Command Executions.')
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:333:                    ->modalDescription('Semua entry terpilih akan dihapus dari LDAP lewat queue. Hasilnya masuk Command Executions.')
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:248:                        ->modalDescription('Entry akan dihapus dari LDAP lewat queue dan tercatat di Command Executions.')
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:262:                    ->modalDescription('Entry akan dihapus dari LDAP lewat queue. Semua hasil masuk Command Executions.')
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:316:                    ->modalDescription('OU akan dihapus lewat queue. Jika masih punya child, LDAP akan menolak dan masuk Command Executions.')
+app/Filament/Pages/Observability/SystemLogs.php:3:namespace App\Filament\Pages\Observability;
+app/Filament/Pages/Observability/SystemLogs.php:6:use App\Services\Observability\SystemLogService;
+app/Filament/Pages/Observability/SystemLogs.php:24:    protected static ?string $navigationLabel = 'System Logs';
+app/Filament/Pages/Observability/SystemLogs.php:26:    protected static ?string $title = 'System Logs';
+app/Filament/Pages/Miscellaneous/UserManual.php:53:            '7. Operations digunakan untuk menjalankan pekerjaan administratif seperti Operation Jobs, Operation Job Items, LDIF Exports, Import Template Maker, LDAP Transfer Center, Imports CRUD Operations, Import Apply Plans, Command Executions, dan Queue Jobs.',
+app/Filament/Pages/Miscellaneous/UserManual.php:57:            '9. Observability digunakan untuk memantau Audit Logs, Failed Jobs, System Logs, dan Health Checks. Bagian ini membantu administrator mengecek error, aktivitas sistem, dan kondisi layanan.',
+app/Models/Observability/SystemLogFile.php:3:namespace App\Models\Observability;
+app/Models/Observability/HealthCheck.php:3:namespace App\Models\Observability;
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:96:                    ->modalDescription('Entry akan dihapus dari LDAP lewat queue. Semua hasil masuk Command Executions.')
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:151:                        ->modalDescription('Semua entry terpilih akan dihapus lewat queue. Hasil detail masuk Command Executions.')
+app/Services/Observability/SystemLogService.php:3:namespace App\Services\Observability;
+app/Services/Observability/SystemLogService.php:5:use App\Models\Observability\SystemLogFile;
+app/Services/Observability/HealthCheckService.php:3:namespace App\Services\Observability;
+app/Services/Observability/HealthCheckService.php:6:use App\Models\Observability\HealthCheck;
+app/Services/Operations/FastImportApplyService.php:103:                'message' => $this->extractMessage($result, $plan) ?: 'Real apply failed. Check Command Executions.',
+app/Services/Operations/BulkLdapUserOperationService.php:752:         * Operation Job Items are only the generic Operations mirror.
+app/Services/Operations/BulkLdapUserOperationService.php:760:         * Bulk LDAP Items, Command Executions, Audit Logs, and the Bulk summary still work.
+app/Services/Operations/BulkLdapUserOperationService.php:827:            // Generic Operation Job Items mirror must never crash the LDAP bulk worker.
+config/queue.php:112:    | Failed Queue Jobs
+
+=== 2. Filament Files ===
+app/Filament/Auth/Login.php
+app/Filament/Pages/Dashboard.php
+app/Filament/Pages/Miscellaneous/KeycloakConsole.php
+app/Filament/Pages/Miscellaneous/UserManual.php
+app/Filament/Pages/Observability/SystemLogs.php
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ListDirectoryObjects.php
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php
+app/Filament/Resources/Directory/LdapApplicationEntryResource/Pages/ListLdapApplicationEntries.php
+app/Filament/Resources/Directory/LdapApplicationEntryResource/Pages/ViewLdapApplicationEntry.php
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/CreateLdapConnection.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/EditLdapConnection.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/ListLdapConnections.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/ViewLdapConnection.php
+app/Filament/Resources/Directory/LdapConnectionResource.php
+app/Filament/Resources/Directory/LdapConnectionResource.php.bak.actions.20260506_002905
+app/Filament/Resources/Directory/LdapDirectoryEntryResource/Pages/ListLdapDirectoryEntries.php
+app/Filament/Resources/Directory/LdapDirectoryEntryResource/Pages/ViewLdapDirectoryEntry.php
+app/Filament/Resources/Directory/LdapDirectoryEntryResource.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/CreateLdapEntryTypeRule.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/EditLdapEntryTypeRule.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/ListLdapEntryTypeRules.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/ViewLdapEntryTypeRule.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource.php
+app/Filament/Resources/Directory/LdapGroupEntryResource/Pages/ListLdapGroupEntries.php
+app/Filament/Resources/Directory/LdapGroupEntryResource/Pages/ViewLdapGroupEntry.php
+app/Filament/Resources/Directory/LdapGroupEntryResource.php
+app/Filament/Resources/Directory/LdapRoleEntryResource/Pages/ListLdapRoleEntries.php
+app/Filament/Resources/Directory/LdapRoleEntryResource/Pages/ViewLdapRoleEntry.php
+app/Filament/Resources/Directory/LdapRoleEntryResource.php
+app/Filament/Resources/Directory/LdapSchemaEntryResource/Pages/ListLdapSchemaEntries.php
+app/Filament/Resources/Directory/LdapSchemaEntryResource/Pages/ViewLdapSchemaEntry.php
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php
+app/Filament/Resources/Directory/LdapUnitEntryResource/Pages/ListLdapUnitEntries.php
+app/Filament/Resources/Directory/LdapUnitEntryResource/Pages/ViewLdapUnitEntry.php
+app/Filament/Resources/Directory/LdapUnitEntryResource.php
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ListLdapUserEntries.php
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ViewLdapUserEntry.php
+app/Filament/Resources/Directory/LdapUserEntryResource.php
+app/Filament/Resources/Observability/AuditLogResource/Pages/ListAuditLogs.php
+app/Filament/Resources/Observability/AuditLogResource/Pages/ViewAuditLog.php
+app/Filament/Resources/Observability/AuditLogResource.php
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ListFailedQueueJobs.php
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ViewFailedQueueJob.php
+app/Filament/Resources/Observability/FailedQueueJobResource.php
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ViewHealthCheck.php
+app/Filament/Resources/Observability/HealthCheckResource.php
+app/Filament/Resources/Operations/BulkLdapOperationItemResource/Pages/ListBulkLdapOperationItems.php
+app/Filament/Resources/Operations/BulkLdapOperationItemResource/Pages/ViewBulkLdapOperationItem.php
+app/Filament/Resources/Operations/BulkLdapOperationItemResource.php
+app/Filament/Resources/Operations/BulkLdapOperationResource/Pages/CreateBulkLdapOperation.php
+app/Filament/Resources/Operations/BulkLdapOperationResource/Pages/EditBulkLdapOperation.php
+app/Filament/Resources/Operations/BulkLdapOperationResource/Pages/ListBulkLdapOperations.php
+app/Filament/Resources/Operations/BulkLdapOperationResource/Pages/ViewBulkLdapOperation.php
+app/Filament/Resources/Operations/BulkLdapOperationResource.php
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ListCommandExecutions.php
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ViewCommandExecution.php
+app/Filament/Resources/Operations/CommandExecutionResource.php
+app/Filament/Resources/Operations/ImportApplyPlanResource/Pages/ListImportApplyPlans.php
+app/Filament/Resources/Operations/ImportApplyPlanResource/Pages/ViewImportApplyPlan.php
+app/Filament/Resources/Operations/ImportApplyPlanResource.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/CreateImportBatch.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/EditImportBatch.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/ListImportBatches.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/ViewImportBatch.php
+app/Filament/Resources/Operations/ImportBatchResource.php
+app/Filament/Resources/Operations/ImportBatchResource/RelationManagers/RowsRelationManager.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/CreateImportTemplate.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/EditImportTemplate.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/ListImportTemplates.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/ViewImportTemplate.php
+app/Filament/Resources/Operations/ImportTemplateResource.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/CreateLdapCrudOperation.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/EditLdapCrudOperation.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ViewLdapCrudOperation.php
+app/Filament/Resources/Operations/LdapCrudOperationResource.php
+app/Filament/Resources/Operations/LdapSyncBatchResource/Pages/ListLdapSyncBatches.php
+app/Filament/Resources/Operations/LdapSyncBatchResource/Pages/ViewLdapSyncBatch.php
+app/Filament/Resources/Operations/LdapSyncBatchResource.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/CreateLdapTransferBatch.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/EditLdapTransferBatch.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ListLdapTransferBatches.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ViewLdapTransferBatch.php
+app/Filament/Resources/Operations/LdapTransferBatchResource.php
+app/Filament/Resources/Operations/LdapTransferBatchResource.php.bak-textcolumn-20260514_145326
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/CreateLdifExportBatch.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/EditLdifExportBatch.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/ListLdifExportBatches.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/ViewLdifExportBatch.php
+app/Filament/Resources/Operations/LdifExportBatchResource.php
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ListOperationJobItems.php
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ViewOperationJobItem.php
+app/Filament/Resources/Operations/OperationJobItemResource.php
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ListOperationJobLogs.php
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ViewOperationJobLog.php
+app/Filament/Resources/Operations/OperationJobLogResource.php
+app/Filament/Resources/Operations/OperationJobResource/Pages/ListOperationJobs.php
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php
+app/Filament/Resources/Operations/OperationJobResource.php
+app/Filament/Resources/Operations/OperationJobResource/RelationManagers/ItemsRelationManager.php
+app/Filament/Resources/Operations/OperationJobResource/RelationManagers/LogsRelationManager.php
+app/Filament/Resources/Operations/QueueJobResource/Pages/ListQueueJobs.php
+app/Filament/Resources/Operations/QueueJobResource/Pages/ViewQueueJob.php
+app/Filament/Resources/Operations/QueueJobResource.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/EditSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/ListSavedScripts.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/ViewSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource.php
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ListUniversalLdapTransferBatches.php
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ViewUniversalLdapTransferBatch.php
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php
+app/Filament/Widgets/Dashboard/DirectoryExtendedSummaryWidget.php
+app/Filament/Widgets/Dashboard/DirectorySummaryWidget.php
+app/Filament/Widgets/Dashboard/HealthOverviewWidget.php
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php
+app/Filament/Widgets/Dashboard/LdapHealthWidget.php
+app/Filament/Widgets/Dashboard/OperationsSummaryWidget.php
+app/Filament/Widgets/Dashboard/RecentAuditLogsWidget.php
+app/Filament/Widgets/Dashboard/RecentCommandExecutionsWidget.php
+app/Filament/Widgets/Dashboard/RecentOperationJobsWidget.php
+app/Filament/Widgets/Dashboard/RecentOperationLogsWidget.php
+app/Filament/Widgets/Dashboard/SecurityActivitySummaryWidget.php
+
+=== 3. Navigation Groups ===
+app/Providers/Filament/AdminPanelProvider.php:12:use Filament\Navigation\NavigationGroup;
+app/Providers/Filament/AdminPanelProvider.php:62:            ->navigationGroups([
+app/Providers/Filament/AdminPanelProvider.php:63:                NavigationGroup::make()
+app/Providers/Filament/AdminPanelProvider.php:67:                NavigationGroup::make()
+app/Providers/Filament/AdminPanelProvider.php:71:                NavigationGroup::make()
+app/Providers/Filament/AdminPanelProvider.php:75:                NavigationGroup::make()
+
+=== 4. Models / Classes ===
+app/Console/Commands/RefreshRedisQueueMonitor.php:5:use App\Models\Operations\OperationJob;
+app/Console/Commands/RefreshRedisQueueMonitor.php:36:        $total += $this->snapshotOperationJobs();
+app/Console/Commands/RefreshRedisQueueMonitor.php:73:    private function snapshotOperationJobs(): int
+app/Console/Commands/RefreshRedisQueueMonitor.php:75:        $jobs = OperationJob::query()
+app/Console/Commands/Directory/SyncDirectoryObjectsCommand.php:6:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Console/Commands/Directory/SyncDirectoryObjectsCommand.php:21:        $execution = SafeCommandExecutionLogger::createQueued(
+app/Console/Commands/Directory/SyncDirectoryObjectsCommand.php:32:            SyncDirectoryObjectsJob::dispatch($connectionId, SafeCommandExecutionLogger::id($execution));
+app/Console/Commands/Directory/SyncDirectoryObjectsCommand.php:34:            $this->info('Directory object sync queued. Command Execution ID: '.SafeCommandExecutionLogger::id($execution));
+app/Console/Commands/Directory/SyncDirectoryObjectsCommand.php:39:        SyncDirectoryObjectsJob::dispatchSync($connectionId, SafeCommandExecutionLogger::id($execution));
+app/Console/Commands/Directory/SyncDirectoryObjectsCommand.php:41:        $this->info('Directory object sync completed. Command Execution ID: '.SafeCommandExecutionLogger::id($execution));
+app/Filament/Widgets/Dashboard/OperationsSummaryWidget.php:20:            Stat::make('Queued Jobs', $this->countOperationJobsByStatus(['queued']))
+app/Filament/Widgets/Dashboard/OperationsSummaryWidget.php:25:            Stat::make('Running Jobs', $this->countOperationJobsByStatus(['running']))
+app/Filament/Widgets/Dashboard/OperationsSummaryWidget.php:30:            Stat::make('Failed Operations', $this->countOperationJobsByStatus(['failed']))
+app/Filament/Widgets/Dashboard/OperationsSummaryWidget.php:42:    private function countOperationJobsByStatus(array $statuses): int
+app/Filament/Widgets/Dashboard/RecentAuditLogsWidget.php:5:use App\Models\Audit\AuditLog;
+app/Filament/Widgets/Dashboard/RecentAuditLogsWidget.php:11:class RecentAuditLogsWidget extends BaseWidget
+app/Filament/Widgets/Dashboard/RecentAuditLogsWidget.php:21:            ->query(fn (): Builder => AuditLog::query()->latest('id')->limit(10))
+app/Filament/Widgets/Dashboard/RecentOperationJobsWidget.php:9:use App\Models\Operations\OperationJob;
+app/Filament/Widgets/Dashboard/RecentOperationJobsWidget.php:11:class RecentOperationJobsWidget extends BaseWidget
+app/Filament/Widgets/Dashboard/RecentOperationJobsWidget.php:21:            ->query(fn (): Builder => OperationJob::query()->latest('id')->limit(10))
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:5:use App\Models\Audit\AuditLog;
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:8:use App\Models\Operations\QueueJob;
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:9:use App\Models\Operations\FailedQueueJob;
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:10:use App\Models\Operations\OperationJob;
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:28:        $auditLogsToday = AuditLog::query()
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:32:        $pendingJobs = QueueJob::query()->count();
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:33:        $failedJobs = FailedQueueJob::query()->count();
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:34:        $operationJobs = OperationJob::query()->count();
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:35:        $failedOperationJobs = OperationJob::query()
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:38:        $runningOperationJobs = OperationJob::query()
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:64:                ->description($runningOperationJobs.' running/queued, '.$failedOperationJobs.' failed')
+app/Filament/Widgets/Dashboard/IamSummaryStatsWidget.php:66:                ->color($failedOperationJobs > 0 ? 'danger' : ($runningOperationJobs > 0 ? 'warning' : ($operationJobs > 0 ? 'info' : 'gray'))),
+app/Filament/Widgets/Dashboard/HealthOverviewWidget.php:5:use App\Models\Observability\HealthCheck;
+app/Filament/Widgets/Dashboard/HealthOverviewWidget.php:22:                HealthCheck::query()
+app/Filament/Widgets/Dashboard/RecentCommandExecutionsWidget.php:5:use App\Models\Operations\CommandExecution;
+app/Filament/Widgets/Dashboard/RecentCommandExecutionsWidget.php:10:class RecentCommandExecutionsWidget extends TableWidget
+app/Filament/Widgets/Dashboard/RecentCommandExecutionsWidget.php:22:                CommandExecution::query()
+app/Filament/Widgets/Dashboard/RecentOperationLogsWidget.php:5:use App\Models\Operations\OperationJobLog;
+app/Filament/Widgets/Dashboard/RecentOperationLogsWidget.php:22:                OperationJobLog::query()
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ListFailedQueueJobs.php:3:namespace App\Filament\Resources\Observability\FailedQueueJobResource\Pages;
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ListFailedQueueJobs.php:5:use App\Filament\Resources\Observability\FailedQueueJobResource;
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ListFailedQueueJobs.php:8:class ListFailedQueueJobs extends ListRecords
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ListFailedQueueJobs.php:10:    protected static string $resource = FailedQueueJobResource::class;
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ViewFailedQueueJob.php:3:namespace App\Filament\Resources\Observability\FailedQueueJobResource\Pages;
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ViewFailedQueueJob.php:5:use App\Filament\Resources\Observability\FailedQueueJobResource;
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ViewFailedQueueJob.php:8:class ViewFailedQueueJob extends ViewRecord
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ViewFailedQueueJob.php:10:    protected static string $resource = FailedQueueJobResource::class;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ViewHealthCheck.php:3:namespace App\Filament\Resources\Observability\HealthCheckResource\Pages;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ViewHealthCheck.php:5:use App\Filament\Resources\Observability\HealthCheckResource;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ViewHealthCheck.php:8:class ViewHealthCheck extends ViewRecord
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ViewHealthCheck.php:10:    protected static string $resource = HealthCheckResource::class;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:3:namespace App\Filament\Resources\Observability\HealthCheckResource\Pages;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:5:use App\Filament\Resources\Observability\HealthCheckResource;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:6:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:7:use App\Services\Observability\HealthCheckService;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:12:class ListHealthChecks extends ListRecords
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:14:    protected static string $resource = HealthCheckResource::class;
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:19:            Action::make('runHealthChecks')
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:29:                    $checks = app(HealthCheckService::class)->runAll();
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php:35:                    app(AuditLogger::class)->log([
+app/Filament/Resources/Observability/AuditLogResource/Pages/ViewAuditLog.php:3:namespace App\Filament\Resources\Observability\AuditLogResource\Pages;
+app/Filament/Resources/Observability/AuditLogResource/Pages/ViewAuditLog.php:5:use App\Filament\Resources\Observability\AuditLogResource;
+app/Filament/Resources/Observability/AuditLogResource/Pages/ViewAuditLog.php:8:class ViewAuditLog extends ViewRecord
+app/Filament/Resources/Observability/AuditLogResource/Pages/ViewAuditLog.php:10:    protected static string $resource = AuditLogResource::class;
+app/Filament/Resources/Observability/AuditLogResource/Pages/ListAuditLogs.php:3:namespace App\Filament\Resources\Observability\AuditLogResource\Pages;
+app/Filament/Resources/Observability/AuditLogResource/Pages/ListAuditLogs.php:5:use App\Filament\Resources\Observability\AuditLogResource;
+app/Filament/Resources/Observability/AuditLogResource/Pages/ListAuditLogs.php:8:class ListAuditLogs extends ListRecords
+app/Filament/Resources/Observability/AuditLogResource/Pages/ListAuditLogs.php:10:    protected static string $resource = AuditLogResource::class;
+app/Filament/Resources/Observability/AuditLogResource.php:5:use App\Filament\Resources\Observability\AuditLogResource\Pages;
+app/Filament/Resources/Observability/AuditLogResource.php:6:use App\Models\Audit\AuditLog;
+app/Filament/Resources/Observability/AuditLogResource.php:18:class AuditLogResource extends Resource
+app/Filament/Resources/Observability/AuditLogResource.php:23:    protected static ?string $model = AuditLog::class;
+app/Filament/Resources/Observability/AuditLogResource.php:252:            'index' => Pages\ListAuditLogs::route('/'),
+app/Filament/Resources/Observability/AuditLogResource.php:253:            'view' => Pages\ViewAuditLog::route('/{record}'),
+app/Filament/Resources/Observability/FailedQueueJobResource.php:5:use App\Filament\Resources\Observability\FailedQueueJobResource\Pages;
+app/Filament/Resources/Observability/FailedQueueJobResource.php:6:use App\Models\Operations\FailedQueueJob;
+app/Filament/Resources/Observability/FailedQueueJobResource.php:7:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Observability/FailedQueueJobResource.php:23:class FailedQueueJobResource extends Resource
+app/Filament/Resources/Observability/FailedQueueJobResource.php:25:    protected static ?string $model = FailedQueueJob::class;
+app/Filament/Resources/Observability/FailedQueueJobResource.php:195:                    ->action(function (FailedQueueJob $record): void {
+app/Filament/Resources/Observability/FailedQueueJobResource.php:201:                            app(AuditLogger::class)->log([
+app/Filament/Resources/Observability/FailedQueueJobResource.php:205:                                'target_type' => FailedQueueJob::class,
+app/Filament/Resources/Observability/FailedQueueJobResource.php:220:                            app(AuditLogger::class)->log([
+app/Filament/Resources/Observability/FailedQueueJobResource.php:224:                                'target_type' => FailedQueueJob::class,
+app/Filament/Resources/Observability/FailedQueueJobResource.php:248:                    ->action(function (FailedQueueJob $record): void {
+app/Filament/Resources/Observability/FailedQueueJobResource.php:256:                            app(AuditLogger::class)->log([
+app/Filament/Resources/Observability/FailedQueueJobResource.php:260:                                'target_type' => FailedQueueJob::class,
+app/Filament/Resources/Observability/FailedQueueJobResource.php:272:                            app(AuditLogger::class)->log([
+app/Filament/Resources/Observability/FailedQueueJobResource.php:276:                                'target_type' => FailedQueueJob::class,
+app/Filament/Resources/Observability/FailedQueueJobResource.php:295:            'index' => Pages\ListFailedQueueJobs::route('/'),
+app/Filament/Resources/Observability/FailedQueueJobResource.php:296:            'view' => Pages\ViewFailedQueueJob::route('/{record}'),
+app/Filament/Resources/Observability/HealthCheckResource.php:5:use App\Filament\Resources\Observability\HealthCheckResource\Pages;
+app/Filament/Resources/Observability/HealthCheckResource.php:6:use App\Models\Observability\HealthCheck;
+app/Filament/Resources/Observability/HealthCheckResource.php:19:class HealthCheckResource extends Resource
+app/Filament/Resources/Observability/HealthCheckResource.php:24:    protected static ?string $model = HealthCheck::class;
+app/Filament/Resources/Observability/HealthCheckResource.php:171:            'index' => Pages\ListHealthChecks::route('/'),
+app/Filament/Resources/Observability/HealthCheckResource.php:172:            'view' => Pages\ViewHealthCheck::route('/{record}'),
+app/Filament/Resources/Operations/OperationJobResource/RelationManagers/LogsRelationManager.php:3:namespace App\Filament\Resources\Operations\OperationJobResource\RelationManagers;
+app/Filament/Resources/Operations/OperationJobResource/RelationManagers/ItemsRelationManager.php:3:namespace App\Filament\Resources\Operations\OperationJobResource\RelationManagers;
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php:3:namespace App\Filament\Resources\Operations\OperationJobResource\Pages;
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php:5:use App\Filament\Resources\Operations\OperationJobItemResource;
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php:6:use App\Filament\Resources\Operations\OperationJobLogResource;
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php:7:use App\Filament\Resources\Operations\OperationJobResource;
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php:11:class ViewOperationJob extends ViewRecord
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php:13:    protected static string $resource = OperationJobResource::class;
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php:22:                ->url(fn (): string => OperationJobItemResource::getUrl('index')),
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php:28:                ->url(fn (): string => OperationJobLogResource::getUrl('index')),
+app/Filament/Resources/Operations/OperationJobResource/Pages/ListOperationJobs.php:3:namespace App\Filament\Resources\Operations\OperationJobResource\Pages;
+app/Filament/Resources/Operations/OperationJobResource/Pages/ListOperationJobs.php:5:use App\Filament\Resources\Operations\OperationJobResource;
+app/Filament/Resources/Operations/OperationJobResource/Pages/ListOperationJobs.php:8:class ListOperationJobs extends ListRecords
+app/Filament/Resources/Operations/OperationJobResource/Pages/ListOperationJobs.php:10:    protected static string $resource = OperationJobResource::class;
+app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:6:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php:15:        app(AuditLogger::class)->log([
+app/Filament/Resources/Operations/SavedScriptResource/Pages/EditSavedScript.php:6:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Operations/SavedScriptResource/Pages/EditSavedScript.php:15:        app(AuditLogger::class)->log([
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ListOperationJobLogs.php:3:namespace App\Filament\Resources\Operations\OperationJobLogResource\Pages;
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ListOperationJobLogs.php:5:use App\Filament\Resources\Operations\OperationJobLogResource;
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ListOperationJobLogs.php:8:class ListOperationJobLogs extends ListRecords
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ListOperationJobLogs.php:10:    protected static string $resource = OperationJobLogResource::class;
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ViewOperationJobLog.php:3:namespace App\Filament\Resources\Operations\OperationJobLogResource\Pages;
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ViewOperationJobLog.php:5:use App\Filament\Resources\Operations\OperationJobLogResource;
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ViewOperationJobLog.php:8:class ViewOperationJobLog extends ViewRecord
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ViewOperationJobLog.php:10:    protected static string $resource = OperationJobLogResource::class;
+app/Filament/Resources/Operations/LdapTransferBatchResource.php.bak-textcolumn-20260514_145326:349:            $executionId = static::createCommandExecution($record, $operation);
+app/Filament/Resources/Operations/LdapTransferBatchResource.php.bak-textcolumn-20260514_145326:372:    private static function createCommandExecution(LdapTransferBatch $record, string $operation): int
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php:11:use App\Services\Operations\OperationJobFactory;
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php:437:                        $operationJob = app(OperationJobFactory::class)->createQueued([
+app/Filament/Resources/Operations/LdapTransferBatchResource.php:466:            $executionId = static::createCommandExecution($record, $operation);
+app/Filament/Resources/Operations/LdapTransferBatchResource.php:489:    private static function createCommandExecution(LdapTransferBatch $record, string $operation): int
+app/Filament/Resources/Operations/QueueJobResource.php:5:use App\Filament\Resources\Operations\QueueJobResource\Pages;
+app/Filament/Resources/Operations/QueueJobResource.php:23:class QueueJobResource extends Resource
+app/Filament/Resources/Operations/QueueJobResource.php:160:            'index' => Pages\ListQueueJobs::route('/'),
+app/Filament/Resources/Operations/QueueJobResource.php:161:            'view' => Pages\ViewQueueJob::route('/{record}'),
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ViewOperationJobItem.php:3:namespace App\Filament\Resources\Operations\OperationJobItemResource\Pages;
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ViewOperationJobItem.php:5:use App\Filament\Resources\Operations\OperationJobItemResource;
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ViewOperationJobItem.php:8:class ViewOperationJobItem extends ViewRecord
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ViewOperationJobItem.php:10:    protected static string $resource = OperationJobItemResource::class;
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ListOperationJobItems.php:3:namespace App\Filament\Resources\Operations\OperationJobItemResource\Pages;
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ListOperationJobItems.php:5:use App\Filament\Resources\Operations\OperationJobItemResource;
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ListOperationJobItems.php:8:class ListOperationJobItems extends ListRecords
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ListOperationJobItems.php:10:    protected static string $resource = OperationJobItemResource::class;
+app/Filament/Resources/Operations/ImportBatchResource.php:15:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Operations/LdapSyncBatchResource.php:17:use App\Models\Operations\OperationJob;
+app/Filament/Resources/Operations/LdapSyncBatchResource.php:18:use App\Services\Operations\OperationJobFactory;
+app/Filament/Resources/Operations/LdapSyncBatchResource.php:310:                        $operationJob = app(OperationJobFactory::class)->createQueued([
+app/Filament/Resources/Operations/OperationJobLogResource.php:5:use App\Filament\Resources\Operations\OperationJobLogResource\Pages;
+app/Filament/Resources/Operations/OperationJobLogResource.php:6:use App\Models\Operations\OperationJobLog;
+app/Filament/Resources/Operations/OperationJobLogResource.php:20:class OperationJobLogResource extends Resource
+app/Filament/Resources/Operations/OperationJobLogResource.php:25:    protected static ?string $model = OperationJobLog::class;
+app/Filament/Resources/Operations/OperationJobLogResource.php:238:            'index' => Pages\ListOperationJobLogs::route('/'),
+app/Filament/Resources/Operations/OperationJobLogResource.php:239:            'view' => Pages\ViewOperationJobLog::route('/{record}'),
+app/Filament/Resources/Operations/QueueJobResource/Pages/ListQueueJobs.php:3:namespace App\Filament\Resources\Operations\QueueJobResource\Pages;
+app/Filament/Resources/Operations/QueueJobResource/Pages/ListQueueJobs.php:5:use App\Filament\Resources\Operations\QueueJobResource;
+app/Filament/Resources/Operations/QueueJobResource/Pages/ListQueueJobs.php:8:class ListQueueJobs extends ListRecords
+app/Filament/Resources/Operations/QueueJobResource/Pages/ListQueueJobs.php:10:    protected static string $resource = QueueJobResource::class;
+app/Filament/Resources/Operations/QueueJobResource/Pages/ViewQueueJob.php:3:namespace App\Filament\Resources\Operations\QueueJobResource\Pages;
+app/Filament/Resources/Operations/QueueJobResource/Pages/ViewQueueJob.php:5:use App\Filament\Resources\Operations\QueueJobResource;
+app/Filament/Resources/Operations/QueueJobResource/Pages/ViewQueueJob.php:8:class ViewQueueJob extends ViewRecord
+app/Filament/Resources/Operations/QueueJobResource/Pages/ViewQueueJob.php:10:    protected static string $resource = QueueJobResource::class;
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/CreateLdifExportBatch.php:6:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/CreateLdifExportBatch.php:15:        app(AuditLogger::class)->log([
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/ViewLdifExportBatch.php:7:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/ViewLdifExportBatch.php:70:                    app(AuditLogger::class)->log([
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/ViewLdifExportBatch.php:104:                    app(AuditLogger::class)->log([
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/EditLdifExportBatch.php:6:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/EditLdifExportBatch.php:15:        app(AuditLogger::class)->log([
+app/Filament/Resources/Operations/CommandExecutionResource.php:5:use App\Filament\Resources\Operations\CommandExecutionResource\Pages;
+app/Filament/Resources/Operations/CommandExecutionResource.php:6:use App\Models\Operations\CommandExecution;
+app/Filament/Resources/Operations/CommandExecutionResource.php:21:class CommandExecutionResource extends Resource
+app/Filament/Resources/Operations/CommandExecutionResource.php:26:    protected static ?string $model = CommandExecution::class;
+app/Filament/Resources/Operations/CommandExecutionResource.php:186:                    ->tooltip(fn (CommandExecution $record): string => (string) $record->command),
+app/Filament/Resources/Operations/CommandExecutionResource.php:309:            'index' => Pages\ListCommandExecutions::route('/'),
+app/Filament/Resources/Operations/CommandExecutionResource.php:310:            'view' => Pages\ViewCommandExecution::route('/{record}'),
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ListCommandExecutions.php:3:namespace App\Filament\Resources\Operations\CommandExecutionResource\Pages;
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ListCommandExecutions.php:5:use App\Filament\Resources\Operations\CommandExecutionResource;
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ListCommandExecutions.php:12:class ListCommandExecutions extends ListRecords
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ListCommandExecutions.php:14:    protected static string $resource = CommandExecutionResource::class;
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ViewCommandExecution.php:3:namespace App\Filament\Resources\Operations\CommandExecutionResource\Pages;
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ViewCommandExecution.php:5:use App\Filament\Resources\Operations\CommandExecutionResource;
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ViewCommandExecution.php:8:class ViewCommandExecution extends ViewRecord
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ViewCommandExecution.php:10:    protected static string $resource = CommandExecutionResource::class;
+app/Filament/Resources/Operations/OperationJobResource.php:5:use App\Filament\Resources\Operations\OperationJobResource\Pages;
+app/Filament/Resources/Operations/OperationJobResource.php:6:use App\Filament\Resources\Operations\OperationJobResource\RelationManagers\ItemsRelationManager;
+app/Filament/Resources/Operations/OperationJobResource.php:7:use App\Filament\Resources\Operations\OperationJobResource\RelationManagers\LogsRelationManager;
+app/Filament/Resources/Operations/OperationJobResource.php:8:use App\Models\Operations\OperationJob;
+app/Filament/Resources/Operations/OperationJobResource.php:21:class OperationJobResource extends Resource
+app/Filament/Resources/Operations/OperationJobResource.php:27:    protected static ?string $model = OperationJob::class;
+app/Filament/Resources/Operations/OperationJobResource.php:254:            'index' => Pages\ListOperationJobs::route('/'),
+app/Filament/Resources/Operations/OperationJobResource.php:255:            'view' => Pages\ViewOperationJob::route('/{record}'),
+app/Filament/Resources/Operations/OperationJobItemResource.php:5:use App\Filament\Resources\Operations\OperationJobItemResource\Pages;
+app/Filament/Resources/Operations/OperationJobItemResource.php:6:use App\Models\Operations\OperationJobItem;
+app/Filament/Resources/Operations/OperationJobItemResource.php:20:class OperationJobItemResource extends Resource
+app/Filament/Resources/Operations/OperationJobItemResource.php:25:    protected static ?string $model = OperationJobItem::class;
+app/Filament/Resources/Operations/OperationJobItemResource.php:200:            'index' => Pages\ListOperationJobItems::route('/'),
+app/Filament/Resources/Operations/OperationJobItemResource.php:201:            'view' => Pages\ViewOperationJobItem::route('/{record}'),
+app/Filament/Resources/Operations/SavedScriptResource.php:7:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Operations/SavedScriptResource.php:313:                        app(AuditLogger::class)->log([
+app/Filament/Resources/Operations/ImportApplyPlanResource.php:195:                            ->url(fn (ImportApplyPlan $record): ?string => $record->dryRunCommandExecutionUrl())
+app/Filament/Resources/Operations/ImportApplyPlanResource.php:201:                            ->url(fn (ImportApplyPlan $record): ?string => $record->realApplyCommandExecutionUrl())
+app/Filament/Resources/Operations/ImportApplyPlanResource.php:207:                            ->url(fn (ImportApplyPlan $record): ?string => $record->postApplyCommandExecutionUrl())
+app/Filament/Resources/Operations/ImportApplyPlanResource.php:213:                            ->url(fn (ImportApplyPlan $record): string => $record->relatedAuditLogsUrl())
+app/Filament/Resources/Directory/LdapConnectionResource.php:8:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Directory/LdapConnectionResource.php:393:                        app(AuditLogger::class)->logModelAction(
+app/Filament/Resources/Directory/LdapConnectionResource.php:432:                        app(AuditLogger::class)->logModelAction(
+app/Filament/Resources/Directory/LdapConnectionResource.php:472:                        app(AuditLogger::class)->log([
+app/Filament/Resources/Directory/LdapConnectionResource.php:517:                        app(AuditLogger::class)->log([
+app/Filament/Resources/Directory/LdapConnectionResource.php:557:                        app(AuditLogger::class)->logModelAction(
+app/Filament/Resources/Directory/LdapConnectionResource.php:590:                        app(AuditLogger::class)->logModelAction(
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ListLdapUserEntries.php:11:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ListLdapUserEntries.php:142:                        $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ListLdapUserEntries.php:152:                        CreateLdapUserJob::dispatch($data, SafeCommandExecutionLogger::id($execution));
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ListLdapUserEntries.php:156:                            ->body('Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ListLdapUserEntries.php:160:                        SafeCommandExecutionLogger::createFailed('ldap_user_create_dispatch_failed', $e->getMessage(), [
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/CreateLdapConnection.php:6:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/CreateLdapConnection.php:26:        app(AuditLogger::class)->logModelAction(
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/EditLdapConnection.php:6:use App\Services\Audit\AuditLogger;
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/EditLdapConnection.php:26:                    app(AuditLogger::class)->logModelAction(
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/EditLdapConnection.php:51:        app(AuditLogger::class)->logModelAction(
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:283:                            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:298:                                \App\Support\Operations\SafeCommandExecutionLogger::id($execution),
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:304:                                ->body('Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:308:                            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:347:                            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:362:                                \App\Support\Operations\SafeCommandExecutionLogger::id($execution),
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:368:                                ->body('Total records: '.count($ids).' | Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:372:                            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:544:            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:562:                \App\Support\Operations\SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:567:                ->body('Operation: '.$operation.' | Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php:571:            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php:14:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php:15:use App\Services\Operations\OperationJobFactory;
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php:382:                if (method_exists(SafeCommandExecutionLogger::class, 'createQueued')) {
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php:383:                    $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php:397:                    $executionId = method_exists(SafeCommandExecutionLogger::class, 'id')
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php:398:                        ? SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php:482:            $operationJob = app(OperationJobFactory::class)->createQueued([
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:11:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:337:            $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:355:                SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:360:                ->body('Operation: '.$operation.' | Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:364:            SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:386:            $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:399:                SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:404:                ->body('Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php:408:            SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:12:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:551:            $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:564:                SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:569:                ->body('Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:573:            SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:648:            $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:663:                SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:668:                ->body('DN: '.$dn.' | Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:672:            SafeCommandExecutionLogger::createFailed('ldap_directory_object_create_dispatch_failed', $e->getMessage(), $data);
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:686:            $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:704:                SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:709:                ->body('Operation: '.$operation.' | Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:713:            SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:742:            $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:760:                SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:765:                ->body('Total: '.count($ids).' | Operation: '.$operation.' | Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php:769:            SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:270:                            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:285:                                \App\Support\Operations\SafeCommandExecutionLogger::id($execution),
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:291:                                ->body('Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:295:                            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:334:                            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:349:                                \App\Support\Operations\SafeCommandExecutionLogger::id($execution),
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:355:                                ->body('Total records: '.count($ids).' | Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:359:                            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:521:            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:539:                \App\Support\Operations\SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:544:                ->body('Operation: '.$operation.' | Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapRoleEntryResource.php:548:            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapUserEntryResource.php:5:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Filament/Resources/Directory/LdapUserEntryResource.php:7:use App\Models\Operations\CommandExecution;
+app/Filament/Resources/Directory/LdapUserEntryResource.php:527:                            $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapUserEntryResource.php:538:                            SyncUsersBatchJob::dispatch([$record->id], SafeCommandExecutionLogger::id($execution));
+app/Filament/Resources/Directory/LdapUserEntryResource.php:542:                                ->body('Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapUserEntryResource.php:546:                            SafeCommandExecutionLogger::createFailed('ldap_user_sync_dispatch_failed', $e->getMessage(), [
+app/Filament/Resources/Directory/LdapUserEntryResource.php:568:                            $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapUserEntryResource.php:579:                            BulkDeleteUsersFromLdapJob::dispatch([$record->id], SafeCommandExecutionLogger::id($execution));
+app/Filament/Resources/Directory/LdapUserEntryResource.php:583:                                ->body('Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapUserEntryResource.php:587:                            SafeCommandExecutionLogger::createFailed('ldap_user_delete_dispatch_failed', $e->getMessage(), [
+app/Filament/Resources/Directory/LdapUserEntryResource.php:611:                                $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapUserEntryResource.php:622:                                SyncUsersBatchJob::dispatch($ids, SafeCommandExecutionLogger::id($execution));
+app/Filament/Resources/Directory/LdapUserEntryResource.php:626:                                    ->body('Total users: '.count($ids).' | Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapUserEntryResource.php:630:                                SafeCommandExecutionLogger::createFailed('ldap_users_bulk_sync_dispatch_failed', $e->getMessage());
+app/Filament/Resources/Directory/LdapUserEntryResource.php:661:                                $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapUserEntryResource.php:673:                                BulkMoveUsersToOuJob::dispatch($ids, $newParentDn, SafeCommandExecutionLogger::id($execution));
+app/Filament/Resources/Directory/LdapUserEntryResource.php:677:                                    ->body('Total users: '.count($ids).' | Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapUserEntryResource.php:681:                                SafeCommandExecutionLogger::createFailed('ldap_users_bulk_move_ou_dispatch_failed', $e->getMessage(), [
+app/Filament/Resources/Directory/LdapUserEntryResource.php:705:                                $execution = SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapUserEntryResource.php:716:                                BulkDeleteUsersFromLdapJob::dispatch($ids, SafeCommandExecutionLogger::id($execution));
+app/Filament/Resources/Directory/LdapUserEntryResource.php:720:                                    ->body('Total users: '.count($ids).' | Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapUserEntryResource.php:724:                                SafeCommandExecutionLogger::createFailed('ldap_users_bulk_delete_dispatch_failed', $e->getMessage());
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:282:                            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:297:                                \App\Support\Operations\SafeCommandExecutionLogger::id($execution),
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:303:                                ->body('Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:307:                            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:346:                            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:361:                                \App\Support\Operations\SafeCommandExecutionLogger::id($execution),
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:367:                                ->body('Total records: '.count($ids).' | Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:371:                            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:506:            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:524:                \App\Support\Operations\SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:529:                ->body('Operation: '.$operation.' | Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapGroupEntryResource.php:533:            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:265:                            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:280:                                \App\Support\Operations\SafeCommandExecutionLogger::id($execution),
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:286:                                ->body('Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:290:                            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:328:                        $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:343:                            \App\Support\Operations\SafeCommandExecutionLogger::id($execution),
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:349:                            ->body('Total: '.count($ids).' | Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:498:            $execution = \App\Support\Operations\SafeCommandExecutionLogger::createQueued(
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:516:                \App\Support\Operations\SafeCommandExecutionLogger::id($execution)
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:521:                ->body('Operation: '.$operation.' | Command Execution ID: '.(\App\Support\Operations\SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/Filament/Resources/Directory/LdapUnitEntryResource.php:525:            \App\Support\Operations\SafeCommandExecutionLogger::createFailed(
+app/Filament/Pages/Observability/SystemLogs.php:5:use App\Services\Audit\AuditLogger;
+app/Filament/Pages/Observability/SystemLogs.php:6:use App\Services\Observability\SystemLogService;
+app/Filament/Pages/Observability/SystemLogs.php:18:class SystemLogs extends Page
+app/Filament/Pages/Observability/SystemLogs.php:54:                                return collect(app(SystemLogService::class)->list())
+app/Filament/Pages/Observability/SystemLogs.php:103:                    $result = app(SystemLogService::class)->clear($this->selectedLog);
+app/Filament/Pages/Observability/SystemLogs.php:105:                    app(AuditLogger::class)->log([
+app/Filament/Pages/Observability/SystemLogs.php:138:        $this->logRows = app(SystemLogService::class)->list();
+app/Filament/Pages/Observability/SystemLogs.php:143:        $this->logContent = app(SystemLogService::class)->tail((string) $this->selectedLog, 150);
+app/Filament/Pages/Dashboard.php:8:use App\Filament\Widgets\Dashboard\RecentAuditLogsWidget;
+app/Filament/Pages/Dashboard.php:9:use App\Filament\Widgets\Dashboard\RecentOperationJobsWidget;
+app/Filament/Pages/Dashboard.php:28:            RecentOperationJobsWidget::class,
+app/Filament/Pages/Dashboard.php:29:            RecentAuditLogsWidget::class,
+app/Jobs/Ldap/RefreshLdapDirectoryCacheJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Ldap/RefreshLdapDirectoryCacheJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Ldap/RefreshLdapDirectoryCacheJob.php:32:        OperationJobTracker $tracker,
+app/Jobs/Ldap/RefreshLdapDirectoryCacheJob.php:35:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Ldap/RefreshLdapDirectoryCacheJob.php:111:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Ldap/RefreshLdapDirectoryCacheJob.php:113:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Operations/ExecuteUniversalLdapSyncJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Operations/ExecuteUniversalLdapSyncJob.php:7:use App\Services\Operations\OperationJobFactory;
+app/Jobs/Operations/ExecuteUniversalLdapSyncJob.php:31:        OperationJobFactory $jobs,
+app/Jobs/Operations/ExecuteUniversalLdapSyncJob.php:33:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Operations/ExecuteUniversalLdapSyncJob.php:123:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Operations/ExecuteUniversalLdapSyncJob.php:126:            app(OperationJobFactory::class)->markFailed($operationJob, $exception->getMessage(), [
+app/Jobs/Operations/GenerateImportApplyLdifPlanJob.php:7:use App\Models\Operations\OperationJob;
+app/Jobs/Operations/GenerateImportApplyLdifPlanJob.php:9:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Operations/GenerateImportApplyLdifPlanJob.php:31:        OperationJobTracker $tracker,
+app/Jobs/Operations/GenerateImportApplyLdifPlanJob.php:34:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Operations/GenerateImportApplyLdifPlanJob.php:129:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Operations/GenerateImportApplyLdifPlanJob.php:130:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Operations/ExecuteBulkLdapOperationJob.php:14:class ExecuteBulkLdapOperationJob implements ShouldQueue
+app/Jobs/Operations/ExecuteLdifExportJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Operations/ExecuteLdifExportJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Operations/ExecuteLdifExportJob.php:29:        OperationJobTracker $tracker,
+app/Jobs/Operations/ExecuteLdifExportJob.php:32:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Operations/ExecuteLdifExportJob.php:142:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Operations/ExecuteLdifExportJob.php:143:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Operations/PostApplyVerifyImportLdapJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Operations/PostApplyVerifyImportLdapJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Operations/PostApplyVerifyImportLdapJob.php:29:        OperationJobTracker $tracker,
+app/Jobs/Operations/PostApplyVerifyImportLdapJob.php:32:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Operations/PostApplyVerifyImportLdapJob.php:135:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Operations/PostApplyVerifyImportLdapJob.php:136:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Operations/RealApplyImportLdapJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Operations/RealApplyImportLdapJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Operations/RealApplyImportLdapJob.php:30:        OperationJobTracker $tracker,
+app/Jobs/Operations/RealApplyImportLdapJob.php:33:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Operations/RealApplyImportLdapJob.php:137:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Operations/RealApplyImportLdapJob.php:138:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Operations/PreviewImportBatchJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Operations/PreviewImportBatchJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Operations/PreviewImportBatchJob.php:35:        OperationJobTracker $tracker,
+app/Jobs/Operations/PreviewImportBatchJob.php:38:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Operations/PreviewImportBatchJob.php:159:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Operations/PreviewImportBatchJob.php:160:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Operations/ExecuteLdapSearchScriptJob.php:5:use App\Models\Operations\CommandExecution;
+app/Jobs/Operations/ExecuteLdapSearchScriptJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Operations/ExecuteLdapSearchScriptJob.php:9:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Operations/ExecuteLdapSearchScriptJob.php:30:        OperationJobTracker $tracker,
+app/Jobs/Operations/ExecuteLdapSearchScriptJob.php:33:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Operations/ExecuteLdapSearchScriptJob.php:130:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Operations/ExecuteLdapSearchScriptJob.php:131:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Operations/ExecuteUniversalLdapTransferJob.php:5:use App\Models\Operations\OperationJob;
+app/Jobs/Operations/ExecuteUniversalLdapTransferJob.php:7:use App\Services\Operations\OperationJobFactory;
+app/Jobs/Operations/ExecuteUniversalLdapTransferJob.php:30:        OperationJobFactory $jobs,
+app/Jobs/Operations/ExecuteUniversalLdapTransferJob.php:32:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Operations/ExecuteUniversalLdapTransferJob.php:102:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Operations/ExecuteUniversalLdapTransferJob.php:114:            app(OperationJobFactory::class)->markFailed($operationJob, $exception->getMessage(), [
+app/Jobs/Operations/ExecuteUniversalLdapTransferJob.php:125:        OperationJob $operationJob,
+app/Jobs/Operations/ExecuteUniversalLdapTransferJob.php:126:        OperationJobFactory $jobs,
+app/Jobs/Operations/VerifyImportApplyLdapDryRunJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Operations/VerifyImportApplyLdapDryRunJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Operations/VerifyImportApplyLdapDryRunJob.php:29:        OperationJobTracker $tracker,
+app/Jobs/Operations/VerifyImportApplyLdapDryRunJob.php:32:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Operations/VerifyImportApplyLdapDryRunJob.php:136:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Operations/VerifyImportApplyLdapDryRunJob.php:137:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/SyncDirectoryObjectsJob.php:7:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Jobs/Directory/SyncDirectoryObjectsJob.php:37:        SafeCommandExecutionLogger::markRunning($this->commandExecutionId);
+app/Jobs/Directory/SyncDirectoryObjectsJob.php:62:                SafeCommandExecutionLogger::markFailed(
+app/Jobs/Directory/SyncDirectoryObjectsJob.php:71:            SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, $summary, $summary);
+app/Jobs/Directory/SyncDirectoryObjectsJob.php:73:            SafeCommandExecutionLogger::markFailed(
+app/Jobs/Directory/BulkDeleteUsersFromLdapJob.php:7:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Jobs/Directory/BulkDeleteUsersFromLdapJob.php:34:        SafeCommandExecutionLogger::markRunning($this->commandExecutionId);
+app/Jobs/Directory/BulkDeleteUsersFromLdapJob.php:82:                SafeCommandExecutionLogger::markPartial($this->commandExecutionId, $summary, 'Some users failed to delete.', $summary);
+app/Jobs/Directory/BulkDeleteUsersFromLdapJob.php:86:            SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, $summary, $summary);
+app/Jobs/Directory/BulkDeleteUsersFromLdapJob.php:88:            SafeCommandExecutionLogger::markFailed($this->commandExecutionId, $e->getMessage(), [
+app/Jobs/Directory/RefreshSingleLdapGroupJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Directory/RefreshSingleLdapGroupJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Directory/RefreshSingleLdapGroupJob.php:29:        OperationJobTracker $tracker,
+app/Jobs/Directory/RefreshSingleLdapGroupJob.php:32:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/RefreshSingleLdapGroupJob.php:104:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Directory/RefreshSingleLdapGroupJob.php:105:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/SyncLdapUnitsJob.php:5:use App\Models\Operations\OperationJob;
+app/Jobs/Directory/SyncLdapUnitsJob.php:7:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Directory/SyncLdapUnitsJob.php:27:        OperationJobTracker $tracker,
+app/Jobs/Directory/SyncLdapUnitsJob.php:30:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/SyncLdapUnitsJob.php:97:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Directory/SyncLdapUnitsJob.php:98:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/SyncLdapRolesJob.php:5:use App\Models\Operations\OperationJob;
+app/Jobs/Directory/SyncLdapRolesJob.php:7:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Directory/SyncLdapRolesJob.php:27:        OperationJobTracker $tracker,
+app/Jobs/Directory/SyncLdapRolesJob.php:30:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/SyncLdapRolesJob.php:97:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Directory/SyncLdapRolesJob.php:98:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/SyncLdapApplicationsJob.php:5:use App\Models\Operations\OperationJob;
+app/Jobs/Directory/SyncLdapApplicationsJob.php:7:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Directory/SyncLdapApplicationsJob.php:27:        OperationJobTracker $tracker,
+app/Jobs/Directory/SyncLdapApplicationsJob.php:30:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/SyncLdapApplicationsJob.php:97:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Directory/SyncLdapApplicationsJob.php:98:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/RefreshSingleLdapUserJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Directory/RefreshSingleLdapUserJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Directory/RefreshSingleLdapUserJob.php:29:        OperationJobTracker $tracker,
+app/Jobs/Directory/RefreshSingleLdapUserJob.php:32:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/RefreshSingleLdapUserJob.php:104:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Directory/RefreshSingleLdapUserJob.php:105:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/ExecuteSchemaBrowserSyncJob.php:7:use App\Models\Operations\OperationJob;
+app/Jobs/Directory/ExecuteSchemaBrowserSyncJob.php:8:use App\Services\Operations\OperationJobFactory;
+app/Jobs/Directory/ExecuteSchemaBrowserSyncJob.php:34:    public function handle(OperationJobFactory $jobs): void
+app/Jobs/Directory/ExecuteSchemaBrowserSyncJob.php:36:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/ExecuteSchemaBrowserSyncJob.php:117:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/ExecuteSchemaBrowserSyncJob.php:130:            app(OperationJobFactory::class)->markFailed($operationJob, $exception->getMessage(), [
+app/Jobs/Directory/SyncLdapUsersJob.php:7:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Directory/SyncLdapUsersJob.php:28:        OperationJobTracker $tracker,
+app/Jobs/Directory/SyncLdapUsersJob.php:31:        $operationJob = \App\Models\Operations\OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/SyncLdapUsersJob.php:101:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Directory/SyncLdapUsersJob.php:102:        $operationJob = \App\Models\Operations\OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/GenericLdapEntryMutationJob.php:6:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Jobs/Directory/GenericLdapEntryMutationJob.php:38:            if (method_exists(SafeCommandExecutionLogger::class, 'markRunning')) {
+app/Jobs/Directory/GenericLdapEntryMutationJob.php:39:                SafeCommandExecutionLogger::markRunning($this->commandExecutionId);
+app/Jobs/Directory/GenericLdapEntryMutationJob.php:120:                if (method_exists(SafeCommandExecutionLogger::class, 'markSuccess')) {
+app/Jobs/Directory/GenericLdapEntryMutationJob.php:121:                    SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, [
+app/Jobs/Directory/GenericLdapEntryMutationJob.php:133:            if (method_exists(SafeCommandExecutionLogger::class, 'markFailed')) {
+app/Jobs/Directory/GenericLdapEntryMutationJob.php:134:                SafeCommandExecutionLogger::markFailed(
+app/Jobs/Directory/GenericLdapEntryMutationJob.php:147:            if (method_exists(SafeCommandExecutionLogger::class, 'markFailed')) {
+app/Jobs/Directory/GenericLdapEntryMutationJob.php:148:                SafeCommandExecutionLogger::markFailed(
+app/Jobs/Directory/CreateLdapUserJob.php:6:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Jobs/Directory/CreateLdapUserJob.php:33:        SafeCommandExecutionLogger::markRunning($this->commandExecutionId);
+app/Jobs/Directory/CreateLdapUserJob.php:39:                SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, [
+app/Jobs/Directory/CreateLdapUserJob.php:50:            SafeCommandExecutionLogger::markFailed($this->commandExecutionId, $result['message'] ?? 'Create LDAP user failed.', [
+app/Jobs/Directory/CreateLdapUserJob.php:55:            SafeCommandExecutionLogger::markFailed($this->commandExecutionId, $e->getMessage(), [
+app/Jobs/Directory/SyncLdapSchemaJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Directory/SyncLdapSchemaJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Directory/SyncLdapSchemaJob.php:29:        OperationJobTracker $tracker,
+app/Jobs/Directory/SyncLdapSchemaJob.php:32:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/SyncLdapSchemaJob.php:103:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Directory/SyncLdapSchemaJob.php:104:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:6:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:37:        SafeCommandExecutionLogger::markRunning($this->commandExecutionId);
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:87:                            $child = SafeCommandExecutionLogger::createQueued(
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:110:                                SafeCommandExecutionLogger::markFailed(
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:111:                                    SafeCommandExecutionLogger::id($child),
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:130:                            SafeCommandExecutionLogger::markSuccess(
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:131:                                SafeCommandExecutionLogger::id($child),
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:151:                                'child_command_execution_id' => SafeCommandExecutionLogger::id($child),
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:177:                SafeCommandExecutionLogger::markPartial(
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:187:            SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, $summary, $summary);
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php:189:            SafeCommandExecutionLogger::markFailed(
+app/Jobs/Directory/SyncUsersBatchJob.php:7:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Jobs/Directory/SyncUsersBatchJob.php:34:        SafeCommandExecutionLogger::markRunning($this->commandExecutionId);
+app/Jobs/Directory/SyncUsersBatchJob.php:80:                SafeCommandExecutionLogger::markPartial($this->commandExecutionId, $summary, 'Some users failed to sync.', $summary);
+app/Jobs/Directory/SyncUsersBatchJob.php:84:            SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, $summary, $summary);
+app/Jobs/Directory/SyncUsersBatchJob.php:86:            SafeCommandExecutionLogger::markFailed($this->commandExecutionId, $e->getMessage(), [
+app/Jobs/Directory/SyncLdapDirectoryExplorerJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Directory/SyncLdapDirectoryExplorerJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Directory/SyncLdapDirectoryExplorerJob.php:29:        OperationJobTracker $tracker,
+app/Jobs/Directory/SyncLdapDirectoryExplorerJob.php:32:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/SyncLdapDirectoryExplorerJob.php:104:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Directory/SyncLdapDirectoryExplorerJob.php:105:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/BulkMoveUsersToOuJob.php:7:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Jobs/Directory/BulkMoveUsersToOuJob.php:35:        SafeCommandExecutionLogger::markRunning($this->commandExecutionId);
+app/Jobs/Directory/BulkMoveUsersToOuJob.php:86:                SafeCommandExecutionLogger::markPartial($this->commandExecutionId, $summary, 'Some users failed to move.', $summary);
+app/Jobs/Directory/BulkMoveUsersToOuJob.php:90:            SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, $summary, $summary);
+app/Jobs/Directory/BulkMoveUsersToOuJob.php:92:            SafeCommandExecutionLogger::markFailed($this->commandExecutionId, $e->getMessage(), [
+app/Jobs/Directory/SyncLdapGroupsJob.php:6:use App\Models\Operations\OperationJob;
+app/Jobs/Directory/SyncLdapGroupsJob.php:8:use App\Services\Operations\OperationJobTracker;
+app/Jobs/Directory/SyncLdapGroupsJob.php:29:        OperationJobTracker $tracker,
+app/Jobs/Directory/SyncLdapGroupsJob.php:32:        $operationJob = OperationJob::query()->findOrFail($this->operationJobId);
+app/Jobs/Directory/SyncLdapGroupsJob.php:102:        $tracker = app(OperationJobTracker::class);
+app/Jobs/Directory/SyncLdapGroupsJob.php:103:        $operationJob = OperationJob::query()->find($this->operationJobId);
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php:6:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php:37:        if (method_exists(SafeCommandExecutionLogger::class, 'markRunning')) {
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php:38:            SafeCommandExecutionLogger::markRunning($this->commandExecutionId);
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php:128:                if (method_exists(SafeCommandExecutionLogger::class, 'markFailed')) {
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php:129:                    SafeCommandExecutionLogger::markFailed(
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php:139:            if (method_exists(SafeCommandExecutionLogger::class, 'markSuccess')) {
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php:140:                SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, $summary, $summary);
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php:143:            if (method_exists(SafeCommandExecutionLogger::class, 'markFailed')) {
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php:144:                SafeCommandExecutionLogger::markFailed(
+app/Models/Observability/SystemLogFile.php:8:class SystemLogFile extends Model
+app/Models/Observability/HealthCheck.php:8:class HealthCheck extends Model
+app/Models/Observability/HealthCheck.php:23:        static::creating(function (HealthCheck $healthCheck): void {
+app/Models/Operations/OperationJobItem.php:9:class OperationJobItem extends Model
+app/Models/Operations/OperationJobItem.php:28:        static::creating(function (OperationJobItem $item): void {
+app/Models/Operations/OperationJobItem.php:37:        return $this->belongsTo(OperationJob::class);
+app/Models/Operations/OperationJobLog.php:9:class OperationJobLog extends Model
+app/Models/Operations/OperationJobLog.php:25:        static::creating(function (OperationJobLog $log): void {
+app/Models/Operations/OperationJobLog.php:42:        return $this->belongsTo(OperationJob::class);
+app/Models/Operations/OperationJobLog.php:47:        return $this->belongsTo(OperationJobItem::class);
+app/Models/Operations/FailedQueueJob.php:7:class FailedQueueJob extends Model
+app/Models/Operations/LdapTransferBatch.php:155:        return $this->belongsTo(OperationJob::class);
+app/Models/Operations/LdifExportBatch.php:74:        return $this->belongsTo(OperationJob::class);
+app/Models/Operations/LdifExportBatch.php:79:        return $this->belongsTo(CommandExecution::class);
+app/Models/Operations/UniversalLdapTransferBatch.php:93:        return $this->belongsTo(OperationJob::class);
+app/Models/Operations/BulkLdapOperation.php:70:        return $this->belongsTo(OperationJob::class);
+app/Models/Operations/OperationJob.php:11:class OperationJob extends Model
+app/Models/Operations/OperationJob.php:34:        static::creating(function (OperationJob $job): void {
+app/Models/Operations/OperationJob.php:43:        return $this->hasMany(OperationJobItem::class);
+app/Models/Operations/OperationJob.php:48:        return $this->hasMany(OperationJobLog::class);
+app/Models/Operations/LdapSyncBatch.php:66:        return $this->belongsTo(OperationJob::class);
+app/Models/Operations/QueueJob.php:7:class QueueJob extends Model
+app/Models/Operations/BulkLdapOperationItem.php:50:        return $this->belongsTo(CommandExecution::class);
+app/Models/Operations/BulkLdapOperationItem.php:55:        return $this->belongsTo(OperationJobItem::class);
+app/Models/Operations/LdapCrudOperation.php:62:    public function previewCommandExecution(): BelongsTo
+app/Models/Operations/LdapCrudOperation.php:64:        return $this->belongsTo(CommandExecution::class, 'preview_command_execution_id');
+app/Models/Operations/LdapCrudOperation.php:67:    public function applyCommandExecution(): BelongsTo
+app/Models/Operations/LdapCrudOperation.php:69:        return $this->belongsTo(CommandExecution::class, 'apply_command_execution_id');
+app/Models/Operations/LdapCrudOperation.php:74:        return $this->belongsTo(OperationJob::class);
+app/Models/Operations/ImportApplyPlan.php:85:        return $this->belongsTo(OperationJob::class);
+app/Models/Operations/ImportApplyPlan.php:88:    public function dryRunCommandExecution(): BelongsTo
+app/Models/Operations/ImportApplyPlan.php:90:        return $this->belongsTo(CommandExecution::class, 'dry_run_command_execution_id');
+app/Models/Operations/ImportApplyPlan.php:93:    public function realApplyCommandExecution(): BelongsTo
+app/Models/Operations/ImportApplyPlan.php:95:        return $this->belongsTo(CommandExecution::class, 'real_apply_command_execution_id');
+app/Models/Operations/ImportApplyPlan.php:98:    public function postApplyCommandExecution(): BelongsTo
+app/Models/Operations/ImportApplyPlan.php:100:        return $this->belongsTo(CommandExecution::class, 'post_apply_command_execution_id');
+app/Models/Operations/ImportApplyPlan.php:319:    public function dryRunCommandExecutionUrl(): ?string
+app/Models/Operations/ImportApplyPlan.php:328:    public function realApplyCommandExecutionUrl(): ?string
+app/Models/Operations/ImportApplyPlan.php:337:    public function postApplyCommandExecutionUrl(): ?string
+app/Models/Operations/ImportApplyPlan.php:346:    public function relatedAuditLogsUrl(): string
+app/Models/Operations/CommandExecution.php:10:class CommandExecution extends Model
+app/Models/Operations/CommandExecution.php:31:        static::creating(function (CommandExecution $execution): void {
+app/Models/Operations/CommandExecution.php:57:        return $this->belongsTo(OperationJob::class, 'operation_job_id');
+app/Models/Operations/CommandExecution.php:62:        return $this->belongsTo(OperationJobItem::class, 'operation_job_item_id');
+app/Models/Operations/ImportBatch.php:82:        return $this->belongsTo(OperationJob::class);
+app/Models/Audit/AuditLog.php:6:use App\Models\Operations\OperationJob;
+app/Models/Audit/AuditLog.php:7:use App\Models\Operations\OperationJobItem;
+app/Models/Audit/AuditLog.php:13:class AuditLog extends Model
+app/Models/Audit/AuditLog.php:57:        static::creating(function (AuditLog $auditLog): void {
+app/Models/Audit/AuditLog.php:80:        return $this->belongsTo(OperationJob::class, 'operation_job_id');
+app/Models/Audit/AuditLog.php:85:        return $this->belongsTo(OperationJobItem::class, 'operation_job_item_id');
+app/_Disabled/DynamicNavigationRollback/RootOuEntryTypeRegistrySyncService.php.disabled:7:use App\Support\Operations\SafeCommandExecutionLogger;
+app/_Disabled/DynamicNavigationRollback/RootOuEntryTypeRegistrySyncService.php.disabled:72:            $childExecution = SafeCommandExecutionLogger::createQueued(
+app/_Disabled/DynamicNavigationRollback/RootOuEntryTypeRegistrySyncService.php.disabled:93:                SafeCommandExecutionLogger::markFailed(
+app/_Disabled/DynamicNavigationRollback/RootOuEntryTypeRegistrySyncService.php.disabled:94:                    SafeCommandExecutionLogger::id($childExecution),
+app/_Disabled/DynamicNavigationRollback/RootOuEntryTypeRegistrySyncService.php.disabled:106:            SafeCommandExecutionLogger::markSuccess(
+app/_Disabled/DynamicNavigationRollback/RootOuEntryTypeRegistrySyncService.php.disabled:107:                SafeCommandExecutionLogger::id($childExecution),
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:8:use App\Support\Operations\SafeCommandExecutionLogger;
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:99:                            $execution = SafeCommandExecutionLogger::createQueued(
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:115:                                SafeCommandExecutionLogger::id($execution),
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:121:                                ->body('Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:125:                            SafeCommandExecutionLogger::createFailed(
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:162:                                $execution = SafeCommandExecutionLogger::createQueued(
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:178:                                    SafeCommandExecutionLogger::id($execution),
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:184:                                    ->body('Total: '.count($ids).' | Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A'))
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled:188:                                SafeCommandExecutionLogger::createFailed(
+app/_Disabled/DynamicNavigationRollback/SyncRootOuEntryTypeRegistryCommand.php.disabled:6:use App\Support\Operations\SafeCommandExecutionLogger;
+app/_Disabled/DynamicNavigationRollback/SyncRootOuEntryTypeRegistryCommand.php.disabled:22:        $execution = SafeCommandExecutionLogger::createQueued(
+app/_Disabled/DynamicNavigationRollback/SyncRootOuEntryTypeRegistryCommand.php.disabled:35:            commandExecutionId: SafeCommandExecutionLogger::id($execution),
+app/_Disabled/DynamicNavigationRollback/SyncRootOuEntryTypeRegistryCommand.php.disabled:39:            SafeCommandExecutionLogger::markSuccess(
+app/_Disabled/DynamicNavigationRollback/SyncRootOuEntryTypeRegistryCommand.php.disabled:40:                SafeCommandExecutionLogger::id($execution),
+app/_Disabled/DynamicNavigationRollback/SyncRootOuEntryTypeRegistryCommand.php.disabled:51:        SafeCommandExecutionLogger::markFailed(
+app/_Disabled/DynamicNavigationRollback/SyncRootOuEntryTypeRegistryCommand.php.disabled:52:            SafeCommandExecutionLogger::id($execution),
+app/Services/Observability/SystemLogService.php:5:use App\Models\Observability\SystemLogFile;
+app/Services/Observability/SystemLogService.php:8:class SystemLogService
+app/Services/Observability/SystemLogService.php:12:        return SystemLogFile::collectRows();
+app/Services/Observability/SystemLogService.php:15:    public function find(string $key): ?SystemLogFile
+app/Services/Observability/SystemLogService.php:17:        return SystemLogFile::findVirtual($key);
+app/Services/Observability/HealthCheckService.php:6:use App\Models\Observability\HealthCheck;
+app/Services/Observability/HealthCheckService.php:13:class HealthCheckService
+app/Services/Observability/HealthCheckService.php:26:    public function checkPostgres(): HealthCheck
+app/Services/Observability/HealthCheckService.php:58:    public function checkQueueDatabase(): HealthCheck
+app/Services/Observability/HealthCheckService.php:99:    public function checkStorage(): HealthCheck
+app/Services/Observability/HealthCheckService.php:137:    public function checkLaravelLog(): HealthCheck
+app/Services/Observability/HealthCheckService.php:244:    ): HealthCheck {
+app/Services/Observability/HealthCheckService.php:245:        return HealthCheck::query()->updateOrCreate(
+app/Services/Operations/ImportPostApplyVerifier.php:6:use App\Models\Operations\CommandExecution;
+app/Services/Operations/ImportPostApplyVerifier.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ImportPostApplyVerifier.php:18:    public function verify(ImportApplyPlan $plan): CommandExecution
+app/Services/Operations/ImportPostApplyVerifier.php:25:        $execution = CommandExecution::query()->create([
+app/Services/Operations/ImportPostApplyVerifier.php:273:    private function audit(ImportApplyPlan $plan, CommandExecution $execution, string $status, int $verifiedCount, int $missingCount): void
+app/Services/Operations/ImportPostApplyVerifier.php:275:        app(AuditLogger::class)->log([
+app/Services/Operations/UniversalLdapTransferService.php:6:use App\Models\Operations\OperationJob;
+app/Services/Operations/UniversalLdapTransferService.php:7:use App\Models\Operations\OperationJobLog;
+app/Services/Operations/UniversalLdapTransferService.php:16:    public function preview(UniversalLdapTransferBatch $batch, OperationJob $operationJob): array
+app/Services/Operations/UniversalLdapTransferService.php:337:    private function log(OperationJob $job, string $level, string $message, array $context = []): void
+app/Services/Operations/UniversalLdapTransferService.php:355:        OperationJobLog::query()->create(
+app/Services/Operations/ImportApplyPlanDispatcher.php:8:use App\Models\Operations\OperationJob;
+app/Services/Operations/ImportApplyPlanDispatcher.php:9:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ImportApplyPlanDispatcher.php:55:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Operations/ImportApplyPlanDispatcher.php:98:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportApplyPlanDispatcher.php:124:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportApplyDryRunDispatcher.php:7:use App\Models\Operations\OperationJob;
+app/Services/Operations/ImportApplyDryRunDispatcher.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ImportApplyDryRunDispatcher.php:27:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Operations/ImportApplyDryRunDispatcher.php:66:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportApplyDryRunDispatcher.php:92:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportPreviewDispatcher.php:7:use App\Models\Operations\OperationJob;
+app/Services/Operations/ImportPreviewDispatcher.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ImportPreviewDispatcher.php:35:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Operations/ImportPreviewDispatcher.php:77:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportPreviewDispatcher.php:102:            app(AuditLogger::class)->log([
+app/Services/Operations/SafeCommandRunner.php:5:use App\Models\Operations\CommandExecution;
+app/Services/Operations/SafeCommandRunner.php:6:use App\Services\Audit\AuditLogger;
+app/Services/Operations/SafeCommandRunner.php:27:    public function run(string $command, string $commandType = 'safe_artisan'): CommandExecution
+app/Services/Operations/SafeCommandRunner.php:32:        $execution = CommandExecution::query()->create([
+app/Services/Operations/SafeCommandRunner.php:106:    private function audit(CommandExecution $execution): void
+app/Services/Operations/SafeCommandRunner.php:108:        app(AuditLogger::class)->log([
+app/Services/Operations/SafeCommandRunner.php:112:            'target_type' => CommandExecution::class,
+app/Services/Operations/LdapSearchScriptExecutor.php:6:use App\Models\Operations\CommandExecution;
+app/Services/Operations/LdapSearchScriptExecutor.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/LdapSearchScriptExecutor.php:17:    public function execute(SavedScript $script): CommandExecution
+app/Services/Operations/LdapSearchScriptExecutor.php:24:        $execution = CommandExecution::query()->create([
+app/Services/Operations/LdapSearchScriptExecutor.php:196:    private function audit(CommandExecution $execution, SavedScript $script, string $action): void
+app/Services/Operations/LdapSearchScriptExecutor.php:198:        app(AuditLogger::class)->log([
+app/Services/Operations/UniversalLdapSyncService.php:8:use App\Models\Operations\OperationJob;
+app/Services/Operations/UniversalLdapSyncService.php:9:use App\Models\Operations\OperationJobLog;
+app/Services/Operations/UniversalLdapSyncService.php:16:    public function sync(LdapSyncBatch $batch, OperationJob $operationJob): array
+app/Services/Operations/UniversalLdapSyncService.php:301:    private function log(OperationJob $job, string $level, string $message, array $context = []): void
+app/Services/Operations/UniversalLdapSyncService.php:303:        OperationJobLog::query()->create([
+app/Services/Operations/LdapRealApplyExecutor.php:6:use App\Models\Operations\CommandExecution;
+app/Services/Operations/LdapRealApplyExecutor.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/LdapRealApplyExecutor.php:18:    public function apply(ImportApplyPlan $plan, string $confirmation): CommandExecution
+app/Services/Operations/LdapRealApplyExecutor.php:25:        $execution = CommandExecution::query()->create([
+app/Services/Operations/LdapRealApplyExecutor.php:273:    private function audit(ImportApplyPlan $plan, CommandExecution $execution, string $status, bool $ldapWasChanged): void
+app/Services/Operations/LdapRealApplyExecutor.php:275:        app(AuditLogger::class)->log([
+app/Services/Operations/OperationJobProgressService.php:5:use App\Models\Operations\OperationJob;
+app/Services/Operations/OperationJobProgressService.php:8:class OperationJobProgressService
+app/Services/Operations/OperationJobProgressService.php:10:    public function recalculate(OperationJob $job): OperationJob
+app/Services/Operations/OperationJobProgressService.php:47:    public function progressText(OperationJob $job): string
+app/Services/Operations/OperationJobProgressService.php:68:    public function progressPercent(OperationJob $job): int
+app/Services/Operations/ImportRealApplyDispatcher.php:7:use App\Models\Operations\OperationJob;
+app/Services/Operations/ImportRealApplyDispatcher.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ImportRealApplyDispatcher.php:34:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Operations/ImportRealApplyDispatcher.php:72:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportRealApplyDispatcher.php:96:            app(AuditLogger::class)->log([
+app/Services/Operations/LdapApplyDryRunVerifier.php:6:use App\Models\Operations\CommandExecution;
+app/Services/Operations/LdapApplyDryRunVerifier.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/LdapApplyDryRunVerifier.php:17:    public function verify(ImportApplyPlan $plan): CommandExecution
+app/Services/Operations/LdapApplyDryRunVerifier.php:24:        $execution = CommandExecution::query()->create([
+app/Services/Operations/LdapApplyDryRunVerifier.php:225:    private function audit(ImportApplyPlan $plan, CommandExecution $execution, string $status): void
+app/Services/Operations/LdapApplyDryRunVerifier.php:227:        app(AuditLogger::class)->log([
+app/Services/Operations/ImportApplyPlanRecoveryService.php:6:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ImportApplyPlanRecoveryService.php:41:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportApplyPlanRecoveryService.php:68:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportApplyPlanRecoveryService.php:129:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportApplyPlanRecoveryService.php:160:            app(AuditLogger::class)->log([
+app/Services/Operations/ScriptPreviewService.php:5:use App\Models\Operations\CommandExecution;
+app/Services/Operations/ScriptPreviewService.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ScriptPreviewService.php:14:    public function preview(SavedScript $script): CommandExecution
+app/Services/Operations/ScriptPreviewService.php:21:        $execution = CommandExecution::query()->create([
+app/Services/Operations/ScriptPreviewService.php:56:        app(AuditLogger::class)->log([
+app/Services/Operations/LdifExportDispatcher.php:8:use App\Models\Operations\OperationJob;
+app/Services/Operations/LdifExportDispatcher.php:9:use App\Services\Audit\AuditLogger;
+app/Services/Operations/LdifExportDispatcher.php:89:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Operations/LdifExportDispatcher.php:127:            app(OperationJobTracker::class)->log($operationJob, 'info', 'LDIF export queued.', [
+app/Services/Operations/LdifExportDispatcher.php:145:            app(AuditLogger::class)->log([
+app/Services/Operations/LdifExportDispatcher.php:171:            app(AuditLogger::class)->log([
+app/Services/Operations/LdapCrudOperationService.php:6:use App\Models\Operations\CommandExecution;
+app/Services/Operations/LdapCrudOperationService.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/LdapCrudOperationService.php:44:        app(AuditLogger::class)->log([
+app/Services/Operations/LdapCrudOperationService.php:127:            app(AuditLogger::class)->log([
+app/Services/Operations/LdapCrudOperationService.php:197:            app(AuditLogger::class)->log([
+app/Services/Operations/LdapCrudOperationService.php:265:            app(AuditLogger::class)->log([
+app/Services/Operations/LdapCrudOperationService.php:291:                    app(AuditLogger::class)->log([
+app/Services/Operations/LdapCrudOperationService.php:329:            app(AuditLogger::class)->log([
+app/Services/Operations/LdapCrudOperationService.php:374:    ): CommandExecution {
+app/Services/Operations/LdapCrudOperationService.php:377:        return CommandExecution::query()->create([
+app/Services/Operations/LdifExportExecutor.php:6:use App\Models\Operations\CommandExecution;
+app/Services/Operations/LdifExportExecutor.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/LdifExportExecutor.php:18:    public function execute(LdifExportBatch $batch): CommandExecution
+app/Services/Operations/LdifExportExecutor.php:25:        $execution = CommandExecution::query()->create([
+app/Services/Operations/LdifExportExecutor.php:276:    private function audit(LdifExportBatch $batch, CommandExecution $execution, string $status): void
+app/Services/Operations/LdifExportExecutor.php:278:        app(AuditLogger::class)->log([
+app/Services/Operations/ScriptOperationDispatcher.php:6:use App\Models\Operations\OperationJob;
+app/Services/Operations/ScriptOperationDispatcher.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ScriptOperationDispatcher.php:13:    public function queueLdapSearch(SavedScript $script): OperationJob
+app/Services/Operations/ScriptOperationDispatcher.php:15:        $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Operations/ScriptOperationDispatcher.php:49:        app(AuditLogger::class)->log([
+app/Services/Operations/OperationJobTracker.php:5:use App\Models\Operations\OperationJob;
+app/Services/Operations/OperationJobTracker.php:6:use App\Models\Operations\OperationJobItem;
+app/Services/Operations/OperationJobTracker.php:7:use App\Models\Operations\OperationJobLog;
+app/Services/Operations/OperationJobTracker.php:15:class OperationJobTracker
+app/Services/Operations/OperationJobTracker.php:17:    public function create(array $data): OperationJob
+app/Services/Operations/OperationJobTracker.php:19:        $data = $this->normalizeOperationJobData($data);
+app/Services/Operations/OperationJobTracker.php:37:        $job = new OperationJob();
+app/Services/Operations/OperationJobTracker.php:48:    public function createItem(OperationJob $job, array $data): ?OperationJobItem
+app/Services/Operations/OperationJobTracker.php:54:        $data = $this->normalizeOperationJobItemData($data);
+app/Services/Operations/OperationJobTracker.php:71:        $item = new OperationJobItem();
+app/Services/Operations/OperationJobTracker.php:78:    public function markRunning(OperationJob $job): void
+app/Services/Operations/OperationJobTracker.php:88:    public function markSuccess(OperationJob $job, array $data = []): void
+app/Services/Operations/OperationJobTracker.php:98:    public function markFailed(OperationJob $job, string $errorMessage, array $data = []): void
+app/Services/Operations/OperationJobTracker.php:111:    public function updateJob(OperationJob $job, array $data): void
+app/Services/Operations/OperationJobTracker.php:113:        $data = $this->normalizeOperationJobData($data);
+app/Services/Operations/OperationJobTracker.php:124:    public function updateItem(?OperationJobItem $item, array $data): void
+app/Services/Operations/OperationJobTracker.php:130:        $data = $this->normalizeOperationJobItemData($data);
+app/Services/Operations/OperationJobTracker.php:148:    public function log(OperationJob $job, string $level, string $message, array $context = [], ?OperationJobItem $item = null): ?OperationJobLog
+app/Services/Operations/OperationJobTracker.php:201:            $log = new OperationJobLog();
+app/Services/Operations/OperationJobTracker.php:219:    private function normalizeOperationJobData(array $data): array
+app/Services/Operations/OperationJobTracker.php:252:    private function normalizeOperationJobItemData(array $data): array
+app/Services/Operations/OperationJobFactory.php:5:use App\Models\Operations\OperationJob;
+app/Services/Operations/OperationJobFactory.php:6:use App\Models\Operations\OperationJobLog;
+app/Services/Operations/OperationJobFactory.php:11:class OperationJobFactory
+app/Services/Operations/OperationJobFactory.php:13:    public function createQueued(array $data): OperationJob
+app/Services/Operations/OperationJobFactory.php:53:        $job = OperationJob::query()->create($this->filterColumns('operation_jobs', $row));
+app/Services/Operations/OperationJobFactory.php:65:    public function markRunning(OperationJob $job, array $context = []): void
+app/Services/Operations/OperationJobFactory.php:78:    public function markSuccess(OperationJob $job, array $result = []): void
+app/Services/Operations/OperationJobFactory.php:110:    public function markFailed(OperationJob $job, string $message, array $context = []): void
+app/Services/Operations/OperationJobFactory.php:130:    public function log(OperationJob $job, string $level, string $message, array $context = []): void
+app/Services/Operations/OperationJobFactory.php:136:        OperationJobLog::query()->create($this->filterColumns('operation_job_logs', [
+app/Services/Operations/BulkLdapUserOperationService.php:5:use App\Jobs\Operations\ExecuteBulkLdapOperationJob;
+app/Services/Operations/BulkLdapUserOperationService.php:9:use App\Models\Operations\CommandExecution;
+app/Services/Operations/BulkLdapUserOperationService.php:10:use App\Services\Audit\AuditLogger;
+app/Services/Operations/BulkLdapUserOperationService.php:175:            $operationJobId = $this->createOperationJob($operation, $retryOnlyFailed);
+app/Services/Operations/BulkLdapUserOperationService.php:200:            ExecuteBulkLdapOperationJob::dispatch($operation->id, $retryOnlyFailed)->onQueue('ldap');
+app/Services/Operations/BulkLdapUserOperationService.php:262:        $this->updateOperationJob($operation, [
+app/Services/Operations/BulkLdapUserOperationService.php:306:        $this->updateOperationJob($operation, [
+app/Services/Operations/BulkLdapUserOperationService.php:364:        $this->updateOperationJobItem($operation, $item, [
+app/Services/Operations/BulkLdapUserOperationService.php:383:            $this->updateOperationJobItem($operation, $item, [
+app/Services/Operations/BulkLdapUserOperationService.php:401:        $execution = $this->createCommandExecution($operation, $item, $displayCommand);
+app/Services/Operations/BulkLdapUserOperationService.php:438:                $this->updateOperationJobItem($operation, $item, [
+app/Services/Operations/BulkLdapUserOperationService.php:470:        ?CommandExecution $execution,
+app/Services/Operations/BulkLdapUserOperationService.php:484:        $this->updateOperationJobItem($operation, $item, [
+app/Services/Operations/BulkLdapUserOperationService.php:608:    private function createCommandExecution(BulkLdapOperation $operation, BulkLdapOperationItem $item, string $displayCommand): CommandExecution
+app/Services/Operations/BulkLdapUserOperationService.php:612:        return CommandExecution::query()->create([
+app/Services/Operations/BulkLdapUserOperationService.php:638:    private function createOperationJobLog(
+app/Services/Operations/BulkLdapUserOperationService.php:678:        $this->createOperationJobLog(
+app/Services/Operations/BulkLdapUserOperationService.php:687:    private function createOperationJob(BulkLdapOperation $operation, bool $retryOnlyFailed): ?int
+app/Services/Operations/BulkLdapUserOperationService.php:729:            // OperationJob is useful, but queue dispatch must not die just because this table schema differs.
+app/Services/Operations/BulkLdapUserOperationService.php:734:    private function updateOperationJob(BulkLdapOperation $operation, array $payload): void
+app/Services/Operations/BulkLdapUserOperationService.php:747:    private function updateOperationJobItem(BulkLdapOperation $operation, BulkLdapOperationItem $item, array $payload): void
+app/Services/Operations/BulkLdapUserOperationService.php:861:        $this->updateOperationJob($operation->fresh(), [
+app/Services/Operations/BulkLdapUserOperationService.php:868:    private function auditItem(BulkLdapOperation $operation, BulkLdapOperationItem $item, string $status, string $message, ?CommandExecution $execution): void
+app/Services/Operations/BulkLdapUserOperationService.php:898:        if (! class_exists(AuditLogger::class)) {
+app/Services/Operations/BulkLdapUserOperationService.php:903:            app(AuditLogger::class)->log(RedactsSensitiveData::redact($payload));
+app/Services/Operations/ImportPreviewService.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ImportPreviewService.php:499:        if (! class_exists(AuditLogger::class)) {
+app/Services/Operations/ImportPreviewService.php:504:            app(AuditLogger::class)->log(RedactsSensitiveData::redact([
+app/Services/Operations/ImportPostApplyVerificationDispatcher.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Operations/ImportPostApplyVerificationDispatcher.php:26:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Operations/ImportPostApplyVerificationDispatcher.php:63:            app(AuditLogger::class)->log([
+app/Services/Operations/ImportPostApplyVerificationDispatcher.php:87:            app(AuditLogger::class)->log([
+app/Services/Operations/LdapTransferStableRunner.php:19:        $operationJobId = $this->createOperationJob($batch, 'ldap_transfer_preview', 'LDAP Transfer Preview - '.$batch->name);
+app/Services/Operations/LdapTransferStableRunner.php:85:            $this->finishOperationJob($operationJobId, 'success', count($entries), count($entries), 0, 0, null);
+app/Services/Operations/LdapTransferStableRunner.php:112:            $this->finishOperationJob($operationJobId, 'failed', 1, 0, 1, 0, $message);
+app/Services/Operations/LdapTransferStableRunner.php:127:        $operationJobId = $this->createOperationJob($batch, 'ldap_transfer_execute', 'LDAP Transfer Execute - '.$batch->name);
+app/Services/Operations/LdapTransferStableRunner.php:245:            $this->finishOperationJob($operationJobId, $status, count($entries), $success, $failed, $skipped, $status === 'failed' ? $message : null);
+app/Services/Operations/LdapTransferStableRunner.php:273:            $this->finishOperationJob($operationJobId, 'failed', 1, 0, 1, 0, $message);
+app/Services/Operations/LdapTransferStableRunner.php:701:    private function createOperationJob(LdapTransferBatch $batch, string $action, string $title): ?int
+app/Services/Operations/LdapTransferStableRunner.php:770:    private function finishOperationJob(?int $operationJobId, string $status, int $total, int $success, int $failed, int $skipped, ?string $error): void
+app/Services/Audit/AuditLogger.php:5:use App\Models\Audit\AuditLog;
+app/Services/Audit/AuditLogger.php:13:class AuditLogger
+app/Services/Audit/AuditLogger.php:15:    public function log(array $data): ?AuditLog
+app/Services/Audit/AuditLogger.php:48:            return AuditLog::query()->create($payload);
+app/Services/Audit/AuditLogger.php:63:    ): ?AuditLog {
+app/Services/Directory/LdapUserLifecycleService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapUserLifecycleService.php:341:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapUserLifecycleService.php:587:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapUserLifecycleService.php:609:        $execution = CommandExecution::query()->create([
+app/Services/Directory/DirectoryManagementSyncDispatcher.php:8:use App\Services\Operations\OperationJobFactory;
+app/Services/Directory/DirectoryManagementSyncDispatcher.php:239:            $operationJob = app(OperationJobFactory::class)->createQueued([
+app/Services/Directory/LdapSingleGroupRefreshService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapSingleGroupRefreshService.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapSingleGroupRefreshService.php:26:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapSingleGroupRefreshService.php:390:    private function audit(LdapGroupEntry $groupEntry, CommandExecution $execution, string $status, array $context): void
+app/Services/Directory/LdapSingleGroupRefreshService.php:392:        app(AuditLogger::class)->log([
+app/Services/Directory/LdapSingleUserSyncService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapSingleUserSyncService.php:49:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapSingleGroupRefreshDispatcher.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapSingleGroupRefreshDispatcher.php:8:use App\Services\Operations\OperationJobTracker;
+app/Services/Directory/LdapSingleGroupRefreshDispatcher.php:19:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Directory/LdapSingleGroupRefreshDispatcher.php:54:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapSingleGroupRefreshDispatcher.php:76:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapSingleUserRefreshService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapSingleUserRefreshService.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapSingleUserRefreshService.php:26:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapSingleUserRefreshService.php:349:    private function audit(LdapUserEntry $userEntry, CommandExecution $execution, string $status, array $context): void
+app/Services/Directory/LdapSingleUserRefreshService.php:351:        app(AuditLogger::class)->log([
+app/Services/Directory/GenericLdapEntryMutationService.php:6:use App\Support\Operations\SafeCommandExecutionLogger;
+app/Services/Directory/GenericLdapEntryMutationService.php:387:            $execution = SafeCommandExecutionLogger::createQueued(
+app/Services/Directory/GenericLdapEntryMutationService.php:417:                SafeCommandExecutionLogger::markFailed(
+app/Services/Directory/GenericLdapEntryMutationService.php:418:                    SafeCommandExecutionLogger::id($execution),
+app/Services/Directory/GenericLdapEntryMutationService.php:427:                    'command_execution_id' => SafeCommandExecutionLogger::id($execution),
+app/Services/Directory/GenericLdapEntryMutationService.php:431:            SafeCommandExecutionLogger::markSuccess(
+app/Services/Directory/GenericLdapEntryMutationService.php:432:                SafeCommandExecutionLogger::id($execution),
+app/Services/Directory/GenericLdapEntryMutationService.php:440:                'command_execution_id' => SafeCommandExecutionLogger::id($execution),
+app/Services/Directory/GenericLdapEntryMutationService.php:498:        $execution = SafeCommandExecutionLogger::createQueued(
+app/Services/Directory/GenericLdapEntryMutationService.php:530:            SafeCommandExecutionLogger::markFailed(
+app/Services/Directory/GenericLdapEntryMutationService.php:531:                SafeCommandExecutionLogger::id($execution),
+app/Services/Directory/GenericLdapEntryMutationService.php:540:                'command_execution_id' => SafeCommandExecutionLogger::id($execution),
+app/Services/Directory/GenericLdapEntryMutationService.php:544:        SafeCommandExecutionLogger::markSuccess(
+app/Services/Directory/GenericLdapEntryMutationService.php:545:            SafeCommandExecutionLogger::id($execution),
+app/Services/Directory/GenericLdapEntryMutationService.php:553:            'command_execution_id' => SafeCommandExecutionLogger::id($execution),
+app/Services/Directory/LdapRoleSyncService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapRoleSyncService.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapRoleSyncService.php:21:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapRoleSyncService.php:305:    private function audit(CommandExecution $execution, string $status, array $summary): void
+app/Services/Directory/LdapRoleSyncService.php:307:        app(AuditLogger::class)->log([
+app/Services/Directory/LdapSingleUserRefreshDispatcher.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapSingleUserRefreshDispatcher.php:8:use App\Services\Operations\OperationJobTracker;
+app/Services/Directory/LdapSingleUserRefreshDispatcher.php:19:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Directory/LdapSingleUserRefreshDispatcher.php:54:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapSingleUserRefreshDispatcher.php:76:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapSchemaSyncService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapSchemaSyncService.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapSchemaSyncService.php:24:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapSchemaSyncService.php:498:    private function audit(?LdapConnection $connection, CommandExecution $execution, string $status, array $summary): void
+app/Services/Directory/LdapSchemaSyncService.php:500:        app(AuditLogger::class)->log([
+app/Services/Directory/LdapUserMutationService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapUserMutationService.php:359:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapUserMutationService.php:436:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapRoleSyncDispatcher.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapRoleSyncDispatcher.php:8:use App\Services\Operations\OperationJobTracker;
+app/Services/Directory/LdapRoleSyncDispatcher.php:17:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Directory/LdapRoleSyncDispatcher.php:48:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapRoleSyncDispatcher.php:69:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapEntryTypeRegistryService.php:6:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapEntryTypeRegistryService.php:29:        app(AuditLogger::class)->log([
+app/Services/Directory/LdapDirectoryExplorerSyncDispatcher.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapDirectoryExplorerSyncDispatcher.php:9:use App\Services\Operations\OperationJobTracker;
+app/Services/Directory/LdapDirectoryExplorerSyncDispatcher.php:28:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Directory/LdapDirectoryExplorerSyncDispatcher.php:62:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapDirectoryExplorerSyncDispatcher.php:84:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapUserSyncService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapUserSyncService.php:22:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapDirectoryExplorerSyncService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapDirectoryExplorerSyncService.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapDirectoryExplorerSyncService.php:25:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapDirectoryExplorerSyncService.php:483:    private function audit(?LdapConnection $connection, CommandExecution $execution, string $status, array $summary): void
+app/Services/Directory/LdapDirectoryExplorerSyncService.php:485:        app(AuditLogger::class)->log([
+app/Services/Directory/LdapGroupSyncService.php:7:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapGroupSyncService.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapGroupSyncService.php:24:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapGroupSyncService.php:385:    private function audit(LdapConnection $connection, CommandExecution $execution, string $status, array $summary): void
+app/Services/Directory/LdapGroupSyncService.php:387:        app(AuditLogger::class)->log([
+app/Services/Directory/LdapApplicationSyncDispatcher.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapApplicationSyncDispatcher.php:8:use App\Services\Operations\OperationJobTracker;
+app/Services/Directory/LdapApplicationSyncDispatcher.php:17:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Directory/LdapApplicationSyncDispatcher.php:48:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapApplicationSyncDispatcher.php:69:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapUserSyncDispatcher.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapUserSyncDispatcher.php:8:use App\Services\Operations\OperationJobTracker;
+app/Services/Directory/LdapUserSyncDispatcher.php:27:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Directory/LdapUserSyncDispatcher.php:61:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapUserSyncDispatcher.php:83:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapUnitSyncService.php:8:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapUnitSyncService.php:9:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapUnitSyncService.php:23:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapUnitSyncService.php:360:    private function audit(CommandExecution $execution, string $status, array $summary): void
+app/Services/Directory/LdapUnitSyncService.php:362:        app(AuditLogger::class)->log([
+app/Services/Directory/LdapUnitSyncDispatcher.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapUnitSyncDispatcher.php:8:use App\Services\Operations\OperationJobTracker;
+app/Services/Directory/LdapUnitSyncDispatcher.php:17:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Directory/LdapUnitSyncDispatcher.php:48:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapUnitSyncDispatcher.php:69:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapApplicationSyncService.php:8:use App\Models\Operations\CommandExecution;
+app/Services/Directory/LdapApplicationSyncService.php:9:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapApplicationSyncService.php:22:        $execution = CommandExecution::query()->create([
+app/Services/Directory/LdapApplicationSyncService.php:342:    private function audit(CommandExecution $execution, string $status, array $summary): void
+app/Services/Directory/LdapApplicationSyncService.php:344:        app(AuditLogger::class)->log([
+app/Services/Directory/LdapSchemaSyncDispatcher.php:8:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapSchemaSyncDispatcher.php:9:use App\Services\Operations\OperationJobTracker;
+app/Services/Directory/LdapSchemaSyncDispatcher.php:28:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Directory/LdapSchemaSyncDispatcher.php:62:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapSchemaSyncDispatcher.php:85:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapGroupSyncDispatcher.php:7:use App\Services\Audit\AuditLogger;
+app/Services/Directory/LdapGroupSyncDispatcher.php:8:use App\Services\Operations\OperationJobTracker;
+app/Services/Directory/LdapGroupSyncDispatcher.php:27:            $operationJob = app(OperationJobTracker::class)->create([
+app/Services/Directory/LdapGroupSyncDispatcher.php:61:            app(AuditLogger::class)->log([
+app/Services/Directory/LdapGroupSyncDispatcher.php:83:            app(AuditLogger::class)->log([
+app/Support/Operations/SafeCommandExecutionLogger.php:5:use App\Models\Operations\CommandExecution;
+app/Support/Operations/SafeCommandExecutionLogger.php:10:class SafeCommandExecutionLogger
+app/Support/Operations/SafeCommandExecutionLogger.php:12:    public static function createQueued(string $commandType, string $command, array $context = []): ?CommandExecution
+app/Support/Operations/SafeCommandExecutionLogger.php:23:    public static function createFailed(string $commandType, string $message, array $context = []): ?CommandExecution
+app/Support/Operations/SafeCommandExecutionLogger.php:85:    public static function create(array $data): ?CommandExecution
+app/Support/Operations/SafeCommandExecutionLogger.php:90:            return CommandExecution::query()->create($payload);
+app/Support/Operations/SafeCommandExecutionLogger.php:92:            Log::error('SafeCommandExecutionLogger create failed', [
+app/Support/Operations/SafeCommandExecutionLogger.php:108:            $execution = CommandExecution::query()->find($id);
+app/Support/Operations/SafeCommandExecutionLogger.php:122:            Log::error('SafeCommandExecutionLogger update failed', [
+app/Support/Operations/SafeCommandExecutionLogger.php:130:    public static function id(?CommandExecution $execution): ?int
+app/Support/Operations/SafeCommandExecutionLogger.php:151:            $columns = Schema::getColumnListing((new CommandExecution())->getTable());
+
+=== 5. Routes ===
+  GET|HEAD  admin ............................................................................................................ filament.admin.pages.dashboard › App\Filament\Pages\Dashboard
+  GET|HEAD  admin/directory/directory-object-managers filament.admin.resources.directory.directory-object-managers.index › App\Filament\Resources\Directory\DirectoryObjectManagerResource\…
+  GET|HEAD  admin/directory/directory-object-managers/{record} filament.admin.resources.directory.directory-object-managers.view › App\Filament\Resources\Directory\DirectoryObjectManagerR…
+  GET|HEAD  admin/directory/ldap-application-entries filament.admin.resources.directory.ldap-application-entries.index › App\Filament\Resources\Directory\LdapApplicationEntryResource\Page…
+  GET|HEAD  admin/directory/ldap-application-entries/{record} filament.admin.resources.directory.ldap-application-entries.view › App\Filament\Resources\Directory\LdapApplicationEntryResou…
+  GET|HEAD  admin/directory/ldap-connections . filament.admin.resources.directory.ldap-connections.index › App\Filament\Resources\Directory\LdapConnectionResource\Pages\ListLdapConnections
+  GET|HEAD  admin/directory/ldap-connections/create filament.admin.resources.directory.ldap-connections.create › App\Filament\Resources\Directory\LdapConnectionResource\Pages\CreateLdapCo…
+  GET|HEAD  admin/directory/ldap-connections/{record} filament.admin.resources.directory.ldap-connections.view › App\Filament\Resources\Directory\LdapConnectionResource\Pages\ViewLdapConn…
+  GET|HEAD  admin/directory/ldap-connections/{record}/edit filament.admin.resources.directory.ldap-connections.edit › App\Filament\Resources\Directory\LdapConnectionResource\Pages\EditLda…
+  GET|HEAD  admin/directory/ldap-directory-entries filament.admin.resources.directory.ldap-directory-entries.index › App\Filament\Resources\Directory\LdapDirectoryEntryResource\Pages\List…
+  GET|HEAD  admin/directory/ldap-directory-entries/{record} filament.admin.resources.directory.ldap-directory-entries.view › App\Filament\Resources\Directory\LdapDirectoryEntryResource\Pa…
+  GET|HEAD  admin/directory/ldap-entry-type-rules filament.admin.resources.directory.ldap-entry-type-rules.index › App\Filament\Resources\Directory\LdapEntryTypeRuleResource\Pages\ListLda…
+  GET|HEAD  admin/directory/ldap-entry-type-rules/create filament.admin.resources.directory.ldap-entry-type-rules.create › App\Filament\Resources\Directory\LdapEntryTypeRuleResource\Pages…
+  GET|HEAD  admin/directory/ldap-entry-type-rules/{record} filament.admin.resources.directory.ldap-entry-type-rules.view › App\Filament\Resources\Directory\LdapEntryTypeRuleResource\Pages…
+  GET|HEAD  admin/directory/ldap-entry-type-rules/{record}/edit filament.admin.resources.directory.ldap-entry-type-rules.edit › App\Filament\Resources\Directory\LdapEntryTypeRuleResource\…
+  GET|HEAD  admin/directory/ldap-group-entries filament.admin.resources.directory.ldap-group-entries.index › App\Filament\Resources\Directory\LdapGroupEntryResource\Pages\ListLdapGroupEnt…
+  GET|HEAD  admin/directory/ldap-group-entries/{record} filament.admin.resources.directory.ldap-group-entries.view › App\Filament\Resources\Directory\LdapGroupEntryResource\Pages\ViewLdap…
+  GET|HEAD  admin/directory/ldap-role-entries filament.admin.resources.directory.ldap-role-entries.index › App\Filament\Resources\Directory\LdapRoleEntryResource\Pages\ListLdapRoleEntries
+  GET|HEAD  admin/directory/ldap-role-entries/{record} filament.admin.resources.directory.ldap-role-entries.view › App\Filament\Resources\Directory\LdapRoleEntryResource\Pages\ViewLdapRol…
+  GET|HEAD  admin/directory/ldap-schema-entries filament.admin.resources.directory.ldap-schema-entries.index › App\Filament\Resources\Directory\LdapSchemaEntryResource\Pages\ListLdapSchem…
+  GET|HEAD  admin/directory/ldap-schema-entries/{record} filament.admin.resources.directory.ldap-schema-entries.view › App\Filament\Resources\Directory\LdapSchemaEntryResource\Pages\ViewL…
+  GET|HEAD  admin/directory/ldap-unit-entries filament.admin.resources.directory.ldap-unit-entries.index › App\Filament\Resources\Directory\LdapUnitEntryResource\Pages\ListLdapUnitEntries
+  GET|HEAD  admin/directory/ldap-unit-entries/{record} filament.admin.resources.directory.ldap-unit-entries.view › App\Filament\Resources\Directory\LdapUnitEntryResource\Pages\ViewLdapUni…
+  GET|HEAD  admin/directory/ldap-user-entries filament.admin.resources.directory.ldap-user-entries.index › App\Filament\Resources\Directory\LdapUserEntryResource\Pages\ListLdapUserEntries
+  GET|HEAD  admin/directory/ldap-user-entries/{record} filament.admin.resources.directory.ldap-user-entries.view › App\Filament\Resources\Directory\LdapUserEntryResource\Pages\ViewLdapUse…
+  GET|HEAD  admin/keycloak-console ................................................................ filament.admin.pages.keycloak-console › App\Filament\Pages\Miscellaneous\KeycloakConsole
+  GET|HEAD  admin/login ................................................................................................................ filament.admin.auth.login › App\Filament\Auth\Login
+  POST      admin/logout ..................................................................................................... filament.admin.auth.logout › Filament\Auth › LogoutController
+  GET|HEAD  admin/observability/audit-logs ............. filament.admin.resources.observability.audit-logs.index › App\Filament\Resources\Observability\AuditLogResource\Pages\ListAuditLogs
+  GET|HEAD  admin/observability/audit-logs/{record} ...... filament.admin.resources.observability.audit-logs.view › App\Filament\Resources\Observability\AuditLogResource\Pages\ViewAuditLog
+  GET|HEAD  admin/observability/failed-queue-jobs filament.admin.resources.observability.failed-queue-jobs.index › App\Filament\Resources\Observability\FailedQueueJobResource\Pages\ListFa…
+  GET|HEAD  admin/observability/failed-queue-jobs/{record} filament.admin.resources.observability.failed-queue-jobs.view › App\Filament\Resources\Observability\FailedQueueJobResource\Page…
+  GET|HEAD  admin/observability/health-checks . filament.admin.resources.observability.health-checks.index › App\Filament\Resources\Observability\HealthCheckResource\Pages\ListHealthChecks
+  GET|HEAD  admin/observability/health-checks/{record} filament.admin.resources.observability.health-checks.view › App\Filament\Resources\Observability\HealthCheckResource\Pages\ViewHealt…
+  GET|HEAD  admin/operations/bulk-ldap-operation-items filament.admin.resources.operations.bulk-ldap-operation-items.index › App\Filament\Resources\Operations\BulkLdapOperationItemResourc…
+  GET|HEAD  admin/operations/bulk-ldap-operation-items/{record} filament.admin.resources.operations.bulk-ldap-operation-items.view › App\Filament\Resources\Operations\BulkLdapOperationIte…
+  GET|HEAD  admin/operations/bulk-ldap-operations filament.admin.resources.operations.bulk-ldap-operations.index › App\Filament\Resources\Operations\BulkLdapOperationResource\Pages\ListBu…
+  GET|HEAD  admin/operations/bulk-ldap-operations/create filament.admin.resources.operations.bulk-ldap-operations.create › App\Filament\Resources\Operations\BulkLdapOperationResource\Page…
+  GET|HEAD  admin/operations/bulk-ldap-operations/{record} filament.admin.resources.operations.bulk-ldap-operations.view › App\Filament\Resources\Operations\BulkLdapOperationResource\Page…
+  GET|HEAD  admin/operations/bulk-ldap-operations/{record}/edit filament.admin.resources.operations.bulk-ldap-operations.edit › App\Filament\Resources\Operations\BulkLdapOperationResource…
+  GET|HEAD  admin/operations/command-executions filament.admin.resources.operations.command-executions.index › App\Filament\Resources\Operations\CommandExecutionResource\Pages\ListCommand…
+  GET|HEAD  admin/operations/command-executions/{record} filament.admin.resources.operations.command-executions.view › App\Filament\Resources\Operations\CommandExecutionResource\Pages\Vie…
+  GET|HEAD  admin/operations/import-apply-plans filament.admin.resources.operations.import-apply-plans.index › App\Filament\Resources\Operations\ImportApplyPlanResource\Pages\ListImportAp…
+  GET|HEAD  admin/operations/import-apply-plans/{record} filament.admin.resources.operations.import-apply-plans.view › App\Filament\Resources\Operations\ImportApplyPlanResource\Pages\View…
+  GET|HEAD  admin/operations/import-batches ....... filament.admin.resources.operations.import-batches.index › App\Filament\Resources\Operations\ImportBatchResource\Pages\ListImportBatches
+  GET|HEAD  admin/operations/import-batches/create filament.admin.resources.operations.import-batches.create › App\Filament\Resources\Operations\ImportBatchResource\Pages\CreateImportBatch
+  GET|HEAD  admin/operations/import-batches/{record} . filament.admin.resources.operations.import-batches.view › App\Filament\Resources\Operations\ImportBatchResource\Pages\ViewImportBatch
+  GET|HEAD  admin/operations/import-batches/{record}/edit filament.admin.resources.operations.import-batches.edit › App\Filament\Resources\Operations\ImportBatchResource\Pages\EditImportB…
+  GET|HEAD  admin/operations/import-template-maker/{template}/download .................................. operations.import-templates.download › Operations\ImportTemplateDownloadController
+  GET|HEAD  admin/operations/import-templates filament.admin.resources.operations.import-templates.index › App\Filament\Resources\Operations\ImportTemplateResource\Pages\ListImportTemplat…
+  GET|HEAD  admin/operations/import-templates/create filament.admin.resources.operations.import-templates.create › App\Filament\Resources\Operations\ImportTemplateResource\Pages\CreateImp…
+  GET|HEAD  admin/operations/import-templates/{record} filament.admin.resources.operations.import-templates.view › App\Filament\Resources\Operations\ImportTemplateResource\Pages\ViewImpor…
+  GET|HEAD  admin/operations/import-templates/{record}/edit filament.admin.resources.operations.import-templates.edit › App\Filament\Resources\Operations\ImportTemplateResource\Pages\Edit…
+  GET|HEAD  admin/operations/ldap-crud-operations filament.admin.resources.operations.ldap-crud-operations.index › App\Filament\Resources\Operations\LdapCrudOperationResource\Pages\ListLd…
+  GET|HEAD  admin/operations/ldap-crud-operations/{record} filament.admin.resources.operations.ldap-crud-operations.view › App\Filament\Resources\Operations\LdapCrudOperationResource\Page…
+  GET|HEAD  admin/operations/ldap-sync-batches filament.admin.resources.operations.ldap-sync-batches.index › App\Filament\Resources\Operations\LdapSyncBatchResource\Pages\ListLdapSyncBatc…
+  GET|HEAD  admin/operations/ldap-sync-batches/{record} filament.admin.resources.operations.ldap-sync-batches.view › App\Filament\Resources\Operations\LdapSyncBatchResource\Pages\ViewLdap…
+  GET|HEAD  admin/operations/ldap-transfer-batches filament.admin.resources.operations.ldap-transfer-batches.index › App\Filament\Resources\Operations\LdapTransferBatchResource\Pages\List…
+  GET|HEAD  admin/operations/ldap-transfer-batches/{record} filament.admin.resources.operations.ldap-transfer-batches.view › App\Filament\Resources\Operations\LdapTransferBatchResource\Pa…
+  GET|HEAD  admin/operations/ldif-export-batches filament.admin.resources.operations.ldif-export-batches.index › App\Filament\Resources\Operations\LdifExportBatchResource\Pages\ListLdifEx…
+  GET|HEAD  admin/operations/ldif-export-batches/{record} filament.admin.resources.operations.ldif-export-batches.view › App\Filament\Resources\Operations\LdifExportBatchResource\Pages\Vi…
+  GET|HEAD  admin/operations/ldif-export-batches/{record}/edit filament.admin.resources.operations.ldif-export-batches.edit › App\Filament\Resources\Operations\LdifExportBatchResource\Pag…
+  GET|HEAD  admin/operations/operation-job-items filament.admin.resources.operations.operation-job-items.index › App\Filament\Resources\Operations\OperationJobItemResource\Pages\ListOpera…
+  GET|HEAD  admin/operations/operation-job-items/{record} filament.admin.resources.operations.operation-job-items.view › App\Filament\Resources\Operations\OperationJobItemResource\Pages\V…
+  GET|HEAD  admin/operations/operation-job-logs filament.admin.resources.operations.operation-job-logs.index › App\Filament\Resources\Operations\OperationJobLogResource\Pages\ListOperatio…
+  GET|HEAD  admin/operations/operation-job-logs/{record} filament.admin.resources.operations.operation-job-logs.view › App\Filament\Resources\Operations\OperationJobLogResource\Pages\View…
+  GET|HEAD  admin/operations/operation-jobs ...... filament.admin.resources.operations.operation-jobs.index › App\Filament\Resources\Operations\OperationJobResource\Pages\ListOperationJobs
+  GET|HEAD  admin/operations/operation-jobs/{record} filament.admin.resources.operations.operation-jobs.view › App\Filament\Resources\Operations\OperationJobResource\Pages\ViewOperationJob
+  GET|HEAD  admin/operations/queue-jobs ...................... filament.admin.resources.operations.queue-jobs.index › App\Filament\Resources\Operations\QueueJobResource\Pages\ListQueueJobs
+  GET|HEAD  admin/operations/queue-jobs/{record} ............... filament.admin.resources.operations.queue-jobs.view › App\Filament\Resources\Operations\QueueJobResource\Pages\ViewQueueJob
+  GET|HEAD  admin/operations/saved-scripts .......... filament.admin.resources.operations.saved-scripts.index › App\Filament\Resources\Operations\SavedScriptResource\Pages\ListSavedScripts
+  GET|HEAD  admin/operations/saved-scripts/create . filament.admin.resources.operations.saved-scripts.create › App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript
+  GET|HEAD  admin/operations/saved-scripts/{record} ... filament.admin.resources.operations.saved-scripts.view › App\Filament\Resources\Operations\SavedScriptResource\Pages\ViewSavedScript
+  GET|HEAD  admin/operations/saved-scripts/{record}/edit filament.admin.resources.operations.saved-scripts.edit › App\Filament\Resources\Operations\SavedScriptResource\Pages\EditSavedScri…
+  GET|HEAD  admin/operations/universal-ldap-transfer-batches filament.admin.resources.operations.universal-ldap-transfer-batches.index › App\Filament\Resources\Operations\UniversalLdapTra…
+  GET|HEAD  admin/operations/universal-ldap-transfer-batches/{record} filament.admin.resources.operations.universal-ldap-transfer-batches.view › App\Filament\Resources\Operations\Universa…
+  GET|HEAD  admin/system-logs ............................................................................... filament.admin.pages.system-logs › App\Filament\Pages\Observability\SystemLogs
+  GET|HEAD  admin/user-manual ............................................................................... filament.admin.pages.user-manual › App\Filament\Pages\Miscellaneous\UserManual
+  GET|HEAD  filament/exports/{export}/download ............................................................................... filament.exports.download › Filament\Actions › DownloadExport
+  GET|HEAD  filament/imports/{import}/failed-rows/download ............................................. filament.imports.failed-rows.download › Filament\Actions › DownloadImportFailureCsv
+  GET|HEAD  storage/{path} ............................................................ storage.local › vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:111
+  PUT       storage/{path} ..................................................... storage.local.upload › vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:119

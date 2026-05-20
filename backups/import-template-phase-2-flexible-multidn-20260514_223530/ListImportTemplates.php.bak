@@ -1,0 +1,190 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportTemplateResource\Pages;
+
+use App\Filament\Resources\Operations\ImportTemplateResource;
+use App\Models\Operations\ImportTemplate;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Section;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+
+class ListImportTemplates extends ListRecords
+{
+    protected static string $resource = ImportTemplateResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('createGenericTemplateModal')
+                ->label('New Generic Template')
+                ->icon('heroicon-o-plus-circle')
+                ->color('primary')
+                ->modalHeading('Create Generic LDAP Import Template')
+                ->modalSubmitActionLabel('Create Template')
+                ->form([
+                    Section::make('1. Template Identity')
+                        ->description('Template generic untuk create, update, delete, atau upsert LDAP object.')
+                        ->schema([
+                            TextInput::make('name')
+                                ->label('Template Name')
+                                ->placeholder('Generic LDAP Object Template')
+                                ->required()
+                                ->maxLength(255),
+
+                            Select::make('template_purpose')
+                                ->label('Operation Mode')
+                                ->options([
+                                    'create' => 'Create',
+                                    'update' => 'Update / Edit',
+                                    'upsert' => 'Upsert',
+                                    'delete' => 'Delete',
+                                ])
+                                ->default('create')
+                                ->required(),
+
+                            Select::make('file_format')
+                                ->label('File Format')
+                                ->options([
+                                    'csv' => 'CSV',
+                                    'ldif' => 'LDIF',
+                                    'json' => 'JSON',
+                                ])
+                                ->default('csv')
+                                ->required(),
+
+                            Select::make('entry_type')
+                                ->label('Entry Type')
+                                ->options([
+                                    'generic' => 'Generic LDAP Object',
+                                    'user' => 'User / inetOrgPerson',
+                                    'group' => 'Group',
+                                    'ou' => 'Organizational Unit',
+                                    'service' => 'Service / Application Object',
+                                    'custom' => 'Custom Object',
+                                ])
+                                ->default('generic')
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('2. DN Rules')
+                        ->description('Tidak hardcode Petra. Isi sesuai LDAP target.')
+                        ->schema([
+                            TextInput::make('base_dn')
+                                ->label('Base DN')
+                                ->placeholder('dc=example,dc=local')
+                                ->required(),
+
+                            TextInput::make('target_ou')
+                                ->label('Target OU / Parent Path')
+                                ->placeholder('people, groups, services, devices, atau kosong')
+                                ->helperText('Contoh: people akan menjadi ou=people,{base_dn}.'),
+
+                            TextInput::make('rdn_attribute')
+                                ->label('RDN / Identifier Attribute')
+                                ->placeholder('uid / cn / ou')
+                                ->default('uid')
+                                ->required(),
+
+                            TextInput::make('dn_template')
+                                ->label('DN Template')
+                                ->placeholder('uid={uid},ou=people,{base_dn}')
+                                ->helperText('Opsional. Jika kosong, sistem pakai RDN + Target OU + Base DN.'),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+
+                    Section::make('3. Object & Attributes')
+                        ->description('Satu baris satu objectClass atau attribute.')
+                        ->schema([
+                            Textarea::make('object_classes')
+                                ->label('Object Classes')
+                                ->rows(6)
+                                ->default("top\nperson\norganizationalPerson\ninetOrgPerson")
+                                ->helperText('Satu per baris. Contoh: top, person, inetOrgPerson.'),
+
+                            Textarea::make('additional_attributes')
+                                ->label('Additional Custom Attributes')
+                                ->rows(6)
+                                ->placeholder("petraNrp\npetraAffiliation\npetraFaculty")
+                                ->helperText('Satu per baris. Boleh kosong.'),
+
+                            TextInput::make('multi_value_separator')
+                                ->label('Multi-value Separator')
+                                ->default(';')
+                                ->required(),
+
+                            TextInput::make('sample_rows')
+                                ->label('Sample Rows')
+                                ->numeric()
+                                ->default(3)
+                                ->required(),
+                        ])
+                        ->columns(['default' => 1, 'md' => 2]),
+                ])
+                ->action(function (array $data): void {
+                    $columns = Schema::getColumnListing('import_templates');
+
+                    $data['uuid'] = (string) Str::uuid();
+                    $data['status'] = 'draft';
+                    $data['created_by'] = Auth::id();
+                    $data['updated_by'] = Auth::id();
+
+                    /*
+                     * Support beberapa nama kolom lama/baru.
+                     * Ini menjaga template tetap bisa create walau struktur table lama beda.
+                     */
+                    $aliases = [
+                        'purpose' => $data['template_purpose'] ?? null,
+                        'format' => $data['file_format'] ?? null,
+                        'type' => $data['entry_type'] ?? null,
+                        'entry' => $data['entry_type'] ?? null,
+                        'target_base_dn' => $data['base_dn'] ?? null,
+                        'identifier_attribute' => $data['rdn_attribute'] ?? null,
+                    ];
+
+                    foreach ($aliases as $key => $value) {
+                        if ($value !== null && in_array($key, $columns, true) && ! array_key_exists($key, $data)) {
+                            $data[$key] = $value;
+                        }
+                    }
+
+                    $data['metadata'] = [
+                        'source' => 'ldap_import_template_modal',
+                        'dn_template' => $data['dn_template'] ?? null,
+                        'base_dn' => $data['base_dn'] ?? null,
+                        'target_ou' => $data['target_ou'] ?? null,
+                        'rdn_attribute' => $data['rdn_attribute'] ?? null,
+                    ];
+
+                    $clean = [];
+
+                    foreach ($data as $key => $value) {
+                        if (! in_array($key, $columns, true)) {
+                            continue;
+                        }
+
+                        if (is_array($value)) {
+                            $value = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                        }
+
+                        $clean[$key] = $value;
+                    }
+
+                    ImportTemplate::query()->create($clean);
+
+                    Notification::make()
+                        ->title('Import template created')
+                        ->body('Template siap dipakai untuk LDAP Import Center.')
+                        ->success()
+                        ->send();
+                }),
+        ];
+    }
+}

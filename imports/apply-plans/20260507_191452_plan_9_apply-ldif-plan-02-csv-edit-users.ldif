@@ -1,0 +1,53 @@
+dn: uid=csv.user101,ou=people,dc=petra,dc=ac,dc=id
+changetype: modify
+replace: cn
+cn: CSV User 101 Edited
+-
+replace: sn
+sn: One Zero One
+-
+replace: givenName
+givenName: CSV
+-
+replace: mail
+mail: csv.user101.edited@petra.ac.id
+-
+replace: description
+description: Edited from CSV import test
+-
+
+dn: uid=csv.user102,ou=people,dc=petra,dc=ac,dc=id
+changetype: modify
+replace: cn
+cn: CSV User 102 Edited
+-
+replace: sn
+sn: One Zero Two
+-
+replace: givenName
+givenName: CSV
+-
+replace: mail
+mail: csv.user102.edited@petra.ac.id
+-
+replace: description
+description: Edited from CSV import test
+-
+
+dn: uid=csv.user103,ou=people,dc=petra,dc=ac,dc=id
+changetype: modify
+replace: cn
+cn: CSV User 103 Edited
+-
+replace: sn
+sn: One Zero Three
+-
+replace: givenName
+givenName: CSV
+-
+replace: mail
+mail: csv.user103.edited@petra.ac.id
+-
+replace: description
+description: Edited from CSV import test
+-

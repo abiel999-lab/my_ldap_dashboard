@@ -1,0 +1,842 @@
+<?php
+
+namespace App\Services\Operations;
+
+use App\Models\Operations\ImportBatch;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Throwable;
+
+class LdapImportApplyService
+{
+    public function apply(ImportBatch $batch): array
+    {
+        try {
+            $batch = $batch->fresh();
+
+            if (! $batch) {
+                throw new \RuntimeException('Import batch not found.');
+            }
+
+            if (! in_array((string) $batch->status, ['preview_completed', 'preview_completed_with_issues'], true)) {
+                throw new \RuntimeException('Generate preview before applying import.');
+            }
+
+            $metadata = $this->metadata($batch);
+
+            $safety = $metadata['safety'] ?? [];
+
+            if (($safety['preview_only'] ?? true) === true) {
+                // We still allow apply from button, because button itself is explicit confirmation.
+                // The stored preview_only flag means preview was generated safely before apply.
+            }
+
+            $this->updateBatch($batch, [
+                'status' => 'applying',
+                'message' => 'Applying LDAP import to target LDAP.',
+                'error_message' => null,
+            ]);
+
+            $connectionId = (int) ($batch->ldap_connection_id ?? 0);
+
+            if ($connectionId <= 0) {
+                throw new \RuntimeException('LDAP connection ID is empty.');
+            }
+
+            $ldapConfig = $this->getLdapConnectionConfig($connectionId);
+            $ldap = $this->connectAndBind($ldapConfig);
+
+            $rows = $this->getPreviewRows($batch->id);
+
+            if ($rows->isEmpty()) {
+                throw new \RuntimeException('No preview rows found. Generate preview first.');
+            }
+
+            $total = 0;
+            $success = 0;
+            $failed = 0;
+            $skipped = 0;
+
+            $stdout = [];
+            $stderr = [];
+            $appliedRows = [];
+
+            foreach ($rows as $row) {
+                $total++;
+
+                $status = (string) ($row->status ?? '');
+                $plan = (string) ($row->action_plan ?? $row->plan ?? $row->planned_action ?? $row->operation ?? '');
+                $targetDn = (string) ($row->target_dn ?? $row->dn ?? '');
+
+                if ($status !== 'valid') {
+                    $skipped++;
+                    $stdout[] = '[SKIPPED] Row '.($row->row_number ?? $total).' is not valid.';
+                    continue;
+                }
+
+                if ($targetDn === '') {
+                    $failed++;
+                    $stderr[] = '[FAILED] Row '.($row->row_number ?? $total).' target DN is empty.';
+                    continue;
+                }
+
+                try {
+                    if ($plan === 'create' || $plan === 'upsert') {
+                        $entry = $this->buildEntryFromRow($row);
+
+                        if ($entry === []) {
+                            throw new \RuntimeException('Mapped payload is empty.');
+                        }
+
+                        $exists = $this->ldapEntryExists($ldap, $targetDn);
+
+                        if ($exists && $plan === 'create') {
+                            $skipped++;
+                            $stdout[] = '[SKIPPED] Existing target: '.$targetDn;
+
+                            $this->updateImportRow($row->id, [
+                                'status' => 'skipped',
+                                'message' => 'Target already exists.',
+                                'conflict_reason' => 'target_exists',
+                            ]);
+
+                            continue;
+                        }
+
+                        if ($exists && $plan === 'upsert') {
+                            $this->ldapModifyReplace($ldap, $targetDn, $entry);
+
+                            $success++;
+                            $stdout[] = '[SUCCESS] Updated: '.$targetDn;
+
+                            $this->updateImportRow($row->id, [
+                                'status' => 'applied',
+                                'message' => 'Updated existing LDAP entry.',
+                            ]);
+
+                            $appliedRows[] = [
+                                'row_id' => $row->id,
+                                'row_number' => $row->row_number ?? null,
+                                'dn' => $targetDn,
+                                'operation' => 'update',
+                            ];
+
+                            continue;
+                        }
+
+                        $entry = $this->normalizeEntryBeforeLdapWrite($entry);
+
+                        $ok = @ldap_add($ldap, $targetDn, $entry);
+
+                        if (! $ok) {
+                            throw new \RuntimeException($this->ldapError($ldap));
+                        }
+
+                        $success++;
+                        $stdout[] = '[SUCCESS] Created: '.$targetDn;
+
+                        $this->updateImportRow($row->id, [
+                            'status' => 'applied',
+                            'message' => 'Created LDAP entry.',
+                        ]);
+
+                        $appliedRows[] = [
+                            'row_id' => $row->id,
+                            'row_number' => $row->row_number ?? null,
+                            'dn' => $targetDn,
+                            'operation' => 'create',
+                            'rollback_operation' => 'delete',
+                        ];
+
+                        continue;
+                    }
+
+                    if ($plan === 'update') {
+                        $entry = $this->buildEntryFromRow($row);
+
+                        if ($entry === []) {
+                            throw new \RuntimeException('Mapped payload is empty.');
+                        }
+
+                        if (! $this->ldapEntryExists($ldap, $targetDn)) {
+                            throw new \RuntimeException('Target does not exist: '.$targetDn);
+                        }
+
+                        $this->ldapModifyReplace($ldap, $targetDn, $entry);
+
+                        $success++;
+                        $stdout[] = '[SUCCESS] Updated: '.$targetDn;
+
+                        $this->updateImportRow($row->id, [
+                            'status' => 'applied',
+                            'message' => 'Updated LDAP entry.',
+                        ]);
+
+                        $appliedRows[] = [
+                            'row_id' => $row->id,
+                            'row_number' => $row->row_number ?? null,
+                            'dn' => $targetDn,
+                            'operation' => 'update',
+                        ];
+
+                        continue;
+                    }
+
+                    $skipped++;
+                    $stdout[] = '[SKIPPED] Unsupported plan for now: '.$plan.' | '.$targetDn;
+
+                    $this->updateImportRow($row->id, [
+                        'status' => 'skipped',
+                        'message' => 'Unsupported plan for apply phase: '.$plan,
+                    ]);
+                } catch (Throwable $rowException) {
+                    $failed++;
+                    $error = $rowException->getMessage();
+
+                    $stderr[] = '[FAILED] '.$targetDn.' | '.$error;
+
+                    $this->updateImportRow($row->id, [
+                        'status' => 'failed',
+                        'message' => $error,
+                        'conflict_reason' => $error,
+                    ]);
+                }
+            }
+
+            @ldap_unbind($ldap);
+
+            $finalStatus = 'success';
+
+            if ($failed > 0 && $success > 0) {
+                $finalStatus = 'success_with_issues';
+            } elseif ($failed > 0 && $success === 0) {
+                $finalStatus = 'failed';
+            }
+
+            $message = match ($finalStatus) {
+                'success' => 'LDAP import applied successfully.',
+                'success_with_issues' => 'LDAP import applied with issues: '.implode(' | ', array_slice($stderr, 0, 3)),
+                default => 'LDAP import apply failed: '.implode(' | ', array_slice($stderr, 0, 3)),
+            };
+
+            $metadata = $this->metadata($batch->fresh() ?: $batch);
+            $metadata['apply'] = [
+                'applied_at' => now()->toDateTimeString(),
+                'total' => $total,
+                'success' => $success,
+                'failed' => $failed,
+                'skipped' => $skipped,
+                'stdout' => implode("\n", $stdout),
+                'stderr' => implode("\n", $stderr),
+                'applied_rows' => $appliedRows,
+            ];
+
+            $this->updateBatch($batch, [
+                'status' => $finalStatus,
+                'message' => $message,
+                'error_message' => $failed > 0 ? implode("\n", $stderr) : null,
+                'success_rows' => $success,
+                'failed_rows' => $failed,
+                'skipped_rows' => $skipped,
+                'metadata' => $metadata,
+                'applied_at' => now(),
+                'last_applied_at' => now(),
+            ]);
+
+            return [
+                'ok' => $finalStatus !== 'failed',
+                'status' => $finalStatus,
+                'message' => $message,
+                'total' => $total,
+                'success' => $success,
+                'failed' => $failed,
+                'skipped' => $skipped,
+                'stdout' => implode("\n", $stdout),
+                'stderr' => implode("\n", $stderr),
+            ];
+        } catch (Throwable $exception) {
+            $message = $exception->getMessage().' | '.$exception->getFile().':'.$exception->getLine();
+
+            $this->updateBatch($batch, [
+                'status' => 'failed',
+                'message' => $message,
+                'error_message' => $message,
+                'failed_rows' => 1,
+            ]);
+
+            return [
+                'ok' => false,
+                'status' => 'failed',
+                'message' => $message,
+                'total' => 0,
+                'success' => 0,
+                'failed' => 1,
+                'skipped' => 0,
+                'stdout' => '',
+                'stderr' => $message,
+            ];
+        }
+    }
+
+    private function getLdapConnectionConfig(int $connectionId): array
+    {
+        $connection = DB::table('ldap_connections')
+            ->where('id', $connectionId)
+            ->first();
+
+        if (! $connection) {
+            throw new \RuntimeException('LDAP connection not found: '.$connectionId);
+        }
+
+        $data = (array) $connection;
+
+        $host = $this->firstFilled([
+            $data['host'] ?? null,
+            $data['hostname'] ?? null,
+            $data['server'] ?? null,
+            $data['url'] ?? null,
+            $data['uri'] ?? null,
+            $data['ldap_url'] ?? null,
+        ]);
+
+        $port = (int) ($this->firstFilled([
+            $data['port'] ?? null,
+            $data['ldap_port'] ?? null,
+            389,
+        ]) ?: 389);
+
+        $bindDn = $this->firstFilled([
+            $data['bind_dn'] ?? null,
+            $data['binddn'] ?? null,
+            $data['username'] ?? null,
+            $data['user_dn'] ?? null,
+        ]);
+
+        $password = $this->firstFilled([
+            $data['bind_password'] ?? null,
+            $data['password'] ?? null,
+            $data['bind_pw'] ?? null,
+            $data['secret'] ?? null,
+        ]);
+
+        if (blank($host)) {
+            throw new \RuntimeException('LDAP host is empty for connection ID '.$connectionId);
+        }
+
+        if (blank($bindDn)) {
+            throw new \RuntimeException('LDAP bind DN is empty for connection ID '.$connectionId);
+        }
+
+        if ($password !== null) {
+            $password = $this->maybeDecrypt((string) $password);
+        }
+
+        return [
+            'host' => (string) $host,
+            'port' => $port,
+            'bind_dn' => (string) $bindDn,
+            'password' => (string) $password,
+        ];
+    }
+
+    private function connectAndBind(array $config)
+    {
+        if (! function_exists('ldap_connect')) {
+            throw new \RuntimeException('PHP LDAP extension is not installed/enabled.');
+        }
+
+        $host = (string) $config['host'];
+        $port = (int) $config['port'];
+
+        $uri = str_starts_with($host, 'ldap://') || str_starts_with($host, 'ldaps://')
+            ? $host
+            : 'ldap://'.$host.':'.$port;
+
+        $ldap = @ldap_connect($uri);
+
+        if (! $ldap) {
+            throw new \RuntimeException('Could not connect to LDAP: '.$uri);
+        }
+
+        @ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+        @ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
+        @ldap_set_option($ldap, LDAP_OPT_NETWORK_TIMEOUT, 10);
+
+        $bound = @ldap_bind($ldap, $config['bind_dn'], $config['password']);
+
+        if (! $bound) {
+            throw new \RuntimeException('LDAP bind failed: '.$this->ldapError($ldap));
+        }
+
+        return $ldap;
+    }
+
+    private function getPreviewRows(int $importBatchId)
+    {
+        if (! Schema::hasTable('import_rows')) {
+            throw new \RuntimeException('import_rows table does not exist.');
+        }
+
+        return DB::table('import_rows')
+            ->where('import_batch_id', $importBatchId)
+            ->whereIn('status', ['valid', 'applied', 'failed', 'skipped'])
+            ->orderBy('row_number')
+            ->get();
+    }
+
+    private function buildEntryFromRow(object $row): array
+    {
+        $payload = $row->mapped_payload ?? $row->payload ?? null;
+
+        if (is_string($payload)) {
+            $decoded = json_decode($payload, true);
+            $payload = is_array($decoded) ? $decoded : [];
+
+                $payload = $this->normalizeLdapPayloadForApply($payload);
+        }
+
+        if (! is_array($payload)) {
+            $payload = [];
+        }
+
+        $entry = [];
+
+        foreach ($payload as $attribute => $value) {
+            if (in_array($attribute, ['dn', 'action', 'type', 'entry_type'], true)) {
+                continue;
+            }
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if ($attribute === 'objectClass') {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $entry[$attribute] = array_values(array_filter(array_map('strval', $value)));
+                continue;
+            }
+
+            if (is_string($value) && str_contains($value, ';')) {
+                $entry[$attribute] = array_values(array_filter(array_map('trim', explode(';', $value))));
+                continue;
+            }
+
+            $entry[$attribute] = (string) $value;
+        }
+
+        $metadata = $row->metadata ?? null;
+
+        if (is_string($metadata)) {
+            $decoded = json_decode($metadata, true);
+            $metadata = is_array($decoded) ? $decoded : [];
+        }
+
+        $previewLdif = $metadata['preview_ldif'] ?? $row->preview_ldif ?? null;
+
+        $objectClasses = $this->objectClassesFromPreviewLdif((string) $previewLdif);
+
+        if ($objectClasses !== []) {
+            $entry['objectClass'] = $objectClasses;
+        } elseif (! isset($entry['objectClass'])) {
+            $entry['objectClass'] = ['top', 'person', 'organizationalPerson', 'inetOrgPerson'];
+        }
+
+        return $entry;
+    }
+
+    private function objectClassesFromPreviewLdif(string $ldif): array
+    {
+        $classes = [];
+
+        foreach (preg_split('/\r?\n/', $ldif) ?: [] as $line) {
+            if (stripos($line, 'objectClass:') !== 0) {
+                continue;
+            }
+
+            $classes[] = trim(substr($line, strlen('objectClass:')));
+        }
+
+        return array_values(array_unique(array_filter($classes)));
+    }
+
+    private function ldapEntryExists($ldap, string $dn): bool
+    {
+        $result = @ldap_read($ldap, $dn, '(objectClass=*)', ['dn'], 0, 1);
+
+        if (! $result) {
+            return false;
+        }
+
+        return @ldap_count_entries($ldap, $result) > 0;
+    }
+
+    private function ldapModifyReplace($ldap, string $dn, array $entry): void
+    {
+        unset($entry['objectClass']);
+
+        if ($entry === []) {
+            throw new \RuntimeException('No modifiable attributes.');
+        }
+
+        $ok = @ldap_mod_replace($ldap, $dn, $entry);
+
+        if (! $ok) {
+            throw new \RuntimeException($this->ldapError($ldap));
+        }
+    }
+
+    private function updateImportRow(int $rowId, array $data): void
+    {
+        if (! Schema::hasTable('import_rows')) {
+            return;
+        }
+
+        $columns = Schema::getColumnListing('import_rows');
+        $clean = [];
+
+        foreach ($data as $key => $value) {
+            if (! in_array($key, $columns, true)) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $value = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            }
+
+            $clean[$key] = $value;
+        }
+
+        if (in_array('updated_at', $columns, true)) {
+            $clean['updated_at'] = now();
+        }
+
+        if ($clean !== []) {
+            DB::table('import_rows')
+                ->where('id', $rowId)
+                ->update($clean);
+        }
+    }
+
+    private function updateBatch(ImportBatch $batch, array $data): void
+    {
+        $columns = Schema::getColumnListing($batch->getTable());
+        $clean = [];
+
+        foreach ($data as $key => $value) {
+            if (! in_array($key, $columns, true)) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $value = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            }
+
+            $clean[$key] = $value;
+        }
+
+        if (in_array('updated_at', $columns, true)) {
+            $clean['updated_at'] = now();
+        }
+
+        if ($clean !== []) {
+            DB::table($batch->getTable())
+                ->where('id', $batch->id)
+                ->update($clean);
+        }
+    }
+
+    private function metadata(ImportBatch $batch): array
+    {
+        $metadata = $batch->metadata ?? [];
+
+        if (is_string($metadata)) {
+            $decoded = json_decode($metadata, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return is_array($metadata) ? $metadata : [];
+    }
+
+    private function firstFilled(array $values): mixed
+    {
+        foreach ($values as $value) {
+            if (filled($value)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function maybeDecrypt(string $value): string
+    {
+        try {
+            return Crypt::decryptString($value);
+        } catch (Throwable) {
+            return $value;
+        }
+    }
+
+    private function ldapError($ldap): string
+    {
+        $errno = @ldap_errno($ldap);
+        $error = @ldap_error($ldap);
+
+        return trim(($errno ? '['.$errno.'] ' : '').($error ?: 'Unknown LDAP error'));
+    }
+
+    private function normalizeLdapPayloadForApply(array $payload): array
+    {
+        /*
+         * LDAP multi-value fields must be arrays.
+         * CSV usually stores them as: top;groupOfNames or dn1;dn2.
+         * Preview LDIF already displays them correctly, but real apply must also normalize them.
+         */
+        $multiValueAttributes = [
+            'objectClass',
+            'member',
+            'uniqueMember',
+            'owner',
+            'seeAlso',
+            'roleOccupant',
+            'memberUid',
+        ];
+
+        $blockedAttributes = [
+            'action',
+            'dn',
+            'changetype',
+            'operation',
+            'plan',
+            'status',
+            'message',
+            'conflict',
+            'conflict_reason',
+        ];
+
+        $normalized = [];
+
+        foreach ($payload as $attribute => $value) {
+            $attribute = trim((string) $attribute);
+
+            if ($attribute === '' || in_array($attribute, $blockedAttributes, true)) {
+                continue;
+            }
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $items = array_values(array_filter(array_map(
+                    fn ($item) => trim((string) $item),
+                    $value
+                )));
+
+                if ($items !== []) {
+                    $normalized[$attribute] = $items;
+                }
+
+                continue;
+            }
+
+            $value = trim((string) $value);
+
+            if ($value === '') {
+                continue;
+            }
+
+            if (in_array($attribute, $multiValueAttributes, true) && str_contains($value, ';')) {
+                $items = array_values(array_filter(array_map(
+                    fn ($item) => trim((string) $item),
+                    explode(';', $value)
+                )));
+
+                if ($items !== []) {
+                    $normalized[$attribute] = $items;
+                }
+
+                continue;
+            }
+
+            /*
+             * objectClass must always be an array even if only one value exists.
+             */
+            if ($attribute === 'objectClass') {
+                $normalized[$attribute] = [$value];
+                continue;
+            }
+
+            $normalized[$attribute] = $value;
+        }
+
+        return $normalized;
+    }
+
+    private function decodeImportRowPayload(mixed $payload): array
+    {
+        if (is_array($payload)) {
+            return $payload;
+        }
+
+        if (is_string($payload) && trim($payload) !== '') {
+            $decoded = json_decode($payload, true);
+
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return [];
+    }
+
+
+    private function normalizeEntryBeforeLdapWrite(array $entry): array
+    {
+        /*
+         * Final guard before ldap_add / ldap_modify.
+         * This is the last safety layer so LDAP never receives:
+         * objectClass => "top;groupOfNames"
+         *
+         * LDAP must receive:
+         * objectClass => ["top", "groupOfNames"]
+         */
+        $blockedAttributes = [
+            'action',
+            'operation',
+            'changetype',
+            'dn',
+            'DN',
+            'plan',
+            'status',
+            'message',
+            'conflict',
+            'conflict_reason',
+            'target_dn',
+            'target_identifier',
+        ];
+
+        $multiValueAttributes = [
+            'objectClass',
+            'objectclass',
+            'member',
+            'uniqueMember',
+            'owner',
+            'seeAlso',
+            'roleOccupant',
+            'memberUid',
+        ];
+
+        $normalized = [];
+
+        foreach ($entry as $attribute => $value) {
+            $attribute = trim((string) $attribute);
+
+            if ($attribute === '' || in_array($attribute, $blockedAttributes, true)) {
+                continue;
+            }
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            /*
+             * Normalize objectclass casing.
+             */
+            if (strtolower($attribute) === 'objectclass') {
+                $attribute = 'objectClass';
+            }
+
+            if (is_array($value)) {
+                $items = array_values(array_filter(array_map(
+                    fn ($item) => trim((string) $item),
+                    $value
+                )));
+
+                if ($items === []) {
+                    continue;
+                }
+
+                if ($attribute === 'objectClass') {
+                    $items = $this->normalizeObjectClassValues($items);
+                }
+
+                $normalized[$attribute] = $items;
+                continue;
+            }
+
+            $value = trim((string) $value);
+
+            if ($value === '') {
+                continue;
+            }
+
+            if ($attribute === 'objectClass') {
+                $normalized[$attribute] = $this->normalizeObjectClassValues([$value]);
+                continue;
+            }
+
+            if (in_array($attribute, $multiValueAttributes, true) && str_contains($value, ';')) {
+                $items = array_values(array_filter(array_map(
+                    fn ($item) => trim((string) $item),
+                    explode(';', $value)
+                )));
+
+                if ($items !== []) {
+                    $normalized[$attribute] = $items;
+                }
+
+                continue;
+            }
+
+            $normalized[$attribute] = $value;
+        }
+
+        /*
+         * LDAP create must always have objectClass.
+         * Do not guess person here; fail safely if missing.
+         */
+        if (isset($normalized['objectClass']) && is_string($normalized['objectClass'])) {
+            $normalized['objectClass'] = $this->normalizeObjectClassValues([$normalized['objectClass']]);
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeObjectClassValues(array $values): array
+    {
+        $result = [];
+
+        foreach ($values as $value) {
+            foreach (preg_split('/[;|,]/', (string) $value) ?: [] as $part) {
+                $part = trim($part);
+
+                if ($part !== '') {
+                    $result[] = $part;
+                }
+            }
+        }
+
+        return array_values(array_unique($result));
+    }
+
+    private function ldapEntryDebugString(array $entry): string
+    {
+        $parts = [];
+
+        foreach ($entry as $attribute => $value) {
+            if (is_array($value)) {
+                $parts[] = $attribute.'=['.implode(',', $value).']';
+            } else {
+                $parts[] = $attribute.'='.$value;
+            }
+        }
+
+        return implode(' | ', $parts);
+    }
+
+}

@@ -1,0 +1,4 @@
+action,dn,mail,description
+update,"uid=imp-test-001,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id",imp-test-001.updated@petra.ac.id,SAFE TEST - updated user 001
+update,"uid=imp-test-002,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id",imp-test-002.updated@petra.ac.id,SAFE TEST - updated user 002
+update,"uid=imp-test-003,ou=import-stage,ou=test-dom,dc=petra,dc=ac,dc=id",imp-test-003.updated@petra.ac.id,SAFE TEST - updated user 003

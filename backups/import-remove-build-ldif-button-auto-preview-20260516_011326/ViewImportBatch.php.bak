@@ -1,0 +1,275 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportBatchResource\Pages;
+
+use App\Filament\Resources\Operations\ImportBatchResource;
+use App\Services\Operations\LdapImportDependencyGraphService;
+use App\Services\Operations\LdapImportApplyService;
+use App\Services\Operations\LdapImportPreviewService;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Storage;
+
+class ViewImportBatch extends ViewRecord
+{
+    protected static string $resource = ImportBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('buildLdifPlan')
+                ->label('Build LDIF')
+                ->icon('heroicon-o-document-text')
+                ->color('gray')
+                ->action(function (): void {
+                    $record = $this->getRecord();
+
+                    try {
+                        $summary = app(\App\Services\Operations\LdapImportLdifPlanService::class)
+                            ->buildForBatch((int) $record->getKey());
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('LDIF plan generated')
+                            ->body('Add: '.($summary['add_rows'] ?? 0).' | Modify: '.($summary['modify_rows'] ?? 0).' | Delete: '.($summary['delete_rows'] ?? 0).' | Failed: '.($summary['failed_rows'] ?? 0))
+                            ->success()
+                            ->send();
+
+                        $this->redirect(static::getResource()::getUrl('view', [
+                            'record' => $record->getKey(),
+                        ]));
+                    } catch (\Throwable $exception) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Failed to build LDIF plan')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            \Filament\Actions\Action::make('repairImportPlans')
+                ->label('Repair')
+                ->icon('heroicon-o-wrench-screwdriver')
+                ->color('gray')
+                ->action(function (): void {
+                    $record = $this->getRecord();
+
+                    try {
+                        $summary = app(\App\Services\Operations\LdapImportPlanRepairService::class)->repair((int) $record->getKey());
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Preview plans repaired')
+                            ->body('Update: '.($summary['update'] ?? 0).' | Delete: '.($summary['delete'] ?? 0).' | Invalid: '.($summary['invalid'] ?? 0))
+                            ->success()
+                            ->send();
+
+                        $this->redirect(static::getResource()::getUrl('view', [
+                            'record' => $record->getKey(),
+                        ]));
+                    } catch (\Throwable $exception) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Failed to repair preview plans')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            \Filament\Actions\Action::make('rollbackImport')
+                ->label('Rollback')
+                ->icon('heroicon-o-arrow-uturn-left')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Rollback LDAP Import')
+                ->modalDescription('Rollback tahap ini akan menghapus entry yang dibuat oleh batch import ini. Update/delete rollback penuh membutuhkan snapshot dan akan dikerjakan setelah update/delete stabil.')
+                ->action(function (): void {
+                    $record = $this->getRecord();
+
+                    try {
+                        $summary = app(\App\Services\Operations\LdapImportRollbackService::class)->rollback((int) $record->getKey());
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Import rollback completed')
+                            ->body('Rolled back: '.($summary['rolled_back'] ?? 0).' | Failed: '.($summary['failed'] ?? 0).' | Skipped: '.($summary['skipped'] ?? 0))
+                            ->success()
+                            ->send();
+
+                        $this->redirect(static::getResource()::getUrl('view', [
+                            'record' => $record->getKey(),
+                        ]));
+                    } catch (\Throwable $exception) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Import rollback failed')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            \Filament\Actions\Action::make('buildDependencyPlan')
+                ->label('Deps')
+                ->icon('heroicon-o-share')
+                ->color('gray')
+                ->action(function (): void {
+                    $record = $this->getRecord();
+
+                    try {
+                        $summary = app(LdapImportDependencyGraphService::class)->buildForBatch((int) $record->getKey());
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Dependency plan refreshed')
+                            ->body('Unique dependencies: '.($summary['unique_dependencies'] ?? 0).' | Missing: '.($summary['unique_missing'] ?? 0).' | Existing: '.($summary['unique_existing'] ?? 0))
+                            ->success()
+                            ->send();
+
+                        $this->redirect(static::getResource()::getUrl('view', [
+                            'record' => $record->getKey(),
+                        ]));
+                    } catch (\Throwable $exception) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Failed to build dependency plan')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
+            Action::make('generateImportPreview')
+                ->label('Preview')
+                ->icon('heroicon-o-eye')
+                ->color('primary')
+                ->requiresConfirmation()
+                ->modalHeading('Generate LDAP import preview?')
+                ->modalDescription('This only generates a preview. It does not apply changes to LDAP.')
+                ->modalSubmitActionLabel('Generate Preview')
+                ->action(function (): void {
+                    $result = app(LdapImportPreviewService::class)->preview($this->getRecord());
+
+                    if ($result['ok'] ?? false) {
+                        Notification::make()
+                            ->title('LDAP import preview generated')
+                            ->body(
+                                'Total: '.($result['total_rows'] ?? 0)
+                                .' | Valid: '.($result['valid_rows'] ?? 0)
+                                .' | Invalid: '.($result['invalid_rows'] ?? 0)
+                            )
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('LDAP import preview failed')
+                            ->body($result['message'] ?? 'Unknown error')
+                            ->danger()
+                            ->send();
+                    }
+
+                    $this->redirect(static::getResource()::getUrl('view', [
+                        'record' => $this->getRecord()->getKey(),
+                    ]));
+                }),
+
+            Action::make('applyImport')
+                ->label('Apply Import')
+                ->icon('heroicon-o-play')
+                ->color('warning')
+                ->visible(function (): bool {
+                    $record = $this->getRecord();
+
+                    return (string) $record->status === 'preview_completed'
+                        && (int) ($record->invalid_rows ?? 0) === 0
+                        && (int) ($record->will_fail_rows ?? 0) === 0;
+                })
+                ->requiresConfirmation()
+                ->modalHeading('Apply LDAP import?')
+                ->modalDescription('This will write changes to the target LDAP. Make sure the preview LDIF is correct before continuing.')
+                ->modalSubmitActionLabel('Apply Import')
+                ->action(function (): void {
+                    $result = app(LdapImportApplyService::class)->apply($this->getRecord());
+
+                    if ($result['ok'] ?? false) {
+                        Notification::make()
+                            ->title('LDAP import applied')
+                            ->body(
+                                'Success: '.($result['success'] ?? 0)
+                                .' | Failed: '.($result['failed'] ?? 0)
+                                .' | Skipped: '.($result['skipped'] ?? 0)
+                            )
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('LDAP import failed')
+                            ->body($result['message'] ?? 'Unknown error')
+                            ->danger()
+                            ->send();
+                    }
+
+                    $this->redirect(static::getResource()::getUrl('view', [
+                        'record' => $this->getRecord()->getKey(),
+                    ]));
+                }),
+
+            Action::make('downloadPreviewLdif')
+                ->label('LDIF')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
+                ->visible(fn (): bool => in_array((string) $this->getRecord()->status, [
+                    'preview_completed',
+                    'preview_completed_with_issues',
+                    'success',
+                    'success_with_issues',
+                    'failed',
+                ], true))
+                ->action(function () {
+                    $record = $this->getRecord();
+
+                    $path = $record->preview_path
+                        ?? $record->output_path
+                        ?? null;
+
+                    if (filled($path) && Storage::disk('local')->exists((string) $path)) {
+                        return response()->download(
+                            Storage::disk('local')->path((string) $path),
+                            'ldap-import-preview-'.$record->id.'.ldif',
+                            ['Content-Type' => 'text/plain']
+                        );
+                    }
+
+                    $metadata = $record->metadata ?? [];
+
+                    if (is_string($metadata)) {
+                        $decoded = json_decode($metadata, true);
+                        $metadata = is_array($decoded) ? $decoded : [];
+                    }
+
+                    $previewLdif = $metadata['preview']['preview_ldif'] ?? null;
+
+                    if (blank($previewLdif)) {
+                        Notification::make()
+                            ->title('Preview LDIF not found')
+                            ->body('Generate preview first, then download the LDIF.')
+                            ->danger()
+                            ->send();
+
+                        return null;
+                    }
+
+                    $fallbackPath = 'imports/previews/fallback/import-preview-'.$record->id.'-'.now()->format('Ymd-His').'.ldif';
+
+                    Storage::disk('local')->put($fallbackPath, (string) $previewLdif);
+
+                    return response()->download(
+                        Storage::disk('local')->path($fallbackPath),
+                        'ldap-import-preview-'.$record->id.'.ldif',
+                        ['Content-Type' => 'text/plain']
+                    );
+                }),
+
+            Action::make('backToImportCenter')
+                ->label('Back')
+                ->icon('heroicon-o-arrow-left')
+                ->color('gray')
+                ->url(fn (): string => ImportBatchResource::getUrl('index')),
+        ];
+    }
+}

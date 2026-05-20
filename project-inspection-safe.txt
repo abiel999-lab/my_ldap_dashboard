@@ -1,0 +1,2503 @@
+PROJECT INSPECTION SAFE
+=======================
+
+1. PHP VERSION
+PHP 8.4.21 (cli) (built: May  7 2026 18:44:14) (NTS)
+Copyright (c) The PHP Group
+Built by Debian
+Zend Engine v4.4.21, Copyright (c) Zend Technologies
+    with Zend OPcache v8.4.21, Copyright (c), by Zend Technologies
+
+2. COMPOSER FILAMENT/LARAVEL
+danharrin/livewire-rate-limiting            2.2.0     Apply rate limiters to Laravel Livewire actions.
+filament/actions                            5.6.2     Easily add beautiful action modals to any Livewire component.
+filament/filament                           5.6.2     A collection of full-stack components for accelerated Laravel app development.
+filament/forms                              5.6.2     Easily add beautiful forms to any Livewire component.
+filament/infolists                          5.6.2     Easily add beautiful read-only infolists to any Livewire component.
+filament/notifications                      5.6.2     Easily add beautiful notifications to any Livewire app.
+filament/query-builder                      5.6.2     A powerful query builder component for Filament.
+filament/schemas                            5.6.2     Easily add beautiful UI to any Livewire component.
+filament/support                            5.6.2     Core helper methods and foundation code for all Filament packages.
+filament/tables                             5.6.2     Easily add beautiful tables to any Livewire component.
+filament/widgets                            5.6.2     Easily add beautiful dashboard widgets to any Livewire component.
+laravel/framework                           13.7.0    The Laravel Framework.
+livewire/livewire                           4.3.0     A front-end framework for Laravel.
+
+3. EXISTING FILAMENT RESOURCES
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ListDirectoryObjects.php
+app/Filament/Resources/Directory/DirectoryObjectManagerResource/Pages/ViewDirectoryObject.php
+app/Filament/Resources/Directory/DirectoryObjectManagerResource.php
+app/Filament/Resources/Directory/LdapApplicationEntryResource/Pages/ListLdapApplicationEntries.php
+app/Filament/Resources/Directory/LdapApplicationEntryResource/Pages/ViewLdapApplicationEntry.php
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/CreateLdapConnection.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/EditLdapConnection.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/ListLdapConnections.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/ViewLdapConnection.php
+app/Filament/Resources/Directory/LdapConnectionResource.php
+app/Filament/Resources/Directory/LdapDirectoryEntryResource/Pages/ListLdapDirectoryEntries.php
+app/Filament/Resources/Directory/LdapDirectoryEntryResource/Pages/ViewLdapDirectoryEntry.php
+app/Filament/Resources/Directory/LdapDirectoryEntryResource.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/CreateLdapEntryTypeRule.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/EditLdapEntryTypeRule.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/ListLdapEntryTypeRules.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/ViewLdapEntryTypeRule.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource.php
+app/Filament/Resources/Directory/LdapGroupEntryResource/Pages/ListLdapGroupEntries.php
+app/Filament/Resources/Directory/LdapGroupEntryResource/Pages/ViewLdapGroupEntry.php
+app/Filament/Resources/Directory/LdapGroupEntryResource.php
+app/Filament/Resources/Directory/LdapRoleEntryResource/Pages/ListLdapRoleEntries.php
+app/Filament/Resources/Directory/LdapRoleEntryResource/Pages/ViewLdapRoleEntry.php
+app/Filament/Resources/Directory/LdapRoleEntryResource.php
+app/Filament/Resources/Directory/LdapSchemaEntryResource/Pages/ListLdapSchemaEntries.php
+app/Filament/Resources/Directory/LdapSchemaEntryResource/Pages/ViewLdapSchemaEntry.php
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php
+app/Filament/Resources/Directory/LdapServerResource/Pages/CreateLdapServer.php
+app/Filament/Resources/Directory/LdapServerResource/Pages/EditLdapServer.php
+app/Filament/Resources/Directory/LdapServerResource/Pages/ListLdapServers.php
+app/Filament/Resources/Directory/LdapServerResource/Pages/ViewLdapServer.php
+app/Filament/Resources/Directory/LdapServerResource.php
+app/Filament/Resources/Directory/LdapUnitEntryResource/Pages/ListLdapUnitEntries.php
+app/Filament/Resources/Directory/LdapUnitEntryResource/Pages/ViewLdapUnitEntry.php
+app/Filament/Resources/Directory/LdapUnitEntryResource.php
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ListLdapUserEntries.php
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ViewLdapUserEntry.php
+app/Filament/Resources/Directory/LdapUserEntryResource.php
+app/Filament/Resources/Observability/AuditLogResource/Pages/ListAuditLogs.php
+app/Filament/Resources/Observability/AuditLogResource/Pages/ViewAuditLog.php
+app/Filament/Resources/Observability/AuditLogResource.php
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ListFailedQueueJobs.php
+app/Filament/Resources/Observability/FailedQueueJobResource/Pages/ViewFailedQueueJob.php
+app/Filament/Resources/Observability/FailedQueueJobResource.php
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ListHealthChecks.php
+app/Filament/Resources/Observability/HealthCheckResource/Pages/ViewHealthCheck.php
+app/Filament/Resources/Observability/HealthCheckResource.php
+app/Filament/Resources/Operations/BulkLdapOperationItemResource/Pages/ListBulkLdapOperationItems.php
+app/Filament/Resources/Operations/BulkLdapOperationItemResource/Pages/ViewBulkLdapOperationItem.php
+app/Filament/Resources/Operations/BulkLdapOperationItemResource.php
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ListCommandExecutions.php
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ViewCommandExecution.php
+app/Filament/Resources/Operations/CommandExecutionResource.php
+app/Filament/Resources/Operations/ImportApplyPlanResource/Pages/ListImportApplyPlans.php
+app/Filament/Resources/Operations/ImportApplyPlanResource/Pages/ViewImportApplyPlan.php
+app/Filament/Resources/Operations/ImportApplyPlanResource.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/CreateImportBatch.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/EditImportBatch.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/ListImportBatches.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/ViewImportBatch.php
+app/Filament/Resources/Operations/ImportBatchResource.php
+app/Filament/Resources/Operations/ImportBatchResource/RelationManagers/RowsRelationManager.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/CreateImportTemplate.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/EditImportTemplate.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/ListImportTemplates.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/ViewImportTemplate.php
+app/Filament/Resources/Operations/ImportTemplateResource.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/CreateLdapCrudOperation.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/EditLdapCrudOperation.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ViewLdapCrudOperation.php
+app/Filament/Resources/Operations/LdapCrudOperationResource.php
+app/Filament/Resources/Operations/LdapSyncBatchResource/Pages/ListLdapSyncBatches.php
+app/Filament/Resources/Operations/LdapSyncBatchResource/Pages/ViewLdapSyncBatch.php
+app/Filament/Resources/Operations/LdapSyncBatchResource.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/CreateLdapTransferBatch.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/EditLdapTransferBatch.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ListLdapTransferBatches.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ViewLdapTransferBatch.php
+app/Filament/Resources/Operations/LdapTransferBatchResource.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/CreateLdifExportBatch.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/EditLdifExportBatch.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/ListLdifExportBatches.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/ViewLdifExportBatch.php
+app/Filament/Resources/Operations/LdifExportBatchResource.php
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ListOperationJobItems.php
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ViewOperationJobItem.php
+app/Filament/Resources/Operations/OperationJobItemResource.php
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ListOperationJobLogs.php
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ViewOperationJobLog.php
+app/Filament/Resources/Operations/OperationJobLogResource.php
+app/Filament/Resources/Operations/OperationJobResource/Pages/ListOperationJobs.php
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php
+app/Filament/Resources/Operations/OperationJobResource.php
+app/Filament/Resources/Operations/OperationJobResource/RelationManagers/ItemsRelationManager.php
+app/Filament/Resources/Operations/OperationJobResource/RelationManagers/LogsRelationManager.php
+app/Filament/Resources/Operations/QueueJobResource/Pages/ListQueueJobs.php
+app/Filament/Resources/Operations/QueueJobResource/Pages/ViewQueueJob.php
+app/Filament/Resources/Operations/QueueJobResource.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/EditSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/ListSavedScripts.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/ViewSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource.php
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ListUniversalLdapTransferBatches.php
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ViewUniversalLdapTransferBatch.php
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php
+
+4. SAMPLE RESOURCE SIGNATURES
+
+----- app/Filament/Resources/Directory/DirectoryObjectManagerResource.php -----
+26:use Filament\Schemas\Schema;
+36:    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cube-transparent';
+44:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+48:    public static function form(Schema $schema): Schema
+53:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Filament\Resources\Directory\DirectoryObjectManagerResource\Pages;
+use App\Jobs\Directory\BulkGenericLdapEntryMutationJob;
+use App\Jobs\Directory\GenericLdapEntryMutationJob;
+use App\Jobs\Directory\SyncDirectoryObjectsJob;
+use App\Models\Directory\LdapConnection;
+use App\Models\Directory\LdapDirectoryEntry;
+use App\Support\Directory\LdapSchemaObjectClassHelper;
+use App\Support\Operations\SafeCommandExecutionLogger;
+use App\Services\Directory\DirectoryManagementSyncDispatcher;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Support\Arr;
+use Throwable;
+
+class DirectoryObjectManagerResource extends Resource
+{
+    protected static ?string $model = LdapDirectoryEntry::class;
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cube-transparent';
+
+    protected static ?string $navigationLabel = 'Directory Object Manager';
+
+    protected static ?string $modelLabel = 'Directory Object';
+
+    protected static ?string $pluralModelLabel = 'Directory Object Manager';
+
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+
+    protected static ?int $navigationSort = 35;
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->query(LdapDirectoryEntry::query())
+            ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('dn')
+                    ->label('DN')
+                    ->searchable()
+                    ->sortable()
+                    ->wrap()
+                    ->limit(120),
+
+                Tables\Columns\TextColumn::make('rdn')
+                    ->label('RDN')
+                    ->state(fn ($record): string => static::safeRdn((string) ($record->dn ?? '')))
+                    ->searchable(query: fn ($query, string $search) => $query->where('dn', 'ilike', '%'.$search.'%'))
+                    ->wrap(),
+
+                Tables\Columns\TextColumn::make('object_class_summary')
+                    ->label('ObjectClass')
+                    ->state(fn ($record): string => static::objectClassSummary($record))
+                    ->badge()
+                    ->wrap(),
+
+                Tables\Columns\TextColumn::make('ldap_connection_id')
+                    ->label('LDAP')
+                    ->state(fn ($record): string => static::connectionName($record->ldap_connection_id ?? null))
+                    ->badge()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+
+----- app/Filament/Resources/Directory/LdapApplicationEntryResource.php -----
+13:use Filament\Schemas\Schema;
+25:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+31:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
+52:    public static function form(Schema $schema): Schema
+153:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Filament\Resources\Directory\LdapApplicationEntryResource\Pages;
+use App\Models\Directory\LdapApplicationEntry;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class LdapApplicationEntryResource extends Resource
+{
+    protected static bool $shouldRegisterNavigation = false;
+
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+    protected static ?int $navigationSort = 70;
+
+
+    protected static ?string $model = LdapApplicationEntry::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
+    protected static ?string $navigationLabel = 'Applications';
+
+    protected static ?string $modelLabel = 'LDAP Application';
+
+    protected static ?string $pluralModelLabel = 'LDAP Applications';
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Application Identity')
+                    ->schema([
+                        TextEntry::make('id')->label('ID'),
+                        TextEntry::make('uuid')->label('UUID')->columnSpanFull(),
+                        TextEntry::make('dn')->label('Source Group DN')->columnSpanFull(),
+                        TextEntry::make('app_key')->label('App Key')->placeholder('N/A'),
+                        TextEntry::make('app_name')->label('App Name')->placeholder('N/A'),
+                        TextEntry::make('cn')->label('CN')->placeholder('N/A'),
+                        TextEntry::make('application_type')
+                            ->label('Application Type')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'web_app' => 'info',
+                                'mobile_app' => 'success',
+                                'network_access_app' => 'warning',
+                                'api_app' => 'danger',
+                                default => 'gray',
+                            }),
+                        TextEntry::make('integration_type')->label('Integration')->badge()->placeholder('N/A'),
+                        TextEntry::make('environment')->label('Environment')->badge()->placeholder('N/A'),
+                    ])
+                    ->columns(3),
+
+                Section::make('Access Summary')
+                    ->schema([
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'active' => 'success',
+
+----- app/Filament/Resources/Directory/LdapConnectionResource.php -----
+25:use Filament\Schemas\Schema;
+33:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+40:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-server-stack';
+46:    public static function form(Schema $schema): Schema
+305:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Filament\Resources\Directory\LdapConnectionResource\Pages;
+use App\Models\Directory\LdapConnection;
+use App\Services\Ldap\LdapConnectionHealthService;
+use App\Services\Audit\AuditLogger;
+use BackedEnum;
+use UnitEnum;
+use Filament\Actions\BulkActionGroup;
+use Filament\Notifications\Notification;
+use Filament\Actions\Action;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+
+class LdapConnectionResource extends Resource
+{
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+    protected static ?int $navigationSort = 20;
+
+
+
+    protected static ?string $model = LdapConnection::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-server-stack';
+    protected static ?string $navigationLabel = 'LDAP Connections';
+
+    protected static ?string $modelLabel = 'LDAP Connection';
+
+    protected static ?string $pluralModelLabel = 'LDAP Connections';
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Connection Identity')
+                    ->description('Basic identity and environment label for this LDAP server.')
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Connection Name')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Production LDAP'),
+
+                        TextInput::make('environment_label')
+                            ->label('Environment')
+                            ->required()
+                            ->maxLength(255)
+                            ->default('local')
+                            ->placeholder('production, staging, testing, local'),
+                    ])
+                    ->columns(2),
+
+                Section::make('LDAP Server')
+                    ->description('Main LDAP server endpoint and bind configuration.')
+                    ->schema([
+                        TextInput::make('host')
+                            ->label('Host')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('ldap.example.ac.id'),
+
+                        TextInput::make('port')
+                            ->label('Port')
+                            ->required()
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(65535)
+                            ->default(389),
+
+                        TextInput::make('base_dn')
+                            ->label('Base DN')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('dc=petra,dc=ac,dc=id')
+                            ->columnSpanFull(),
+
+----- app/Filament/Resources/Directory/LdapDirectoryEntryResource.php -----
+12:use Filament\Schemas\Schema;
+23:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+29:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-folder-open';
+52:    public static function form(Schema $schema): Schema
+150:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Filament\Resources\Directory\LdapDirectoryEntryResource\Pages;
+use App\Models\Directory\LdapDirectoryEntry;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class LdapDirectoryEntryResource extends Resource
+{
+    protected static bool $shouldRegisterNavigation = false;
+
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+    protected static ?int $navigationSort = 10;
+
+
+    protected static ?string $model = LdapDirectoryEntry::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-folder-open';
+
+    protected static ?string $navigationLabel = 'Directory Explorer';
+
+    protected static ?string $modelLabel = 'LDAP Directory Entry';
+
+    protected static ?string $pluralModelLabel = 'LDAP Directory Explorer';
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Entry Identity')
+                    ->schema([
+                        TextEntry::make('id')->label('ID'),
+                        TextEntry::make('uuid')->label('UUID')->columnSpanFull(),
+                        TextEntry::make('dn')->label('DN')->columnSpanFull(),
+                        TextEntry::make('parent_dn')->label('Parent DN')->placeholder('N/A')->columnSpanFull(),
+                        TextEntry::make('rdn')->label('RDN')->placeholder('N/A'),
+                        TextEntry::make('rdn_attribute')->label('RDN Attribute')->placeholder('N/A'),
+                        TextEntry::make('rdn_value')->label('RDN Value')->placeholder('N/A'),
+                        TextEntry::make('entry_uuid')->label('Entry UUID')->placeholder('N/A')->columnSpanFull(),
+                    ])
+                    ->columns(3),
+
+                Section::make('Detected Type')
+                    ->schema([
+                        TextEntry::make('entry_type')
+                            ->label('Entry Type')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'user' => 'info',
+                                'group' => 'success',
+                                'role' => 'warning',
+                                'application' => 'primary',
+                                'unit_ou' => 'gray',
+                                'device' => 'danger',
+                                'service_account' => 'gray',
+                                'policy' => 'warning',
+                                default => 'gray',
+                            }),
+                        TextEntry::make('entry_category')->label('Category')->badge()->placeholder('N/A'),
+
+----- app/Filament/Resources/Directory/LdapEntryTypeRuleResource.php -----
+21:use Filament\Schemas\Schema;
+33:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+38:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-adjustments-horizontal';
+46:    public static function form(Schema $schema): Schema
+283:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Filament\Resources\Directory\LdapEntryTypeRuleResource\Pages;
+use App\Models\Directory\LdapEntryTypeRule;
+use BackedEnum;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class LdapEntryTypeRuleResource extends Resource
+{
+    protected static bool $shouldRegisterNavigation = false;
+
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+    protected static ?int $navigationSort = 90;
+
+    protected static ?string $model = LdapEntryTypeRule::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-adjustments-horizontal';
+
+    protected static ?string $navigationLabel = 'Entry Type Registry';
+
+    protected static ?string $modelLabel = 'LDAP Entry Type Rule';
+
+    protected static ?string $pluralModelLabel = 'LDAP Entry Type Registry';
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Rule Identity')
+                    ->schema([
+                        TextInput::make('rule_key')
+                            ->label('Rule Key')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(255)
+                            ->helperText('Example: user_inetorgperson, group_groupofnames, custom_student_entry'),
+
+                        TextInput::make('name')
+                            ->label('Name')
+                            ->required()
+                            ->maxLength(255),
+
+                        Select::make('entry_type')
+                            ->label('Entry Type')
+                            ->required()
+                            ->options([
+                                'user' => 'User',
+                                'group' => 'Group',
+                                'role' => 'Role',
+                                'application' => 'Application',
+                                'unit_ou' => 'Unit / OU',
+                                'device' => 'Device',
+                                'service_account' => 'Service Account',
+                                'policy' => 'Policy',
+                                'schema' => 'Schema',
+                                'generic_entry' => 'Generic Entry',
+                                'custom' => 'Custom',
+                            ])
+                            ->searchable(),
+
+                        Select::make('entry_category')
+                            ->label('Entry Category')
+                            ->options([
+                                'identity' => 'Identity',
+                                'authorization' => 'Authorization',
+                                'application_access' => 'Application Access',
+                                'structure' => 'Structure',
+                                'asset' => 'Asset',
+                                'service' => 'Service',
+
+----- app/Filament/Resources/Directory/LdapGroupEntryResource.php -----
+13:use Filament\Schemas\Schema;
+24:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+30:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
+51:    public static function form(Schema $schema): Schema
+150:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Filament\Resources\Directory\LdapGroupEntryResource\Pages;
+use App\Models\Directory\LdapGroupEntry;
+use App\Services\Directory\LdapMembershipResolver;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class LdapGroupEntryResource extends Resource
+{
+    protected static bool $shouldRegisterNavigation = false;
+
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+    protected static ?int $navigationSort = 40;
+
+
+    protected static ?string $model = LdapGroupEntry::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $navigationLabel = 'Groups';
+
+    protected static ?string $modelLabel = 'LDAP Group';
+
+    protected static ?string $pluralModelLabel = 'LDAP Groups';
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Group Identity')
+                    ->schema([
+                        TextEntry::make('id')->label('ID'),
+                        TextEntry::make('uuid')->label('UUID')->columnSpanFull(),
+                        TextEntry::make('dn')->label('DN')->columnSpanFull(),
+                        TextEntry::make('cn')->label('CN')->placeholder('N/A'),
+                        TextEntry::make('ou')->label('OU')->placeholder('N/A'),
+                        TextEntry::make('description')->label('Description')->placeholder('N/A'),
+                        TextEntry::make('group_type')
+                            ->label('Group Type')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'app_group' => 'info',
+                                'role_group' => 'warning',
+                                'security_group' => 'danger',
+                                'posix_group' => 'success',
+                                'organizational_unit' => 'gray',
+                                default => 'primary',
+                            }),
+                    ])
+                    ->columns(3),
+
+                Section::make('Status / Counters')
+                    ->schema([
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'active' => 'success',
+                                'missing_from_ldap' => 'warning',
+                                default => 'gray',
+
+----- app/Filament/Resources/Directory/LdapRoleEntryResource.php -----
+12:use Filament\Schemas\Schema;
+23:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+29:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-key';
+50:    public static function form(Schema $schema): Schema
+140:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Filament\Resources\Directory\LdapRoleEntryResource\Pages;
+use App\Models\Directory\LdapRoleEntry;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class LdapRoleEntryResource extends Resource
+{
+    protected static bool $shouldRegisterNavigation = false;
+
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+    protected static ?int $navigationSort = 50;
+
+
+    protected static ?string $model = LdapRoleEntry::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-key';
+    protected static ?string $navigationLabel = 'Roles';
+
+    protected static ?string $modelLabel = 'LDAP Role';
+
+    protected static ?string $pluralModelLabel = 'LDAP Roles';
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Role Identity')
+                    ->schema([
+                        TextEntry::make('id')->label('ID'),
+                        TextEntry::make('uuid')->label('UUID')->columnSpanFull(),
+                        TextEntry::make('dn')->label('Source Group DN')->columnSpanFull(),
+                        TextEntry::make('cn')->label('CN')->placeholder('N/A'),
+                        TextEntry::make('role_key')->label('Role Key')->placeholder('N/A'),
+                        TextEntry::make('role_name')->label('Role Name')->placeholder('N/A'),
+                        TextEntry::make('role_type')
+                            ->label('Role Type')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'admin_role' => 'danger',
+                                'staff_role' => 'warning',
+                                'student_role' => 'info',
+                                'alumni_role' => 'success',
+                                'external_role' => 'gray',
+                                'app_role' => 'primary',
+                                default => 'gray',
+                            }),
+                        TextEntry::make('role_scope')->label('Scope')->badge()->placeholder('N/A'),
+                        TextEntry::make('application_key')->label('Application Key')->placeholder('N/A'),
+                    ])
+                    ->columns(3),
+
+                Section::make('Status / Counters')
+                    ->schema([
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'active' => 'success',
+
+----- app/Filament/Resources/Directory/LdapSchemaEntryResource.php -----
+26:use Filament\Schemas\Schema;
+36:    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
+44:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+48:    public static function form(Schema $schema): Schema
+53:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Models\Operations\LdapSyncBatch;
+
+use App\Filament\Resources\Directory\LdapSchemaEntryResource\Pages;
+use App\Jobs\Directory\ModifyLdapSchemaDefinitionJob;
+use App\Jobs\Directory\SyncLdapSchemaEntriesJob;
+use App\Jobs\Directory\ExecuteSchemaBrowserSyncJob;
+use App\Models\Directory\LdapConnection;
+use App\Models\Directory\LdapSchemaEntry;
+use App\Support\Directory\LdapSchemaDefinitionParser;
+use App\Support\Operations\SafeCommandExecutionLogger;
+use App\Services\Operations\OperationJobFactory;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\Schema as DbSchema;
+use Throwable;
+
+class LdapSchemaEntryResource extends Resource
+{
+    protected static ?string $model = LdapSchemaEntry::class;
+
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
+
+    protected static ?string $navigationLabel = 'Schema Browser';
+
+    protected static ?string $modelLabel = 'LDAP Schema Entry';
+
+    protected static ?string $pluralModelLabel = 'LDAP Schema Browser';
+
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+
+    protected static ?int $navigationSort = 40;
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->query(LdapSchemaEntry::query())
+            ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('schema_type')
+                    ->label('Type')
+                    ->state(fn ($record): string => static::safeValue($record, ['schema_type', 'type'], 'unknown'))
+                    ->badge()
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('primary_name')
+                    ->label('Name')
+                    ->state(fn ($record): string => static::safeValue($record, ['primary_name', 'name', 'display_name'], 'N/A'))
+                    ->searchable(query: fn ($query, string $search) => $query->where(function ($query) use ($search): void {
+                        foreach (['primary_name', 'name', 'display_name', 'oid', 'raw_definition', 'raw'] as $column) {
+                            if (static::hasColumn($column)) {
+                                $query->orWhere($column, 'ilike', '%'.$search.'%');
+                            }
+                        }
+                    }))
+                    ->sortable()
+                    ->wrap(),
+
+                Tables\Columns\TextColumn::make('oid')
+                    ->label('OID')
+                    ->state(fn ($record): string => static::safeValue($record, ['oid'], 'N/A'))
+                    ->searchable()
+                    ->sortable()
+                    ->copyable(),
+
+                Tables\Columns\TextColumn::make('kind')
+
+----- app/Filament/Resources/Directory/LdapServerResource.php -----
+21:use Filament\Schemas\Schema;
+34:    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedServerStack;
+42:    protected static string|UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+46:    public static function form(Schema $schema): Schema
+52:    public static function formSchema(): array
+197:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Filament\Resources\Directory\LdapServerResource\Pages;
+use App\Models\Directory\LdapServer;
+use App\Services\Directory\LdapServerProvisioningService;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Support\Str;
+use UnitEnum;
+use BackedEnum;
+
+class LdapServerResource extends Resource
+{
+    protected static ?string $model = LdapServer::class;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedServerStack;
+
+    protected static ?string $navigationLabel = 'LDAP Servers';
+
+    protected static ?string $modelLabel = 'LDAP Server';
+
+    protected static ?string $pluralModelLabel = 'LDAP Servers';
+
+    protected static string|UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+
+    protected static ?int $navigationSort = 15;
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components(static::formSchema());
+    }
+
+    public static function formSchema(): array
+    {
+        return [
+            Section::make('Server Identity')
+                ->description('Konfigurasi dasar LDAP server baru.')
+                ->schema([
+                    Grid::make(2)->schema([
+                        TextInput::make('name')
+                            ->label('Server Name')
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $set): void {
+                                if (filled($state)) {
+                                    $set('slug', Str::slug($state));
+                                    $set('container_name', 'openldap-'.Str::slug($state));
+                                }
+                            }),
+
+                        TextInput::make('slug')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->helperText('Dipakai untuk nama container/kubernetes object.'),
+                    ]),
+
+                    Grid::make(2)->schema([
+                        TextInput::make('organization')
+                            ->label('Organization')
+                            ->default('Petra Christian University'),
+
+                        TextInput::make('domain')
+                            ->label('LDAP Domain')
+                            ->default('test.local')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $set): void {
+                                if (filled($state)) {
+                                    $base = collect(explode('.', strtolower($state)))
+                                        ->filter()
+                                        ->map(fn ($part) => 'dc='.preg_replace('/[^a-z0-9-]/', '', $part))
+                                        ->implode(',');
+
+----- app/Filament/Resources/Directory/LdapUnitEntryResource.php -----
+12:use Filament\Schemas\Schema;
+23:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+28:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
+51:    public static function form(Schema $schema): Schema
+135:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Filament\Resources\Directory\LdapUnitEntryResource\Pages;
+use App\Models\Directory\LdapUnitEntry;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class LdapUnitEntryResource extends Resource
+{
+    protected static bool $shouldRegisterNavigation = false;
+
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+    protected static ?int $navigationSort = 60;
+
+    protected static ?string $model = LdapUnitEntry::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
+
+    protected static ?string $navigationLabel = 'Units / OU';
+
+    protected static ?string $modelLabel = 'LDAP Unit / OU';
+
+    protected static ?string $pluralModelLabel = 'LDAP Units / OU';
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Unit Identity')
+                    ->schema([
+                        TextEntry::make('id')->label('ID'),
+                        TextEntry::make('uuid')->label('UUID')->columnSpanFull(),
+                        TextEntry::make('dn')->label('DN')->columnSpanFull(),
+                        TextEntry::make('parent_dn')->label('Parent DN')->placeholder('N/A')->columnSpanFull(),
+                        TextEntry::make('ou')->label('OU')->placeholder('N/A'),
+                        TextEntry::make('unit_key')->label('Unit Key')->placeholder('N/A'),
+                        TextEntry::make('unit_name')->label('Unit Name')->placeholder('N/A'),
+                        TextEntry::make('unit_type')
+                            ->label('Unit Type')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'people_container' => 'info',
+                                'groups_container' => 'success',
+                                'applications_container' => 'primary',
+                                'roles_container' => 'warning',
+                                'devices_container' => 'danger',
+                                'services_container' => 'gray',
+                                'policies_container' => 'gray',
+                                default => 'gray',
+                            }),
+                        TextEntry::make('tree_level')->label('Tree Level'),
+                    ])
+                    ->columns(3),
+
+                Section::make('Counters')
+                    ->schema([
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+
+----- app/Filament/Resources/Directory/LdapUserEntryResource.php -----
+38:use Filament\Schemas\Schema;
+48:    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+55:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
+218:    public static function form(Schema $schema): Schema
+444:    public static function table(\Filament\Tables\Table $table): \Filament\Tables\Table
+<?php
+
+namespace App\Filament\Resources\Directory;
+
+use App\Support\Operations\SafeCommandExecutionLogger;
+
+use App\Models\Operations\CommandExecution;
+
+use App\Jobs\Directory\BulkDeleteUsersFromLdapJob;
+
+use App\Jobs\Directory\BulkMoveUsersToOuJob;
+
+use App\Jobs\Directory\SyncUsersBatchJob;
+
+use App\Services\Directory\LdapSingleUserSyncService;
+
+use App\Services\Directory\LdapUserLifecycleService;
+
+use Filament\Schemas\Components\Tabs\Tab;
+
+use Filament\Schemas\Components\Tabs;
+
+use Filament\Schemas\Components\Grid;
+
+use Filament\Infolists\Components\RepeatableEntry;
+
+use App\Services\Ldap\LdapEntryInspectorService;
+
+use App\Filament\Resources\Directory\LdapUserEntryResource\Pages;
+use App\Models\Directory\LdapUserEntry;
+use App\Services\Directory\LdapMembershipResolver;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class LdapUserEntryResource extends Resource
+{
+    protected static string|\UnitEnum|null $navigationGroup = '1. DIRECTORY MANAGEMENT';
+    protected static ?int $navigationSort = 30;
+
+
+
+    protected static ?string $model = LdapUserEntry::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
+    protected static ?string $navigationLabel = 'Users';
+
+    protected static ?string $modelLabel = 'LDAP User';
+
+    protected static ?string $pluralModelLabel = 'LDAP Users';
+    public static function canCreate(): bool
+    {
+        return false
+            ->actions([
+                \Filament\Actions\ViewAction::make(),
+
+                \Filament\Actions\Action::make('syncFromTable')
+                    ->label('Sync')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('gray')
+                    ->action(function ($record): void {
+                        $result = app(LdapSingleUserSyncService::class)->sync($record);
+
+                        if ($result['ok'] ?? false) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('User synced')
+                                ->body(isset($result['command_execution_id']) ? 'Command Execution ID: '.$result['command_execution_id'] : null)
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Sync failed')
+                                ->body($result['message'] ?? 'Unknown error.')
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                \Filament\Actions\Action::make('deleteFromLdap')
+                    ->label('Delete LDAP')
+
+----- app/Filament/Resources/Observability/AuditLogResource.php -----
+12:use Filament\Schemas\Schema;
+20:    protected static string|\UnitEnum|null $navigationGroup = '3. OBSERVABILITY';
+25:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
+46:    public static function form(Schema $schema): Schema
+116:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Observability;
+
+use App\Filament\Resources\Observability\AuditLogResource\Pages;
+use App\Models\Audit\AuditLog;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class AuditLogResource extends Resource
+{
+    protected static string|\UnitEnum|null $navigationGroup = '3. OBSERVABILITY';
+    protected static ?int $navigationSort = 10;
+
+    protected static ?string $model = AuditLog::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shield-check';
+    protected static ?string $navigationLabel = 'Audit Logs';
+
+    protected static ?string $modelLabel = 'Audit Log';
+
+    protected static ?string $pluralModelLabel = 'Audit Logs';
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Actor')
+                    ->schema([
+                        TextEntry::make('actor_name')->label('Name')->placeholder('System / Unknown'),
+                        TextEntry::make('actor_email')->label('Email')->placeholder('No email'),
+                        TextEntry::make('actor_ip')->label('IP Address')->placeholder('No IP'),
+                        TextEntry::make('user_agent')->label('User Agent')->placeholder('No user agent')->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Section::make('Action')
+                    ->schema([
+                        TextEntry::make('module')->label('Module')->badge(),
+                        TextEntry::make('action')->label('Action')->badge(),
+                        TextEntry::make('status')->label('Status')->badge(),
+                        TextEntry::make('duration_ms')->label('Duration')->suffix(' ms')->placeholder('N/A'),
+                        TextEntry::make('target_type')->label('Target Type')->placeholder('N/A'),
+                        TextEntry::make('target_key')->label('Target Key')->placeholder('N/A'),
+                        TextEntry::make('target_dn')->label('Target DN')->placeholder('N/A')->columnSpanFull(),
+                        TextEntry::make('error_message')->label('Error Message')->placeholder('No error')->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Section::make('Payload')
+                    ->schema([
+                        TextEntry::make('before_value')
+                            ->label('Before')
+                            ->formatStateUsing(fn ($state): string => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: 'N/A')
+                            ->placeholder('N/A')
+                            ->columnSpanFull(),
+
+                        TextEntry::make('after_value')
+                            ->label('After')
+                            ->formatStateUsing(fn ($state): string => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: 'N/A')
+                            ->placeholder('N/A')
+                            ->columnSpanFull(),
+
+
+----- app/Filament/Resources/Observability/FailedQueueJobResource.php -----
+15:use Filament\Schemas\Schema;
+27:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-exclamation-triangle';
+29:    protected static string|UnitEnum|null $navigationGroup = '3. OBSERVABILITY';
+54:    public static function form(Schema $schema): Schema
+98:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Observability;
+
+use App\Filament\Resources\Observability\FailedQueueJobResource\Pages;
+use App\Models\Operations\FailedQueueJob;
+use App\Services\Audit\AuditLogger;
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Artisan;
+use UnitEnum;
+use Throwable;
+
+class FailedQueueJobResource extends Resource
+{
+    protected static ?string $model = FailedQueueJob::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-exclamation-triangle';
+
+    protected static string|UnitEnum|null $navigationGroup = '3. OBSERVABILITY';
+
+    protected static ?string $navigationLabel = 'Failed Jobs';
+
+    protected static ?string $modelLabel = 'Failed Job';
+
+    protected static ?string $pluralModelLabel = 'Failed Jobs';
+
+    protected static ?int $navigationSort = 20;
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Failed Job')
+                    ->schema([
+                        TextEntry::make('id')->label('ID'),
+                        TextEntry::make('uuid')->label('UUID')->columnSpanFull(),
+                        TextEntry::make('connection')->label('Connection')->badge(),
+                        TextEntry::make('queue')->label('Queue')->badge(),
+                        TextEntry::make('failed_at')->label('Failed At')->dateTime(),
+                    ])
+                    ->columns(2),
+
+                Section::make('Payload')
+                    ->schema([
+                        TextEntry::make('payload_preview')
+                            ->label('Preview')
+                            ->columnSpanFull(),
+
+                        TextEntry::make('payload')
+                            ->label('Raw Payload')
+                            ->formatStateUsing(function ($state): string {
+                                $decoded = json_decode((string) $state, true);
+
+                                return json_encode($decoded ?: $state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: 'N/A';
+                            })
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Exception')
+                    ->schema([
+
+----- app/Filament/Resources/Observability/HealthCheckResource.php -----
+12:use Filament\Schemas\Schema;
+21:    protected static string|\UnitEnum|null $navigationGroup = '3. OBSERVABILITY';
+26:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-heart';
+47:    public static function form(Schema $schema): Schema
+93:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Observability;
+
+use App\Filament\Resources\Observability\HealthCheckResource\Pages;
+use App\Models\Observability\HealthCheck;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class HealthCheckResource extends Resource
+{
+    protected static string|\UnitEnum|null $navigationGroup = '3. OBSERVABILITY';
+    protected static ?int $navigationSort = 40;
+
+    protected static ?string $model = HealthCheck::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-heart';
+    protected static ?string $navigationLabel = 'Health Checks';
+
+    protected static ?string $modelLabel = 'Health Check';
+
+    protected static ?string $pluralModelLabel = 'Health Checks';
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Health Check')
+                    ->schema([
+                        TextEntry::make('component')->label('Component')->badge(),
+                        TextEntry::make('name')->label('Name'),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'healthy' => 'success',
+                                'warning' => 'warning',
+                                'failed' => 'danger',
+                                default => 'gray',
+                            }),
+                        TextEntry::make('duration_ms')->label('Duration')->suffix(' ms')->placeholder('N/A'),
+                        TextEntry::make('message')->label('Message')->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Section::make('Details')
+                    ->schema([
+                        TextEntry::make('details')
+                            ->label('Details')
+                            ->formatStateUsing(fn ($state): string => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: 'N/A')
+                            ->placeholder('N/A')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Timeline')
+                    ->schema([
+                        TextEntry::make('checked_at')->label('Checked At')->dateTime()->placeholder('Never'),
+                        TextEntry::make('updated_at')->label('Updated At')->dateTime()->placeholder('N/A'),
+                        TextEntry::make('uuid')->label('UUID')->columnSpanFull(),
+                    ])
+                    ->columns(2),
+            ]);
+
+----- app/Filament/Resources/Operations/BulkLdapOperationItemResource.php -----
+12:use Filament\Schemas\Schema;
+22:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-list-bullet';
+26:protected static string|UnitEnum|null $navigationGroup = '2. OPERATIONS';
+92:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Operations;
+
+use App\Filament\Resources\Operations\BulkLdapOperationItemResource\Pages;
+use App\Models\Operations\BulkLdapOperation;
+use App\Models\Operations\BulkLdapOperationItem;
+use BackedEnum;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use UnitEnum;
+
+class BulkLdapOperationItemResource extends Resource
+{
+    protected static ?string $model = BulkLdapOperationItem::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-list-bullet';
+
+    
+    protected static bool $shouldRegisterNavigation = false;
+protected static string|UnitEnum|null $navigationGroup = '2. OPERATIONS';
+
+    protected static ?string $navigationLabel = 'Bulk LDAP Items';
+
+    protected static ?string $modelLabel = 'Bulk LDAP Item';
+
+    protected static ?string $pluralModelLabel = 'Bulk LDAP Items';
+
+    protected static ?int $navigationSort = 47;
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Item')
+                    ->schema([
+                        TextEntry::make('id')->label('ID'),
+                        TextEntry::make('bulk_ldap_operation_id')->label('Bulk Operation ID'),
+                        TextEntry::make('sequence')->label('Sequence'),
+                        TextEntry::make('uid')->label('UID'),
+                        TextEntry::make('action')->label('Action')->badge(),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'pending' => 'gray',
+                                'running' => 'warning',
+                                'success', 'already_applied' => 'success',
+                                'failed' => 'danger',
+                                'conflict' => 'warning',
+                                'skipped' => 'gray',
+                                default => 'gray',
+                            }),
+                        TextEntry::make('target_dn')->label('Target DN')->columnSpanFull(),
+                        TextEntry::make('destination_dn')->label('Destination DN')->placeholder('N/A')->columnSpanFull(),
+                    ])
+                    ->columns(3),
+
+                Section::make('Execution')
+                    ->schema([
+                        TextEntry::make('attempt_count')->label('Attempt Count'),
+                        TextEntry::make('exit_code')->label('Exit Code')->placeholder('N/A'),
+                        TextEntry::make('command_execution_id')->label('Command Execution ID')->placeholder('N/A'),
+                        TextEntry::make('error_message')->label('Error')->placeholder('N/A')->columnSpanFull(),
+                        TextEntry::make('stdout')->label('STDOUT')->placeholder('N/A')->columnSpanFull(),
+                        TextEntry::make('stderr')->label('STDERR')->placeholder('N/A')->columnSpanFull(),
+                    ])
+                    ->columns(3),
+
+                Section::make('Preview')
+                    ->schema([
+                        TextEntry::make('ldif_preview')->label('LDIF Preview')->columnSpanFull(),
+                    ]),
+
+                Section::make('Raw Data')
+                    ->schema([
+                        TextEntry::make('payload_hash')->label('Payload Hash')->columnSpanFull(),
+                        TextEntry::make('created_at')->label('Created')->dateTime(),
+                        TextEntry::make('updated_at')->label('Updated')->dateTime(),
+                        TextEntry::make('started_at')->label('Started')->dateTime()->placeholder('N/A'),
+                        TextEntry::make('finished_at')->label('Finished')->dateTime()->placeholder('N/A'),
+                    ])
+                    ->columns(2),
+            ]);
+    }
+
+----- app/Filament/Resources/Operations/CommandExecutionResource.php -----
+13:use Filament\Schemas\Schema;
+23:    protected static string|\UnitEnum|null $navigationGroup = '2. OPERATIONS';
+28:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-command-line';
+49:    public static function form(Schema $schema): Schema
+120:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Operations;
+
+use App\Filament\Resources\Operations\CommandExecutionResource\Pages;
+use App\Models\Operations\CommandExecution;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class CommandExecutionResource extends Resource
+{
+    protected static string|\UnitEnum|null $navigationGroup = '2. OPERATIONS';
+    protected static ?int $navigationSort = 90;
+
+    protected static ?string $model = CommandExecution::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-command-line';
+    protected static ?string $navigationLabel = 'Command Executions';
+
+    protected static ?string $modelLabel = 'Command Execution';
+
+    protected static ?string $pluralModelLabel = 'Command Executions';
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Execution')
+                    ->schema([
+                        TextEntry::make('id')->label('ID'),
+                        TextEntry::make('uuid')->label('UUID')->columnSpanFull(),
+                        TextEntry::make('command_type')->label('Command Type')->badge(),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (?string $state): string => match ($state) {
+                                'pending' => 'gray',
+                                'running' => 'info',
+                                'success' => 'success',
+                                'previewed' => 'info',
+                                'failed' => 'danger',
+                                'blocked' => 'warning',
+                                default => 'gray',
+                            }),
+                        IconEntry::make('safe_mode')->label('Safe Mode')->boolean(),
+                        IconEntry::make('preview_mode')->label('Preview Mode')->boolean(),
+                        IconEntry::make('destructive')->label('Destructive')->boolean(),
+                        TextEntry::make('exit_code')->label('Exit Code')->placeholder('N/A'),
+                        TextEntry::make('duration_ms')->label('Duration')->suffix(' ms')->placeholder('N/A'),
+                    ])
+                    ->columns(3),
+
+                Section::make('Actor')
+                    ->schema([
+                        TextEntry::make('actor_name')->label('Actor Name')->placeholder('System / Unknown'),
+                        TextEntry::make('actor_email')->label('Actor Email')->placeholder('No email'),
+                        TextEntry::make('actor_ip')->label('IP Address')->placeholder('No IP'),
+                        TextEntry::make('user_agent')->label('User Agent')->columnSpanFull()->placeholder('No user agent'),
+                    ])
+                    ->columns(2),
+
+----- app/Filament/Resources/Operations/ImportApplyPlanResource.php -----
+15:use Filament\Schemas\Schema;
+24:    protected static string|\UnitEnum|null $navigationGroup = '2. OPERATIONS';
+29:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-check';
+56:    public static function form(Schema $schema): Schema
+231:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Operations;
+
+use App\Support\Ui\StatusLabel;
+
+use App\Filament\Resources\Operations\ImportApplyPlanResource\Pages;
+use App\Models\Operations\ImportApplyPlan;
+use BackedEnum;
+use Filament\Actions\ViewAction;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+class ImportApplyPlanResource extends Resource
+{
+    protected static string|\UnitEnum|null $navigationGroup = '2. OPERATIONS';
+    protected static ?int $navigationSort = 60;
+
+    protected static ?string $model = ImportApplyPlan::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-check';
+    protected static ?string $navigationLabel = 'Import Apply Plans';
+
+    protected static ?string $modelLabel = 'Import Apply Plan';
+
+    protected static ?string $pluralModelLabel = 'Import Apply Plans';
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->components([]);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make('Plan')
+                    ->schema([
+                        TextEntry::make('id')->label('ID'),
+                        TextEntry::make('uuid')->label('UUID')->columnSpanFull(),
+                        TextEntry::make('name')->label('Name'),
+                        TextEntry::make('plan_type')->label('Type')->badge(),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->formatStateUsing(fn (?string $state): string => StatusLabel::importApplyPlan($state))
+                            ->color(fn (?string $state): string => StatusLabel::importApplyPlanColor($state)),
+                        TextEntry::make('approval_status')
+                            ->label('Approval')
+                            ->badge()
+                            ->formatStateUsing(fn (?string $state): string => StatusLabel::approval($state))
+                            ->color(fn (?string $state): string => StatusLabel::approvalColor($state)),
+                        TextEntry::make('message')->label('Message')->placeholder('N/A')->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Section::make('Summary')
+                    ->schema([
+                        TextEntry::make('total_rows')->label('Total Rows'),
+                        TextEntry::make('planned_create_rows')->label('Planned Create'),
+                        TextEntry::make('planned_update_rows')->label('Planned Update'),
+                        TextEntry::make('skipped_rows')->label('Skipped'),
+
+----- app/Filament/Resources/Operations/ImportBatchResource.php -----
+29:use Filament\Schemas\Schema;
+41:    protected static string|\UnitEnum|null $navigationGroup = '2. OPERATIONS';
+46:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-up-tray';
+176:    public static function form(Schema $schema): Schema
+331:    public static function table(Table $table): Table
+497:    public static function formatImportRowJsonForModal(mixed $value): string
+<?php
+
+namespace App\Filament\Resources\Operations;
+
+use App\Filament\Resources\Operations\ImportBatchResource\Pages\CreateImportBatch;
+use App\Filament\Resources\Operations\ImportBatchResource\Pages\EditImportBatch;
+use App\Filament\Resources\Operations\ImportBatchResource\Pages\ListImportBatches;
+use App\Filament\Resources\Operations\ImportBatchResource\Pages\ViewImportBatch;
+use App\Support\Ui\StatusLabel;
+
+use App\Filament\Resources\Operations\ImportBatchResource\Pages;
+use App\Filament\Resources\Operations\ImportBatchResource\RelationManagers\RowsRelationManager;
+use App\Models\Directory\LdapConnection;
+use App\Models\Operations\ImportBatch;
+use App\Services\Audit\AuditLogger;
+use App\Services\Operations\ImportPreviewDispatcher;
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use UnitEnum;
+
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
+class ImportBatchResource extends Resource
+{
+    protected static string|\UnitEnum|null $navigationGroup = '2. OPERATIONS';
+    protected static ?int $navigationSort = 50;
+
+    protected static ?string $model = ImportBatch::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-up-tray';
+
+    protected static ?string $navigationLabel = 'LDAP Import Center';
+
+    protected static ?string $modelLabel = 'LDAP Import';
+
+    protected static ?string $pluralModelLabel = 'LDAP Import Center';
+
+    public static function getCreateModalSchema(): array
+    {
+        return [
+            Section::make('1. Import Identity')
+                ->description('Buat batch import LDAP. Data belum diterapkan ke LDAP sampai proses apply dijalankan.')
+                ->schema([
+                    TextInput::make('name')
+                        ->label('Import Name')
+                        ->placeholder('TEST Import students to Petra LDAP')
+                        ->required()
+                        ->maxLength(255),
+
+                    Select::make('ldap_connection_id')
+                        ->label('Target LDAP')
+                        ->relationship('ldapConnection', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->helperText('Pilih target LDAP untuk preview/apply. Bisa dikosongkan hanya untuk draft jika resource lama mengizinkan.'),
+
+                    Select::make('import_type')
+                        ->label('Import Mode')
+                        ->options([
+                            'csv' => 'CSV Import',
+                            'ldif' => 'LDIF Import',
+                            'json' => 'JSON Import',
+                            'manual' => 'Manual / Generic LDAP Object',
+                        ])
+                        ->default('csv')
+                        ->required(),
+
+                    Select::make('status')
+                        ->label('Initial Status')
+                        ->options([
+                            'draft' => 'Draft',
+                            'queued' => 'Queued',
+                            'preview_queued' => 'Preview Queued',
+                        ])
+
+----- app/Filament/Resources/Operations/ImportTemplateResource.php -----
+21:use Filament\Schemas\Schema;
+29:    protected static string|\UnitEnum|null $navigationGroup = '2. OPERATIONS';
+34:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-arrow-down';
+46:    public static function form(Schema $schema): Schema
+160:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Operations;
+
+use App\Filament\Resources\Operations\ImportTemplateResource\Pages\CreateImportTemplate;
+use App\Filament\Resources\Operations\ImportTemplateResource\Pages\EditImportTemplate;
+use App\Filament\Resources\Operations\ImportTemplateResource\Pages\ListImportTemplates;
+use App\Filament\Resources\Operations\ImportTemplateResource\Pages\ViewImportTemplate;
+use App\Models\Directory\LdapConnection;
+use App\Models\Operations\ImportTemplate;
+use App\Services\Operations\ImportTemplateGeneratorService;
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
+use UnitEnum;
+
+use Illuminate\Support\Facades\Storage;
+class ImportTemplateResource extends Resource
+{
+    protected static string|\UnitEnum|null $navigationGroup = '2. OPERATIONS';
+    protected static ?int $navigationSort = 40;
+
+    protected static ?string $model = ImportTemplate::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-arrow-down';
+    protected static ?string $navigationLabel = 'Import Templates';
+
+    protected static ?string $modelLabel = 'Import Template';
+
+    protected static ?string $pluralModelLabel = 'Import Templates';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema->schema([
+            TextInput::make('name')
+                ->label('Template Name')
+                ->default('User Import Template')
+                ->required()
+                ->maxLength(255),
+
+            Select::make('ldap_connection_id')
+                ->label('LDAP Connection')
+                ->options(fn (): array => class_exists(LdapConnection::class)
+                    ? LdapConnection::query()
+                        ->orderByDesc('is_default')
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->toArray()
+                    : [])
+                ->searchable()
+                ->preload()
+                ->helperText('Optional. Choose LDAP connection for schema-aware template later.'),
+
+            Select::make('template_purpose')
+                ->label('Template Purpose')
+                ->options([
+                        'create' => 'Create entry',
+                        'update' => 'Update attributes',
+                        'delete' => 'Delete entry',
+                        'rename_dn' => 'Rename DN / RDN',
+                        'move_dn' => 'Move DN to another parent',
+                        'add_objectclass' => 'Add objectClass',
+                        'schema_create' => 'Schema create',
+                        'schema_modify' => 'Schema modify',
+                        'schema_delete' => 'Schema delete',
+                    ])
+                ->default('create')
+                ->required(),
+
+            Select::make('entry_type')
+                ->label('Entry Type')
+                ->options([
+                    'user' => 'User / inetOrgPerson',
+                    'group' => 'Group / groupOfNames',
+                    'ou' => 'Organizational Unit',
+                    'custom' => 'Custom Entry',
+
+----- app/Filament/Resources/Operations/LdapCrudOperationResource.php -----
+25:use Filament\Schemas\Schema;
+36:    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-pencil-square';
+38:    protected static string|UnitEnum|null $navigationGroup = '2. OPERATIONS';
+54:    public static function form(Schema $schema): Schema
+314:    public static function table(Table $table): Table
+<?php
+
+namespace App\Filament\Resources\Operations;
+
+use App\Filament\Resources\Operations\LdapCrudOperationResource\Pages;
+use App\Models\Directory\LdapConnection;
+use App\Models\Operations\LdapCrudOperation;
+use App\Services\Operations\LdapCrudOperationService;
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\IconEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use UnitEnum;
+
+class LdapCrudOperationResource extends Resource
+{
+    protected static ?string $model = LdapCrudOperation::class;
+
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-pencil-square';
+
+    protected static string|UnitEnum|null $navigationGroup = '2. OPERATIONS';
+
+    protected static ?string $navigationLabel = 'LDAP Transfer Center';
+
+    protected static ?string $modelLabel = 'LDAP Transfer Center Operation';
+
+    protected static ?string $pluralModelLabel = 'LDAP Transfer Center';
+
+    protected static ?int $navigationSort = 45;
+
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->columns(1)
+            ->components([
+                Section::make('1. Transfer Identity')
+                    ->description('Pilih LDAP source dan target. Transfer hanya membuat preview LDIF dulu, belum menulis ke target LDAP.')
+                    ->columnSpanFull()
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Transfer Name')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('Petra LDAP students to Tiny Test LDAP'),
+
+                        Select::make('source_ldap_connection_id')
+                            ->label('Source LDAP')
+                            ->options(fn (): array => LdapConnection::query()
+                                ->where('is_active', true)
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
+                                ->all())
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+
+                        Select::make('target_ldap_connection_id')
+                            ->label('Target LDAP')
+                            ->options(fn (): array => LdapConnection::query()
+                                ->where('is_active', true)
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
+                                ->all())
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+                    ])
+
+5. EXISTING LDAP/IMPORT/EXPORT FILES
+app/Console/Commands/BuildImportDependencyPlan.php
+app/Console/Commands/BuildImportLdifPlan.php
+app/Console/Commands/Directory/DirectSyncLdapSchemaCommand.php
+app/Console/Commands/IamCleanMissingFromLdapCacheCommand.php
+app/Console/Commands/IamConfigureLdapSchemaWriteCommand.php
+app/Console/Commands/IamSyncLdapSchemaDirectCommand.php
+app/Console/Commands/IamTestImportObjectClassFlowCommand.php
+app/Console/Commands/Operations/OperationsAlignmentCheckCommand.php
+app/Console/Commands/RepairImportPlans.php
+app/Console/Commands/RollbackImportBatch.php
+app/Console/Commands/SeedDummyLdapConnectionCommand.php
+app/_Disabled/DynamicNavigationRollback/DynamicLdapEntries.php.disabled
+app/Filament/Resources/Directory/LdapApplicationEntryResource/Pages/ListLdapApplicationEntries.php
+app/Filament/Resources/Directory/LdapApplicationEntryResource/Pages/ViewLdapApplicationEntry.php
+app/Filament/Resources/Directory/LdapApplicationEntryResource.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/CreateLdapConnection.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/EditLdapConnection.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/ListLdapConnections.php
+app/Filament/Resources/Directory/LdapConnectionResource/Pages/ViewLdapConnection.php
+app/Filament/Resources/Directory/LdapConnectionResource.php
+app/Filament/Resources/Directory/LdapConnectionResource.php.bak.actions.20260506_002905
+app/Filament/Resources/Directory/LdapDirectoryEntryResource/Pages/ListLdapDirectoryEntries.php
+app/Filament/Resources/Directory/LdapDirectoryEntryResource/Pages/ViewLdapDirectoryEntry.php
+app/Filament/Resources/Directory/LdapDirectoryEntryResource.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/CreateLdapEntryTypeRule.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/EditLdapEntryTypeRule.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/ListLdapEntryTypeRules.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource/Pages/ViewLdapEntryTypeRule.php
+app/Filament/Resources/Directory/LdapEntryTypeRuleResource.php
+app/Filament/Resources/Directory/LdapGroupEntryResource/Pages/ListLdapGroupEntries.php
+app/Filament/Resources/Directory/LdapGroupEntryResource/Pages/ViewLdapGroupEntry.php
+app/Filament/Resources/Directory/LdapGroupEntryResource.php
+app/Filament/Resources/Directory/LdapRoleEntryResource/Pages/ListLdapRoleEntries.php
+app/Filament/Resources/Directory/LdapRoleEntryResource/Pages/ViewLdapRoleEntry.php
+app/Filament/Resources/Directory/LdapRoleEntryResource.php
+app/Filament/Resources/Directory/LdapSchemaEntryResource/Pages/ListLdapSchemaEntries.php
+app/Filament/Resources/Directory/LdapSchemaEntryResource/Pages/ViewLdapSchemaEntry.php
+app/Filament/Resources/Directory/LdapSchemaEntryResource.php
+app/Filament/Resources/Directory/LdapServerResource/Pages/CreateLdapServer.php
+app/Filament/Resources/Directory/LdapServerResource/Pages/EditLdapServer.php
+app/Filament/Resources/Directory/LdapServerResource/Pages/ListLdapServers.php
+app/Filament/Resources/Directory/LdapServerResource/Pages/ViewLdapServer.php
+app/Filament/Resources/Directory/LdapServerResource.php
+app/Filament/Resources/Directory/LdapUnitEntryResource/Pages/ListLdapUnitEntries.php
+app/Filament/Resources/Directory/LdapUnitEntryResource/Pages/ViewLdapUnitEntry.php
+app/Filament/Resources/Directory/LdapUnitEntryResource.php
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ListLdapUserEntries.php
+app/Filament/Resources/Directory/LdapUserEntryResource/Pages/ViewLdapUserEntry.php
+app/Filament/Resources/Directory/LdapUserEntryResource.php
+app/Filament/Resources/Operations/BulkLdapOperationItemResource/Pages/ListBulkLdapOperationItems.php
+app/Filament/Resources/Operations/BulkLdapOperationItemResource/Pages/ViewBulkLdapOperationItem.php
+app/Filament/Resources/Operations/BulkLdapOperationItemResource.php
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ListCommandExecutions.php
+app/Filament/Resources/Operations/CommandExecutionResource/Pages/ViewCommandExecution.php
+app/Filament/Resources/Operations/CommandExecutionResource.php
+app/Filament/Resources/Operations/ImportApplyPlanResource/Pages/ListImportApplyPlans.php
+app/Filament/Resources/Operations/ImportApplyPlanResource/Pages/ViewImportApplyPlan.php
+app/Filament/Resources/Operations/ImportApplyPlanResource.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/CreateImportBatch.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/EditImportBatch.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/ListImportBatches.php
+app/Filament/Resources/Operations/ImportBatchResource/Pages/ViewImportBatch.php
+app/Filament/Resources/Operations/ImportBatchResource.php
+app/Filament/Resources/Operations/ImportBatchResource/RelationManagers/RowsRelationManager.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/CreateImportTemplate.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/EditImportTemplate.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/ListImportTemplates.php
+app/Filament/Resources/Operations/ImportTemplateResource/Pages/ViewImportTemplate.php
+app/Filament/Resources/Operations/ImportTemplateResource.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/CreateLdapCrudOperation.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/EditLdapCrudOperation.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ListLdapCrudOperations.php
+app/Filament/Resources/Operations/LdapCrudOperationResource/Pages/ViewLdapCrudOperation.php
+app/Filament/Resources/Operations/LdapCrudOperationResource.php
+app/Filament/Resources/Operations/LdapSyncBatchResource/Pages/ListLdapSyncBatches.php
+app/Filament/Resources/Operations/LdapSyncBatchResource/Pages/ViewLdapSyncBatch.php
+app/Filament/Resources/Operations/LdapSyncBatchResource.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/CreateLdapTransferBatch.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/EditLdapTransferBatch.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ListLdapTransferBatches.php
+app/Filament/Resources/Operations/LdapTransferBatchResource/Pages/ViewLdapTransferBatch.php
+app/Filament/Resources/Operations/LdapTransferBatchResource.php
+app/Filament/Resources/Operations/LdapTransferBatchResource.php.bak-textcolumn-20260514_145326
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/CreateLdifExportBatch.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/EditLdifExportBatch.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/ListLdifExportBatches.php
+app/Filament/Resources/Operations/LdifExportBatchResource/Pages/ViewLdifExportBatch.php
+app/Filament/Resources/Operations/LdifExportBatchResource.php
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ListOperationJobItems.php
+app/Filament/Resources/Operations/OperationJobItemResource/Pages/ViewOperationJobItem.php
+app/Filament/Resources/Operations/OperationJobItemResource.php
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ListOperationJobLogs.php
+app/Filament/Resources/Operations/OperationJobLogResource/Pages/ViewOperationJobLog.php
+app/Filament/Resources/Operations/OperationJobLogResource.php
+app/Filament/Resources/Operations/OperationJobResource/Pages/ListOperationJobs.php
+app/Filament/Resources/Operations/OperationJobResource/Pages/ViewOperationJob.php
+app/Filament/Resources/Operations/OperationJobResource.php
+app/Filament/Resources/Operations/OperationJobResource/RelationManagers/ItemsRelationManager.php
+app/Filament/Resources/Operations/OperationJobResource/RelationManagers/LogsRelationManager.php
+app/Filament/Resources/Operations/QueueJobResource/Pages/ListQueueJobs.php
+app/Filament/Resources/Operations/QueueJobResource/Pages/ViewQueueJob.php
+app/Filament/Resources/Operations/QueueJobResource.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/CreateSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/EditSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/ListSavedScripts.php
+app/Filament/Resources/Operations/SavedScriptResource/Pages/ViewSavedScript.php
+app/Filament/Resources/Operations/SavedScriptResource.php
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ListUniversalLdapTransferBatches.php
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource/Pages/ViewUniversalLdapTransferBatch.php
+app/Filament/Resources/Operations/UniversalLdapTransferBatchResource.php
+app/Filament/Widgets/Dashboard/LdapHealthWidget.php
+app/Filament/Widgets/Dashboard/OperationsSummaryWidget.php
+app/Filament/Widgets/Dashboard/RecentOperationJobsWidget.php
+app/Filament/Widgets/Dashboard/RecentOperationLogsWidget.php
+app/Http/Controllers/Operations/ImportTemplateDownloadController.php
+app/Jobs/Directory/BulkDeleteLdapEntriesJob.php
+app/Jobs/Directory/BulkDeleteUsersFromLdapJob.php
+app/Jobs/Directory/BulkGenericLdapEntryMutationJob.php
+app/Jobs/Directory/CreateLdapUserJob.php
+app/Jobs/Directory/GenericLdapEntryMutationJob.php
+app/Jobs/Directory/ModifyLdapSchemaDefinitionJob.php
+app/Jobs/Directory/RefreshSingleLdapGroupJob.php
+app/Jobs/Directory/RefreshSingleLdapUserJob.php
+app/Jobs/Directory/SyncLdapApplicationsJob.php
+app/Jobs/Directory/SyncLdapDirectoryExplorerJob.php
+app/Jobs/Directory/SyncLdapGroupsJob.php
+app/Jobs/Directory/SyncLdapRolesJob.php
+app/Jobs/Directory/SyncLdapSchemaEntriesJob.php
+app/Jobs/Directory/SyncLdapSchemaJob.php
+app/Jobs/Directory/SyncLdapUnitsJob.php
+app/Jobs/Directory/SyncLdapUsersJob.php
+app/Jobs/Ldap/RefreshLdapDirectoryCacheJob.php
+app/Jobs/Operations/ExecuteBulkLdapOperationJob.php
+app/Jobs/Operations/ExecuteLdapSearchScriptJob.php
+app/Jobs/Operations/ExecuteLdapTransferJob.php
+app/Jobs/Operations/ExecuteLdifExportJob.php
+app/Jobs/Operations/ExecuteUniversalLdapSyncJob.php
+app/Jobs/Operations/ExecuteUniversalLdapTransferJob.php
+app/Jobs/Operations/GenerateImportApplyLdifPlanJob.php
+app/Jobs/Operations/PostApplyVerifyImportLdapJob.php
+app/Jobs/Operations/PreviewImportBatchJob.php
+app/Jobs/Operations/RealApplyImportLdapJob.php
+app/Jobs/Operations/VerifyImportApplyLdapDryRunJob.php
+app/Models/Directory/LdapApplicationEntry.php
+app/Models/Directory/LdapConnection.php
+app/Models/Directory/LdapDirectoryEntry.php
+app/Models/Directory/LdapEntryTypeRule.php
+app/Models/Directory/LdapGroupEntry.php
+app/Models/Directory/LdapRoleEntry.php
+app/Models/Directory/LdapSchemaEntry.php
+app/Models/Directory/LdapServer.php
+app/Models/Directory/LdapUnitEntry.php
+app/Models/Directory/LdapUserEntry.php
+app/Models/Directory/UniversalLdapEntry.php
+app/Models/Operations/BulkLdapOperationItem.php
+app/Models/Operations/BulkLdapOperation.php
+app/Models/Operations/CommandExecution.php
+app/Models/Operations/FailedQueueJob.php
+app/Models/Operations/ImportApplyPlan.php
+app/Models/Operations/ImportBatch.php
+app/Models/Operations/ImportRow.php
+app/Models/Operations/ImportTemplate.php
+app/Models/Operations/LdapCrudOperation.php
+app/Models/Operations/LdapSyncBatch.php
+app/Models/Operations/LdapTransferBatch.php
+app/Models/Operations/LdapTransferItem.php
+app/Models/Operations/LdifExportBatch.php
+app/Models/Operations/OperationJobItem.php
+app/Models/Operations/OperationJobLog.php
+app/Models/Operations/OperationJob.php
+app/Models/Operations/QueueJob.php
+app/Models/Operations/QueueMonitorJob.php
+app/Models/Operations/SavedScript.php
+app/Models/Operations/UniversalLdapTransferBatch.php
+app/Services/Directory/GenericLdapEntryMutationService.php
+app/Services/Directory/LdapApplicationSyncDispatcher.php
+app/Services/Directory/LdapApplicationSyncService.php
+app/Services/Directory/LdapDirectoryExplorerSyncDispatcher.php
+app/Services/Directory/LdapDirectoryExplorerSyncService.php
+app/Services/Directory/LdapEntryTypeRegistryService.php
+app/Services/Directory/LdapGroupSyncDispatcher.php
+app/Services/Directory/LdapGroupSyncService.php
+app/Services/Directory/LdapMembershipResolver.php
+app/Services/Directory/LdapRoleSyncDispatcher.php
+app/Services/Directory/LdapRoleSyncService.php
+app/Services/Directory/LdapSchemaAttributeCatalogService.php
+app/Services/Directory/LdapSchemaSyncDispatcher.php
+app/Services/Directory/LdapSchemaSyncService.php
+app/Services/Directory/LdapServerProvisioningService.php
+app/Services/Directory/LdapSingleGroupRefreshDispatcher.php
+app/Services/Directory/LdapSingleGroupRefreshService.php
+app/Services/Directory/LdapSingleUserRefreshDispatcher.php
+app/Services/Directory/LdapSingleUserRefreshService.php
+app/Services/Directory/LdapSingleUserSyncService.php
+app/Services/Directory/LdapUnitSyncDispatcher.php
+app/Services/Directory/LdapUnitSyncService.php
+app/Services/Directory/LdapUserLifecycleService.php
+app/Services/Directory/LdapUserMutationService.php
+app/Services/Directory/LdapUserSyncDispatcher.php
+app/Services/Directory/LdapUserSyncService.php
+app/Services/Ldap/LdapConnectionHealthService.php
+app/Services/Ldap/LdapDirectoryBrowserService.php
+app/Services/Ldap/LdapEntryAttributeFormatterService.php
+app/Services/Ldap/LdapEntryInspectorService.php
+app/Services/Observability/OperationActivityDetailService.php
+app/Services/Operations/BulkLdapUserOperationService.php
+app/Services/Operations/FastImportApplyService.php
+app/Services/Operations/ImportApplyDryRunDispatcher.php
+app/Services/Operations/ImportApplyPlanDispatcher.php
+app/Services/Operations/ImportApplyPlanRecoveryService.php
+app/Services/Operations/ImportApplyPlanService.php
+app/Services/Operations/ImportApplySafetyGateService.php
+app/Services/Operations/ImportLdapExistenceService.php
+app/Services/Operations/ImportObjectClassService.php
+app/Services/Operations/ImportPostApplyVerificationDispatcher.php
+app/Services/Operations/ImportPostApplyVerifier.php
+app/Services/Operations/ImportPreviewDispatcher.php
+app/Services/Operations/ImportPreviewService.php
+app/Services/Operations/ImportRealApplyDispatcher.php
+app/Services/Operations/ImportTemplateGeneratorService.php
+app/Services/Operations/LdapApplyDryRunVerifier.php
+app/Services/Operations/LdapCrudLdifBuilder.php
+app/Services/Operations/LdapCrudOperationService.php
+app/Services/Operations/LdapCrudValidator.php
+app/Services/Operations/LdapImportApplyService.php
+app/Services/Operations/LdapImportDependencyGraphService.php
+app/Services/Operations/LdapImportLdifApplyService.php
+app/Services/Operations/LdapImportLdifPlanService.php
+app/Services/Operations/LdapImportPlanRepairService.php
+app/Services/Operations/LdapImportPreviewService.php
+app/Services/Operations/LdapImportRollbackService.php
+app/Services/Operations/LdapRealApplyExecutor.php
+app/Services/Operations/LdapSearchScriptExecutor.php
+app/Services/Operations/LdapTransferPreviewService.php
+app/Services/Operations/LdapTransferRollbackService.php
+app/Services/Operations/LdapTransferStableRunner.php
+app/Services/Operations/LdifExportDispatcher.php
+app/Services/Operations/LdifExportExecutor.php
+app/Services/Operations/OperationJobFactory.php
+app/Services/Operations/OperationJobProgressService.php
+app/Services/Operations/OperationJobTracker.php
+app/Services/Operations/SafeCommandRunner.php
+app/Services/Operations/ScriptOperationDispatcher.php
+app/Services/Operations/ScriptPreviewService.php
+app/Services/Operations/SmartImportBatchResolver.php
+app/Services/Operations/SmartImportTemplateResolver.php
+app/Services/Operations/UniversalLdapSyncService.php
+app/Services/Operations/UniversalLdapTransferService.php
+app/Support/Directory/LdapSchemaDefinitionParser.php
+app/Support/Directory/LdapSchemaObjectClassHelper.php
+app/Support/Directory/LdapSchemaWriteExecutor.php
+app/Support/Operations/LdapTransferExecutor.php
+app/Support/Operations/SafeCommandExecutionLogger.php
+database/migrations/2026_05_05_142849_create_ldap_connections_table.php
+database/migrations/2026_05_05_142850_create_operation_jobs_table.php
+database/migrations/2026_05_05_142851_create_operation_job_items_table.php
+database/migrations/2026_05_05_142852_create_operation_job_logs_table.php
+database/migrations/2026_05_06_121303_create_ldap_directory_entries_table.php
+database/migrations/2026_05_06_124622_add_enterprise_columns_to_operation_jobs_table.php
+database/migrations/2026_05_06_125344_ensure_operation_job_logs_columns.php
+database/migrations/2026_05_06_134454_create_ldif_export_batches_table.php
+database/migrations/2026_05_06_140842_create_import_batches_and_rows_tables.php
+database/migrations/2026_05_06_151958_create_import_apply_plans_table.php
+database/migrations/2026_05_06_152354_add_safety_gate_columns_to_import_apply_plans.php
+database/migrations/2026_05_06_152922_add_dry_run_verification_columns_to_import_apply_plans.php
+database/migrations/2026_05_06_155031_add_real_apply_columns_to_import_apply_plans.php
+database/migrations/2026_05_06_163012_add_post_apply_verification_columns_to_import_apply_plans.php
+database/migrations/2026_05_06_164453_add_recovery_columns_to_import_apply_plans.php
+database/migrations/2026_05_06_231854_create_ldap_user_entries_table.php
+database/migrations/2026_05_06_234913_create_ldap_group_entries_table.php
+database/migrations/2026_05_07_105430_create_ldap_role_entries_table.php
+database/migrations/2026_05_07_110018_create_ldap_application_entries_table.php
+database/migrations/2026_05_07_110414_create_ldap_unit_entries_table.php
+database/migrations/2026_05_07_111006_create_ldap_schema_entries_table.php
+database/migrations/2026_05_07_111644_create_ldap_entry_type_rules_table.php
+database/migrations/2026_05_07_112120_create_ldap_directory_entries_table.php
+database/migrations/2026_05_07_133407_create_ldap_crud_operations_table.php
+database/migrations/2026_05_07_140034_create_bulk_ldap_operations_tables.php
+database/migrations/2026_05_08_122728_create_import_templates_table.php
+database/migrations/2026_05_12_092837_optimize_ldap_dashboard_indexes.php
+database/migrations/2026_05_13_120217_add_advanced_columns_to_ldap_schema_entries_table.php
+database/migrations/2026_05_13_131822_add_schema_write_config_to_ldap_connections_table.php
+database/migrations/2026_05_13_135442_create_ldap_transfer_batches_table.php
+database/migrations/2026_05_13_135442_create_ldap_transfer_items_table.php
+database/migrations/2026_05_13_162527_add_flexible_dn_source_to_ldap_transfer_batches_table.php
+database/migrations/2026_05_13_190602_add_flexible_export_columns_to_ldif_export_batches_table.php
+database/migrations/2026_05_13_200000_create_ldap_sync_batches_table.php
+database/migrations/2026_05_13_200001_create_universal_ldap_entries_table.php
+database/migrations/2026_05_13_203000_create_universal_ldap_transfer_batches_table.php
+database/migrations/2026_05_14_124953_add_safe_columns_to_universal_ldap_transfer_batches_table.php
+database/migrations/2026_05_14_999997_fix_ldap_transfer_long_text_columns.php
+database/migrations/2026_05_14_999998_add_clean_transfer_columns_to_ldap_transfer_batches.php
+database/migrations/2026_05_16_020035_create_ldap_servers_table.php
+database/migrations/2026_05_17_000001_create_bulk_ldap_operation_logs_table.php
+database/seeders/LdapConnectionSeeder.php
+
+6. ARTISAN ABOUT
+
+  Environment ......................................................................................................................................  
+  Application Name ............................................................................................................ Petra LDAP Dashboard  
+  Laravel Version ........................................................................................................................... 13.7.0  
+  PHP Version ............................................................................................................................... 8.4.21  
+  Composer Version ........................................................................................................................... 2.9.7  
+  Environment ................................................................................................................................ local  
+  Debug Mode ................................................................................................................................... OFF  
+  URL .......................................................................................................................... 203.189.120.51:8020  
+  Maintenance Mode ............................................................................................................................. OFF  
+  Timezone ............................................................................................................................ Asia/Jakarta  
+  Locale ........................................................................................................................................ en  
+
+  Cache ............................................................................................................................................  
+  Config ................................................................................................................................ NOT CACHED  
+  Events ................................................................................................................................ NOT CACHED  
+  Routes ................................................................................................................................ NOT CACHED  
+  Views ................................................................................................................................. NOT CACHED  
+
+  Drivers ..........................................................................................................................................  
+  Broadcasting ................................................................................................................................. log  
+  Cache ...................................................................................................................................... redis  
+  Database ................................................................................................................................... pgsql  
+  Logs .............................................................................................................................. stack / single  
+  Mail ......................................................................................................................................... log  
+  Queue ...................................................................................................................................... redis  
+  Session ................................................................................................................................. database  
+
+  Storage ..........................................................................................................................................  
+  public/storage ............................................................................................................................ LINKED  
+
+  Filament .........................................................................................................................................  
+  Blade Icons ........................................................................................................................... NOT CACHED  
+  Packages ................................................... filament, forms, notifications, support, tables, actions, infolists, schemas, widgets  
+  Panel Components ...................................................................................................................... NOT CACHED  
+  Version ................................................................................................................................... v5.6.2  
+  Views .............................................................................................................................. NOT PUBLISHED  
+
+  Livewire .........................................................................................................................................  
+  Livewire .................................................................................................................................. v4.3.0  
+
+  Spatie Permissions ...............................................................................................................................  
+  Features Enabled ......................................................................................................................... Default  
+  Version .................................................................................................................................... 7.4.1  
+
+
+7. ROUTE LIST CHECK
+
+  GET|HEAD  / .................................................................................................................................................................................. routes/web.php:6
+  GET|HEAD  admin ................................................................................................................................. filament.admin.pages.dashboard › App\Filament\Pages\Dashboard
+  GET|HEAD  admin/directory/directory-object-managers filament.admin.resources.directory.directory-object-managers.index › App\Filament\Resources\Directory\DirectoryObjectManagerResource\Pages\ListDirectoryOb…
+  GET|HEAD  admin/directory/directory-object-managers/{record} filament.admin.resources.directory.directory-object-managers.view › App\Filament\Resources\Directory\DirectoryObjectManagerResource\Pages\ViewDir…
+  GET|HEAD  admin/directory/ldap-application-entries filament.admin.resources.directory.ldap-application-entries.index › App\Filament\Resources\Directory\LdapApplicationEntryResource\Pages\ListLdapApplication…
+  GET|HEAD  admin/directory/ldap-application-entries/{record} filament.admin.resources.directory.ldap-application-entries.view › App\Filament\Resources\Directory\LdapApplicationEntryResource\Pages\ViewLdapApp…
+  GET|HEAD  admin/directory/ldap-connections ...................... filament.admin.resources.directory.ldap-connections.index › App\Filament\Resources\Directory\LdapConnectionResource\Pages\ListLdapConnections
+  GET|HEAD  admin/directory/ldap-connections/create ............. filament.admin.resources.directory.ldap-connections.create › App\Filament\Resources\Directory\LdapConnectionResource\Pages\CreateLdapConnection
+  GET|HEAD  admin/directory/ldap-connections/{record} ............... filament.admin.resources.directory.ldap-connections.view › App\Filament\Resources\Directory\LdapConnectionResource\Pages\ViewLdapConnection
+  GET|HEAD  admin/directory/ldap-connections/{record}/edit .......... filament.admin.resources.directory.ldap-connections.edit › App\Filament\Resources\Directory\LdapConnectionResource\Pages\EditLdapConnection
+  GET|HEAD  admin/directory/ldap-directory-entries . filament.admin.resources.directory.ldap-directory-entries.index › App\Filament\Resources\Directory\LdapDirectoryEntryResource\Pages\ListLdapDirectoryEntries
+  GET|HEAD  admin/directory/ldap-directory-entries/{record} filament.admin.resources.directory.ldap-directory-entries.view › App\Filament\Resources\Directory\LdapDirectoryEntryResource\Pages\ViewLdapDirectory…
+  GET|HEAD  admin/directory/ldap-entry-type-rules ...... filament.admin.resources.directory.ldap-entry-type-rules.index › App\Filament\Resources\Directory\LdapEntryTypeRuleResource\Pages\ListLdapEntryTypeRules
+  GET|HEAD  admin/directory/ldap-entry-type-rules/create filament.admin.resources.directory.ldap-entry-type-rules.create › App\Filament\Resources\Directory\LdapEntryTypeRuleResource\Pages\CreateLdapEntryTypeR…
+  GET|HEAD  admin/directory/ldap-entry-type-rules/{record} filament.admin.resources.directory.ldap-entry-type-rules.view › App\Filament\Resources\Directory\LdapEntryTypeRuleResource\Pages\ViewLdapEntryTypeRule
+  GET|HEAD  admin/directory/ldap-entry-type-rules/{record}/edit filament.admin.resources.directory.ldap-entry-type-rules.edit › App\Filament\Resources\Directory\LdapEntryTypeRuleResource\Pages\EditLdapEntryTy…
+  GET|HEAD  admin/directory/ldap-group-entries ................. filament.admin.resources.directory.ldap-group-entries.index › App\Filament\Resources\Directory\LdapGroupEntryResource\Pages\ListLdapGroupEntries
+  GET|HEAD  admin/directory/ldap-group-entries/{record} ........... filament.admin.resources.directory.ldap-group-entries.view › App\Filament\Resources\Directory\LdapGroupEntryResource\Pages\ViewLdapGroupEntry
+  GET|HEAD  admin/directory/ldap-role-entries ..................... filament.admin.resources.directory.ldap-role-entries.index › App\Filament\Resources\Directory\LdapRoleEntryResource\Pages\ListLdapRoleEntries
+  GET|HEAD  admin/directory/ldap-role-entries/{record} ............... filament.admin.resources.directory.ldap-role-entries.view › App\Filament\Resources\Directory\LdapRoleEntryResource\Pages\ViewLdapRoleEntry
+  GET|HEAD  admin/directory/ldap-schema-entries ............. filament.admin.resources.directory.ldap-schema-entries.index › App\Filament\Resources\Directory\LdapSchemaEntryResource\Pages\ListLdapSchemaEntries
+  GET|HEAD  admin/directory/ldap-schema-entries/{record} ....... filament.admin.resources.directory.ldap-schema-entries.view › App\Filament\Resources\Directory\LdapSchemaEntryResource\Pages\ViewLdapSchemaEntry
+  GET|HEAD  admin/directory/ldap-servers ...................................... filament.admin.resources.directory.ldap-servers.index › App\Filament\Resources\Directory\LdapServerResource\Pages\ListLdapServers
+  GET|HEAD  admin/directory/ldap-servers/{record} ............................... filament.admin.resources.directory.ldap-servers.view › App\Filament\Resources\Directory\LdapServerResource\Pages\ViewLdapServer
+  GET|HEAD  admin/directory/ldap-unit-entries ..................... filament.admin.resources.directory.ldap-unit-entries.index › App\Filament\Resources\Directory\LdapUnitEntryResource\Pages\ListLdapUnitEntries
+  GET|HEAD  admin/directory/ldap-unit-entries/{record} ............... filament.admin.resources.directory.ldap-unit-entries.view › App\Filament\Resources\Directory\LdapUnitEntryResource\Pages\ViewLdapUnitEntry
+  GET|HEAD  admin/directory/ldap-user-entries ..................... filament.admin.resources.directory.ldap-user-entries.index › App\Filament\Resources\Directory\LdapUserEntryResource\Pages\ListLdapUserEntries
+  GET|HEAD  admin/directory/ldap-user-entries/{record} ............... filament.admin.resources.directory.ldap-user-entries.view › App\Filament\Resources\Directory\LdapUserEntryResource\Pages\ViewLdapUserEntry
+  GET|HEAD  admin/keycloak-console ..................................................................................... filament.admin.pages.keycloak-console › App\Filament\Pages\Miscellaneous\KeycloakConsole
+  GET|HEAD  admin/login ..................................................................................................................................... filament.admin.auth.login › App\Filament\Auth\Login
+  POST      admin/logout .......................................................................................................................... filament.admin.auth.logout › Filament\Auth › LogoutController
+  GET|HEAD  admin/observability/audit-logs .................................. filament.admin.resources.observability.audit-logs.index › App\Filament\Resources\Observability\AuditLogResource\Pages\ListAuditLogs
+  GET|HEAD  admin/observability/audit-logs/{record} ........................... filament.admin.resources.observability.audit-logs.view › App\Filament\Resources\Observability\AuditLogResource\Pages\ViewAuditLog
+  GET|HEAD  admin/observability/failed-queue-jobs ........ filament.admin.resources.observability.failed-queue-jobs.index › App\Filament\Resources\Observability\FailedQueueJobResource\Pages\ListFailedQueueJobs
+  GET|HEAD  admin/observability/failed-queue-jobs/{record} . filament.admin.resources.observability.failed-queue-jobs.view › App\Filament\Resources\Observability\FailedQueueJobResource\Pages\ViewFailedQueueJob
+  GET|HEAD  admin/observability/health-checks ...................... filament.admin.resources.observability.health-checks.index › App\Filament\Resources\Observability\HealthCheckResource\Pages\ListHealthChecks
+  GET|HEAD  admin/observability/health-checks/{record} ............... filament.admin.resources.observability.health-checks.view › App\Filament\Resources\Observability\HealthCheckResource\Pages\ViewHealthCheck
+  GET|HEAD  admin/operations/bulk-ldap-operation-items filament.admin.resources.operations.bulk-ldap-operation-items.index › App\Filament\Resources\Operations\BulkLdapOperationItemResource\Pages\ListBulkLdapO…
+  GET|HEAD  admin/operations/bulk-ldap-operation-items/{record} filament.admin.resources.operations.bulk-ldap-operation-items.view › App\Filament\Resources\Operations\BulkLdapOperationItemResource\Pages\ViewB…
+  GET|HEAD  admin/operations/command-executions ........... filament.admin.resources.operations.command-executions.index › App\Filament\Resources\Operations\CommandExecutionResource\Pages\ListCommandExecutions
+  GET|HEAD  admin/operations/command-executions/{record} .... filament.admin.resources.operations.command-executions.view › App\Filament\Resources\Operations\CommandExecutionResource\Pages\ViewCommandExecution
+  GET|HEAD  admin/operations/import-apply-plans ............. filament.admin.resources.operations.import-apply-plans.index › App\Filament\Resources\Operations\ImportApplyPlanResource\Pages\ListImportApplyPlans
+  GET|HEAD  admin/operations/import-apply-plans/{record} ...... filament.admin.resources.operations.import-apply-plans.view › App\Filament\Resources\Operations\ImportApplyPlanResource\Pages\ViewImportApplyPlan
+  GET|HEAD  admin/operations/import-batches ............................ filament.admin.resources.operations.import-batches.index › App\Filament\Resources\Operations\ImportBatchResource\Pages\ListImportBatches
+  GET|HEAD  admin/operations/import-batches/create .................... filament.admin.resources.operations.import-batches.create › App\Filament\Resources\Operations\ImportBatchResource\Pages\CreateImportBatch
+  GET|HEAD  admin/operations/import-batches/{record} ...................... filament.admin.resources.operations.import-batches.view › App\Filament\Resources\Operations\ImportBatchResource\Pages\ViewImportBatch
+  GET|HEAD  admin/operations/import-batches/{record}/edit ................. filament.admin.resources.operations.import-batches.edit › App\Filament\Resources\Operations\ImportBatchResource\Pages\EditImportBatch
+  GET|HEAD  admin/operations/import-template-maker/{template}/download ....................................................... operations.import-templates.download › Operations\ImportTemplateDownloadController
+  GET|HEAD  admin/operations/import-templates ................... filament.admin.resources.operations.import-templates.index › App\Filament\Resources\Operations\ImportTemplateResource\Pages\ListImportTemplates
+  GET|HEAD  admin/operations/import-templates/create .......... filament.admin.resources.operations.import-templates.create › App\Filament\Resources\Operations\ImportTemplateResource\Pages\CreateImportTemplate
+  GET|HEAD  admin/operations/import-templates/{record} ............ filament.admin.resources.operations.import-templates.view › App\Filament\Resources\Operations\ImportTemplateResource\Pages\ViewImportTemplate
+  GET|HEAD  admin/operations/import-templates/{record}/edit ....... filament.admin.resources.operations.import-templates.edit › App\Filament\Resources\Operations\ImportTemplateResource\Pages\EditImportTemplate
+  GET|HEAD  admin/operations/ldap-crud-operations ..... filament.admin.resources.operations.ldap-crud-operations.index › App\Filament\Resources\Operations\LdapCrudOperationResource\Pages\ListLdapCrudOperations
+  GET|HEAD  admin/operations/ldap-crud-operations/{record} filament.admin.resources.operations.ldap-crud-operations.view › App\Filament\Resources\Operations\LdapCrudOperationResource\Pages\ViewLdapCrudOperati…
+  GET|HEAD  admin/operations/ldap-sync-batches .................. filament.admin.resources.operations.ldap-sync-batches.index › App\Filament\Resources\Operations\LdapSyncBatchResource\Pages\ListLdapSyncBatches
+  GET|HEAD  admin/operations/ldap-sync-batches/{record} ............ filament.admin.resources.operations.ldap-sync-batches.view › App\Filament\Resources\Operations\LdapSyncBatchResource\Pages\ViewLdapSyncBatch
+  GET|HEAD  admin/operations/ldap-transfer-batches .. filament.admin.resources.operations.ldap-transfer-batches.index › App\Filament\Resources\Operations\LdapTransferBatchResource\Pages\ListLdapTransferBatches
+  GET|HEAD  admin/operations/ldap-transfer-batches/{record} filament.admin.resources.operations.ldap-transfer-batches.view › App\Filament\Resources\Operations\LdapTransferBatchResource\Pages\ViewLdapTransferB…
+  GET|HEAD  admin/operations/ldif-export-batches .......... filament.admin.resources.operations.ldif-export-batches.index › App\Filament\Resources\Operations\LdifExportBatchResource\Pages\ListLdifExportBatches
+  GET|HEAD  admin/operations/ldif-export-batches/{record} .... filament.admin.resources.operations.ldif-export-batches.view › App\Filament\Resources\Operations\LdifExportBatchResource\Pages\ViewLdifExportBatch
+  GET|HEAD  admin/operations/ldif-export-batches/{record}/edit filament.admin.resources.operations.ldif-export-batches.edit › App\Filament\Resources\Operations\LdifExportBatchResource\Pages\EditLdifExportBatch
+  GET|HEAD  admin/operations/operation-job-items ......... filament.admin.resources.operations.operation-job-items.index › App\Filament\Resources\Operations\OperationJobItemResource\Pages\ListOperationJobItems
+  GET|HEAD  admin/operations/operation-job-items/{record} .. filament.admin.resources.operations.operation-job-items.view › App\Filament\Resources\Operations\OperationJobItemResource\Pages\ViewOperationJobItem
+  GET|HEAD  admin/operations/operation-job-logs ............. filament.admin.resources.operations.operation-job-logs.index › App\Filament\Resources\Operations\OperationJobLogResource\Pages\ListOperationJobLogs
+  GET|HEAD  admin/operations/operation-job-logs/{record} ...... filament.admin.resources.operations.operation-job-logs.view › App\Filament\Resources\Operations\OperationJobLogResource\Pages\ViewOperationJobLog
+  GET|HEAD  admin/operations/operation-jobs ........................... filament.admin.resources.operations.operation-jobs.index › App\Filament\Resources\Operations\OperationJobResource\Pages\ListOperationJobs
+  GET|HEAD  admin/operations/operation-jobs/{record} .................... filament.admin.resources.operations.operation-jobs.view › App\Filament\Resources\Operations\OperationJobResource\Pages\ViewOperationJob
+  GET|HEAD  admin/operations/queue-jobs ........................................... filament.admin.resources.operations.queue-jobs.index › App\Filament\Resources\Operations\QueueJobResource\Pages\ListQueueJobs
+  GET|HEAD  admin/operations/queue-jobs/{record} .................................... filament.admin.resources.operations.queue-jobs.view › App\Filament\Resources\Operations\QueueJobResource\Pages\ViewQueueJob
+  GET|HEAD  admin/operations/saved-scripts ............................... filament.admin.resources.operations.saved-scripts.index › App\Filament\Resources\Operations\SavedScriptResource\Pages\ListSavedScripts
+  GET|HEAD  admin/operations/saved-scripts/create ...................... filament.admin.resources.operations.saved-scripts.create › App\Filament\Resources\Operations\SavedScriptResource\Pages\CreateSavedScript
+  GET|HEAD  admin/operations/saved-scripts/{record} ........................ filament.admin.resources.operations.saved-scripts.view › App\Filament\Resources\Operations\SavedScriptResource\Pages\ViewSavedScript
+  GET|HEAD  admin/operations/saved-scripts/{record}/edit ................... filament.admin.resources.operations.saved-scripts.edit › App\Filament\Resources\Operations\SavedScriptResource\Pages\EditSavedScript
+  GET|HEAD  admin/operations/universal-ldap-transfer-batches filament.admin.resources.operations.universal-ldap-transfer-batches.index › App\Filament\Resources\Operations\UniversalLdapTransferBatchResource\Pa…
+  GET|HEAD  admin/operations/universal-ldap-transfer-batches/{record} filament.admin.resources.operations.universal-ldap-transfer-batches.view › App\Filament\Resources\Operations\UniversalLdapTransferBatchRes…
+  GET|HEAD  admin/system-logs .................................................................................................... filament.admin.pages.system-logs › App\Filament\Pages\Observability\SystemLogs
+  GET|HEAD  admin/user-manual .................................................................................................... filament.admin.pages.user-manual › App\Filament\Pages\Miscellaneous\UserManual
+  GET|HEAD  auth/callback ......................................................................................................................... auth.keycloak.callback › Auth\KeycloakAuthController@callback
+  GET|POST|HEAD auth/logout ........................................................................................................................... auth.keycloak.logout › Auth\KeycloakAuthController@logout

@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportBatchResource\Pages;
+
+use App\Filament\Resources\Operations\ImportBatchResource;
+use App\Services\Operations\LdapImportPreviewService;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
+
+class ViewImportBatch extends ViewRecord
+{
+    protected static string $resource = ImportBatchResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('generateImportPreview')
+                ->label('Generate Preview')
+                ->icon('heroicon-o-eye')
+                ->color('primary')
+                ->requiresConfirmation()
+                ->modalHeading('Generate LDAP import preview?')
+                ->modalDescription('This only generates a preview. It does not apply changes to LDAP.')
+                ->modalSubmitActionLabel('Generate Preview')
+                ->action(function (): void {
+                    $result = app(LdapImportPreviewService::class)->preview($this->getRecord());
+
+                    if ($result['ok'] ?? false) {
+                        Notification::make()
+                            ->title('LDAP import preview generated')
+                            ->body(
+                                'Total: '.($result['total_rows'] ?? 0)
+                                .' | Valid: '.($result['valid_rows'] ?? 0)
+                                .' | Invalid: '.($result['invalid_rows'] ?? 0)
+                            )
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('LDAP import preview failed')
+                            ->body($result['message'] ?? 'Unknown error')
+                            ->danger()
+                            ->send();
+                    }
+
+                    $this->redirect(static::getResource()::getUrl('view', [
+                        'record' => $this->getRecord()->getKey(),
+                    ]));
+                }),
+
+            Action::make('backToImportCenter')
+                ->label('Back to Imports')
+                ->icon('heroicon-o-arrow-left')
+                ->color('gray')
+                ->url(fn (): string => ImportBatchResource::getUrl('index')),
+        ];
+    }
+}

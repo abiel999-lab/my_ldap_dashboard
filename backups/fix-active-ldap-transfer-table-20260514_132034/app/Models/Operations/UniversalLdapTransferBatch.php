@@ -1,0 +1,264 @@
+<?php
+
+namespace App\Models\Operations;
+
+use App\Models\Directory\LdapConnection;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class UniversalLdapTransferBatch extends Model
+{
+    protected $guarded = [];
+
+    protected $table = 'universal_ldap_transfer_batches';
+
+    protected function casts(): array
+    {
+        return [
+            'metadata' => 'array',
+            'preview_only' => 'boolean',
+            'safe_mode' => 'boolean',
+            'destructive' => 'boolean',
+            'include_operational_attributes' => 'boolean',
+            'size_limit' => 'integer',
+            'page_size' => 'integer',
+            'output_size_bytes' => 'integer',
+            'total_entries' => 'integer',
+            'planned_entries' => 'integer',
+            'transferred_entries' => 'integer',
+            'failed_entries' => 'integer',
+            'started_at' => 'datetime',
+            'finished_at' => 'datetime',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (UniversalLdapTransferBatch $batch): void {
+            $batch->uuid ??= (string) Str::uuid();
+            $batch->created_by ??= Auth::id();
+            $batch->updated_by ??= Auth::id();
+
+            $batch->status ??= 'draft';
+            $batch->transfer_scope ??= 'custom_dn';
+            $batch->search_scope ??= 'sub';
+            $batch->filter ??= '(objectClass=*)';
+            $batch->attributes ??= '*';
+
+            $batch->size_limit ??= 1000;
+            $batch->page_size ??= 500;
+            $batch->target_dn_strategy ??= 'preserve_tree';
+            $batch->excluded_attributes ??= 'userPassword entryUUID entryCSN createTimestamp creatorsName modifyTimestamp modifiersName structuralObjectClass';
+            $batch->if_target_exists ??= 'skip';
+
+            $batch->preview_only = true;
+            $batch->safe_mode = true;
+            $batch->include_operational_attributes ??= false;
+            $batch->destructive = false;
+        });
+
+        static::updating(function (UniversalLdapTransferBatch $batch): void {
+            $batch->updated_by = Auth::id();
+            $batch->source_input_mode ??= 'ldap_query';
+            $batch->source_mode ??= 'ldap_query';
+            $batch->mode ??= 'copy';
+            $batch->transfer_mode ??= 'copy';
+            $batch->target_dn ??= $batch->target_parent_dn;
+            $batch->target_dn_mode ??= 'auto';
+            $batch->legacy_target_base_dn ??= null;
+
+            $batch->preview_only = true;
+            $batch->safe_mode = true;
+            $batch->destructive = false;
+        });
+    }
+
+    public function sourceLdapConnection(): BelongsTo
+    {
+        return $this->belongsTo(LdapConnection::class, 'source_ldap_connection_id');
+    }
+
+    public function targetLdapConnection(): BelongsTo
+    {
+        return $this->belongsTo(LdapConnection::class, 'target_ldap_connection_id');
+    }
+
+    public function operationJob(): BelongsTo
+    {
+        return $this->belongsTo(OperationJob::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    protected function effectiveSourceDn(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $baseDn = $this->safeString($this->getRawOriginal('source_base_dn'));
+                $scope = $this->safeString($this->getRawOriginal('transfer_scope') ?: 'custom_dn');
+
+                if ($scope === 'custom_dn') {
+                    return $this->safeString($this->getRawOriginal('custom_source_dn'));
+                }
+
+                if ($scope === 'full') {
+                    return $baseDn;
+                }
+
+                if (in_array($scope, ['ou', 'cn', 'uid'], true)) {
+                    $attr = $this->safeString($this->getRawOriginal('source_rdn_attribute') ?: $scope);
+                    $value = $this->safeString($this->getRawOriginal('source_rdn_value'));
+
+                    if ($attr === '' || $value === '' || $baseDn === '') {
+                        return '';
+                    }
+
+                    if (str_contains($value, '=')) {
+                        return $value.','.$baseDn;
+                    }
+
+                    return $attr.'='.$value.','.$baseDn;
+                }
+
+                return $baseDn;
+            }
+        );
+    }
+
+    protected function attributeList(): Attribute
+    {
+        return Attribute::make(
+            get: function (): array {
+                $value = $this->getRawOriginal('attributes');
+
+                if ($value === null) {
+                    return ['*'];
+                }
+
+                if (is_array($value)) {
+                    return $this->normalizeList($value);
+                }
+
+                if (! is_string($value)) {
+                    $value = $this->safeString($value);
+                }
+
+                $value = trim($value);
+
+                if ($value === '') {
+                    return ['*'];
+                }
+
+                $decoded = json_decode($value, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return $this->normalizeList($decoded);
+                }
+
+                $items = preg_split('/[\s,]+/', $value) ?: [];
+                $normalized = $this->normalizeList($items);
+
+                return $normalized === [] ? ['*'] : $normalized;
+            }
+        );
+    }
+
+    protected function displayOutputSize(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $bytes = (int) ($this->output_size_bytes ?? 0);
+
+                if ($bytes <= 0) {
+                    return 'N/A';
+                }
+
+                if ($bytes >= 1024 * 1024) {
+                    return round($bytes / 1024 / 1024, 2).' MB';
+                }
+
+                return round($bytes / 1024, 2).' KB';
+            }
+        );
+    }
+
+    public function hasOutputFile(): bool
+    {
+        return filled($this->output_path) && Storage::disk('local')->exists((string) $this->output_path);
+    }
+
+    public function readOutputContent(int $maxBytes = 60000): string
+    {
+        if (! $this->hasOutputFile()) {
+            return 'Transfer preview plan output file is missing.';
+        }
+
+        $content = Storage::disk('local')->get((string) $this->output_path);
+
+        if (strlen($content) > $maxBytes) {
+            return substr($content, 0, $maxBytes)."\n\n--- FILE TRUNCATED IN UI. DOWNLOAD FULL FILE TO VIEW ALL CONTENT. ---";
+        }
+
+        return $content;
+    }
+
+    private function safeString(mixed $value): string
+    {
+        if ($value === null) {
+            return '';
+        }
+
+        if (is_string($value)) {
+            return trim($value);
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0';
+        }
+
+        if (is_scalar($value)) {
+            return trim((string) $value);
+        }
+
+        if (is_array($value)) {
+            return trim(implode(',', $this->normalizeList($value)));
+        }
+
+        return '';
+    }
+
+    private function normalizeList(mixed $value): array
+    {
+        return collect(is_array($value) ? $value : [$value])
+            ->flatten()
+            ->map(function ($item): string {
+                if ($item === null) {
+                    return '';
+                }
+
+                if (is_bool($item)) {
+                    return $item ? '1' : '0';
+                }
+
+                if (is_scalar($item)) {
+                    return trim((string) $item);
+                }
+
+                return '';
+            })
+            ->flatMap(fn (string $item): array => preg_split('/[\s,]+/', $item) ?: [])
+            ->map(fn ($item): string => trim((string) $item))
+            ->filter(fn (string $item): bool => $item !== '')
+            ->unique()
+            ->values()
+            ->all();
+    }
+}

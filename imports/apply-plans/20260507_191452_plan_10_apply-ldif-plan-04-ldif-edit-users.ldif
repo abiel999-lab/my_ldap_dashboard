@@ -1,0 +1,23 @@
+dn: uid=ldif.user101,ou=people,dc=petra,dc=ac,dc=id
+changetype: modify
+replace: cn
+cn: LDIF User 101 Edited
+-
+replace: mail
+mail: ldif.user101.edited@petra.ac.id
+-
+replace: description
+description: Edited from LDIF import test
+-
+
+dn: uid=ldif.user102,ou=people,dc=petra,dc=ac,dc=id
+changetype: modify
+replace: cn
+cn: LDIF User 102 Edited
+-
+replace: mail
+mail: ldif.user102.edited@petra.ac.id
+-
+replace: description
+description: Edited from LDIF import test
+-

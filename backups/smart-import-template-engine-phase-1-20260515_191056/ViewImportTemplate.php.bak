@@ -1,0 +1,375 @@
+<?php
+
+namespace App\Filament\Resources\Operations\ImportTemplateResource\Pages;
+
+use App\Filament\Resources\Operations\ImportTemplateResource;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
+
+class ViewImportTemplate extends ViewRecord
+{
+    protected static string $resource = ImportTemplateResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('generateTemplate')
+                ->label('Generate Template')
+                ->icon('heroicon-o-cog-6-tooth')
+                ->color('success')
+                ->action(function (): void {
+                    $record = $this->getRecord();
+
+                    $path = $this->storeTemplateCsv($record);
+
+                    $this->updateRecordIfColumnsExist($record, [
+                        'output_path' => $path,
+                        'status' => 'generated',
+                    ]);
+
+                    Notification::make()
+                        ->title('Template generated')
+                        ->body('Template CSV regenerated from current metadata.')
+                        ->success()
+                        ->send();
+
+                    $this->redirect(static::getResource()::getUrl('view', [
+                        'record' => $record->getKey(),
+                    ]));
+                }),
+
+            Action::make('downloadTemplate')
+                ->label('Download')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('primary')
+                ->action(function () {
+                    $record = $this->getRecord();
+
+                    /*
+                     * Jangan pakai output_path lama.
+                     * Selalu generate fresh dari metadata yang sekarang tampil.
+                     */
+                    $path = $this->storeTemplateCsv($record);
+
+                    $this->updateRecordIfColumnsExist($record, [
+                        'output_path' => $path,
+                        'status' => 'generated',
+                    ]);
+
+                    $filename = str($record->name ?? 'ldap-import-template')
+                        ->slug()
+                        ->append('.csv')
+                        ->toString();
+
+                    return response()->download(
+                        Storage::disk('local')->path($path),
+                        $filename,
+                        ['Content-Type' => 'text/csv']
+                    );
+                }),
+
+            Action::make('editTemplate')
+                ->label('Edit')
+                ->icon('heroicon-o-pencil-square')
+                ->color('primary')
+                ->url(fn () => static::getResource()::getUrl('edit', [
+                    'record' => $this->getRecord()->getKey(),
+                ])),
+        ];
+    }
+
+    private function storeTemplateCsv($record): string
+    {
+        $csv = $this->buildCsvFromTemplateRecord($record);
+
+        $safeName = str($record->name ?? 'ldap-import-template')
+            ->slug()
+            ->toString();
+
+        $path = 'imports/templates/'.$safeName.'_'.now()->format('Ymd_His').'.csv';
+
+        Storage::disk('local')->put($path, $csv);
+
+        return $path;
+    }
+
+    private function buildCsvFromTemplateRecord($record): string
+    {
+        $metadata = $this->decodeMetadata($record->metadata ?? []);
+
+        $operationMode = $metadata['operation_mode']
+            ?? $metadata['operation']['mode']
+            ?? $record->template_purpose
+            ?? $record->purpose
+            ?? 'create';
+
+        $baseDn = $metadata['dn_rules']['base_dn']
+            ?? $record->base_dn
+            ?? $record->target_base_dn
+            ?? 'dc=example,dc=local';
+
+        $targetParentDn = $metadata['dn_rules']['target_parent_dn']
+            ?? $metadata['dn_rules']['target_ou']
+            ?? $record->target_ou
+            ?? $record->parent_dn
+            ?? '';
+
+        $rdnAttribute = $metadata['dn_rules']['rdn_attribute']
+            ?? $metadata['dn_rules']['identifier_attribute']
+            ?? $record->rdn_attribute
+            ?? $record->identifier_attribute
+            ?? 'uid';
+
+        $dnTemplate = $metadata['dn_rules']['dn_template']
+            ?? $record->dn_template
+            ?? null;
+
+        if (blank($dnTemplate)) {
+            $parentDn = filled($targetParentDn)
+                ? str_replace('{base_dn}', (string) $baseDn, (string) $targetParentDn)
+                : (string) $baseDn;
+
+            $dnTemplate = $rdnAttribute.'={'.$rdnAttribute.'},'.$parentDn;
+        }
+
+        $objectClasses = $this->lines(
+            $metadata['object_rules']['object_classes']
+                ?? $record->object_classes
+                ?? ''
+        );
+
+        if ($objectClasses === []) {
+            $objectClasses = ['top'];
+        }
+
+        $requiredAttributes = $this->lines(
+            $metadata['object_rules']['required_attributes']
+                ?? $record->required_attributes
+                ?? $rdnAttribute
+        );
+
+        $optionalAttributes = $this->lines(
+            $metadata['object_rules']['optional_attributes']
+                ?? $record->optional_attributes
+                ?? $record->additional_attributes
+                ?? ''
+        );
+
+        $attributeMapping = $this->keyValueLines(
+            $metadata['object_rules']['attribute_mapping']
+                ?? $record->attribute_mapping
+                ?? ''
+        );
+
+        $multiValueSeparator = $metadata['object_rules']['multi_value_separator']
+            ?? $record->multi_value_separator
+            ?? ';';
+
+        $sampleRows = (int) (
+            $metadata['safety_rules']['sample_rows']
+                ?? $record->sample_rows
+                ?? 3
+        );
+
+        if ($sampleRows <= 0) {
+            $sampleRows = 3;
+        }
+
+        /*
+         * Header harus mengikuti template:
+         * - action
+         * - dn
+         * - RDN attribute
+         * - required attrs
+         * - optional attrs
+         * - mapping source columns
+         * - objectClass
+         */
+        $columns = array_values(array_unique(array_filter(array_merge(
+            [$rdnAttribute],
+            $requiredAttributes,
+            $optionalAttributes,
+            array_keys($attributeMapping),
+        ))));
+
+        $columns = array_values(array_filter($columns, function ($column) {
+            return ! in_array($column, ['action', 'dn', 'objectClass', 'objectclass'], true);
+        }));
+
+        $headers = array_values(array_unique(array_merge(
+            ['action', 'dn'],
+            $columns,
+            ['objectClass']
+        )));
+
+        $action = match ((string) $operationMode) {
+            'update' => 'update',
+            'upsert' => 'upsert',
+            'delete' => 'delete',
+            default => 'create',
+        };
+
+        $objectClassValue = implode((string) $multiValueSeparator, $objectClasses);
+
+        $rows = [];
+        $rows[] = $headers;
+
+        for ($i = 1; $i <= $sampleRows; $i++) {
+            $number = str_pad((string) $i, 3, '0', STR_PAD_LEFT);
+
+            $identifierValue = match ((string) $rdnAttribute) {
+                'cn' => 'test-group-'.$number,
+                'ou' => 'test-ou-'.$number,
+                default => 'test-user-'.$number,
+            };
+
+            $placeholderData = [
+                'base_dn' => (string) $baseDn,
+                'uid' => $rdnAttribute === 'uid' ? $identifierValue : 'test-user-'.$number,
+                'cn' => $rdnAttribute === 'cn' ? $identifierValue : 'Test Name '.$number,
+                'ou' => $rdnAttribute === 'ou' ? $identifierValue : 'test-ou-'.$number,
+                $rdnAttribute => $identifierValue,
+            ];
+
+            $dn = preg_replace_callback('/\{([^}]+)\}/', function ($matches) use ($placeholderData) {
+                return (string) ($placeholderData[$matches[1]] ?? '');
+            }, (string) $dnTemplate);
+
+            $row = [];
+
+            foreach ($headers as $header) {
+                $row[$header] = '';
+            }
+
+            $row['action'] = $action;
+            $row['dn'] = $dn;
+            $row['objectClass'] = $objectClassValue;
+
+            foreach ($columns as $column) {
+                $row[$column] = $this->sampleValueForAttribute(
+                    attribute: $column,
+                    number: $number,
+                    baseDn: (string) $baseDn,
+                    rdnAttribute: (string) $rdnAttribute,
+                    identifierValue: $identifierValue,
+                );
+            }
+
+            $rows[] = array_map(fn ($header) => $row[$header] ?? '', $headers);
+        }
+
+        $handle = fopen('php://temp', 'r+');
+
+        foreach ($rows as $row) {
+            fputcsv($handle, $row);
+        }
+
+        rewind($handle);
+
+        return stream_get_contents($handle) ?: '';
+    }
+
+    private function sampleValueForAttribute(string $attribute, string $number, string $baseDn, string $rdnAttribute, string $identifierValue): string
+    {
+        if ($attribute === $rdnAttribute) {
+            return $identifierValue;
+        }
+
+        return match ($attribute) {
+            'uid' => 'test-user-'.$number,
+            'cn' => $rdnAttribute === 'cn' ? $identifierValue : 'Test User '.$number,
+            'sn' => 'User '.$number,
+            'givenName' => 'Test',
+            'displayName' => 'Test User '.$number,
+            'mail' => 'test.user'.$number.'@example.local',
+            'member' => 'uid=test-user-001,ou=people,'.$baseDn,
+            'ou' => $rdnAttribute === 'ou' ? $identifierValue : 'test-ou-'.$number,
+            'description' => 'Generated from LDAP Import Template',
+            default => $attribute.'-'.$number,
+        };
+    }
+
+    private function decodeMetadata(mixed $metadata): array
+    {
+        if (is_array($metadata)) {
+            return $metadata;
+        }
+
+        if (is_string($metadata)) {
+            $decoded = json_decode($metadata, true);
+
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+
+    private function lines(mixed $value): array
+    {
+        if (is_array($value)) {
+            return array_values(array_filter(array_map(
+                fn ($item) => trim((string) $item),
+                $value
+            )));
+        }
+
+        if (blank($value)) {
+            return [];
+        }
+
+        $decoded = is_string($value) ? json_decode($value, true) : null;
+
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return array_values(array_filter(array_map(
+                fn ($item) => trim((string) $item),
+                $decoded
+            )));
+        }
+
+        return array_values(array_filter(array_map(
+            fn ($line) => trim((string) $line),
+            preg_split('/\r?\n/', (string) $value) ?: []
+        )));
+    }
+
+    private function keyValueLines(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        $items = [];
+
+        foreach ($this->lines($value) as $line) {
+            if (! str_contains($line, '=')) {
+                continue;
+            }
+
+            [$key, $val] = explode('=', $line, 2);
+
+            $items[trim($key)] = trim($val);
+        }
+
+        return $items;
+    }
+
+    private function updateRecordIfColumnsExist($record, array $data): void
+    {
+        $columns = Schema::getColumnListing($record->getTable());
+
+        $clean = [];
+
+        foreach ($data as $key => $value) {
+            if (in_array($key, $columns, true)) {
+                $clean[$key] = $value;
+            }
+        }
+
+        if ($clean !== []) {
+            $record->forceFill($clean)->save();
+        }
+    }
+}
