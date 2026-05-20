@@ -63,8 +63,7 @@ class LdapConnectionResource extends Resource
                             ->default('local')
                             ->placeholder('production, staging, testing, local'),
                     ])
-                    ->columns(2)
-                    ->columnSpanFull(),
+                    ->columns(2),
 
                 Section::make('LDAP Server')
                     ->description('Main LDAP server endpoint and bind configuration.')
@@ -118,8 +117,7 @@ class LdapConnectionResource extends Resource
                             ->maxValue(120)
                             ->default(5),
                     ])
-                    ->columns(3)
-                    ->columnSpanFull(),
+                    ->columns(3),
 
                 Section::make('Connection Mode')
                     ->description('Controls whether this connection is active, default, or read-only.')
@@ -136,8 +134,7 @@ class LdapConnectionResource extends Resource
                             ->label('Read-only Mode')
                             ->helperText('Read-only connections should not be used for destructive LDAP operations.'),
                     ])
-                    ->columns(3)
-                    ->columnSpanFull(),
+                    ->columns(3),
 
                 Section::make('Dynamic LDAP Mapping')
                     ->description('Do not hardcode LDAP structure. Configure per connection.')
@@ -195,8 +192,7 @@ class LdapConnectionResource extends Resource
                             ->dehydrated(false)
                             ->columnSpanFull(),
                     ])
-                    ->columns(2)
-                    ->columnSpanFull(),
+                    ->columns(2),
             ]);
     }
 
