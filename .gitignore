@@ -11,3 +11,5 @@
 !.env.example
 /public/storage
 .DS_Store
+*.bak.*
+*.bak

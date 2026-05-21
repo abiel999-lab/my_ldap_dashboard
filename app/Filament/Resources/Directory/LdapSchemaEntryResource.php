@@ -224,8 +224,8 @@ class LdapSchemaEntryResource extends Resource
             ])
             ->bulkActions([])
             ->recordUrl(fn ($record): string => static::getUrl('view', ['record' => $record]))
-            ->defaultSort('id', 'desc')
-            ->paginated([10, 25, 50, 100]);
+            ->defaultSort('updated_at', 'desc')
+            ->paginated([10, 25, 50]);
     }
 
     public static function schemaMutationForm($record = null): array
