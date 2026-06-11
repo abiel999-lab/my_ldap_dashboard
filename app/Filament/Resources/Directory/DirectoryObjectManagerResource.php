@@ -536,13 +536,48 @@ class DirectoryObjectManagerResource extends Resource
 
     public static function queueSyncObjects(array $data): void
     {
-        $connectionId = isset($data['ldap_connection_id']) && $data['ldap_connection_id'] !== ''
-            ? (int) $data['ldap_connection_id']
-            : null;
+        try {
+            $connectionId = isset($data['ldap_connection_id']) && $data['ldap_connection_id'] !== ''
+                ? (int) $data['ldap_connection_id']
+                : null;
 
-        $result = app(DirectoryManagementSyncDispatcher::class)->queueDirectoryObjects($connectionId);
+            $execution = SafeCommandExecutionLogger::createQueued(
+                'ldap_directory_objects_sync_queued',
+                'queued job: SyncDirectoryObjectsJob',
+                [
+                    'operation' => 'sync_directory_objects',
+                    'ldap_connection_id' => $connectionId,
+                    'queue' => 'ldap',
+                    'source' => 'directory_object_manager',
+                ]
+            );
 
-        DirectoryManagementSyncDispatcher::notifyResult($result, 'Directory objects sync queued');
+            SyncDirectoryObjectsJob::dispatch(
+                $connectionId,
+                SafeCommandExecutionLogger::id($execution)
+            );
+
+            Notification::make()
+                ->title('Directory objects sync queued')
+                ->body('Command Execution ID: '.(SafeCommandExecutionLogger::id($execution) ?? 'N/A').' | Queue: ldap')
+                ->success()
+                ->send();
+        } catch (Throwable $e) {
+            SafeCommandExecutionLogger::createFailed(
+                'ldap_directory_objects_sync_dispatch_failed',
+                $e->getMessage(),
+                [
+                    'operation' => 'sync_directory_objects',
+                    'data' => $data,
+                ]
+            );
+
+            Notification::make()
+                ->title('Directory objects sync failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     public static function queueSyncSingleObject($record): void

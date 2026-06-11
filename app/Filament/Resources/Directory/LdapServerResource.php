@@ -236,6 +236,7 @@ class LdapServerResource extends Resource
 
                     Action::make('startDocker')
                         ->label('Start Docker LDAP')
+                        ->visible(fn (): bool => (bool) env('LDAP_SERVER_ENABLE_DOCKER_ACTIONS', false))
                         ->icon('heroicon-o-play')
                         ->requiresConfirmation()
                         ->action(function (LdapServer $record): void {
@@ -250,6 +251,7 @@ class LdapServerResource extends Resource
 
                     Action::make('stopDocker')
                         ->label('Stop Docker LDAP')
+                        ->visible(fn (): bool => (bool) env('LDAP_SERVER_ENABLE_DOCKER_ACTIONS', false))
                         ->icon('heroicon-o-stop')
                         ->color('warning')
                         ->requiresConfirmation()
@@ -265,6 +267,7 @@ class LdapServerResource extends Resource
 
                     Action::make('restartDocker')
                         ->label('Restart Docker LDAP')
+                        ->visible(fn (): bool => (bool) env('LDAP_SERVER_ENABLE_DOCKER_ACTIONS', false))
                         ->icon('heroicon-o-arrow-path')
                         ->requiresConfirmation()
                         ->action(function (LdapServer $record): void {
@@ -279,6 +282,7 @@ class LdapServerResource extends Resource
 
                     Action::make('checkDocker')
                         ->label('Check Docker Status')
+                        ->visible(fn (): bool => (bool) env('LDAP_SERVER_ENABLE_DOCKER_ACTIONS', false))
                         ->icon('heroicon-o-command-line')
                         ->action(function (LdapServer $record): void {
                             $result = app(LdapServerProvisioningService::class)->checkDockerContainer($record);

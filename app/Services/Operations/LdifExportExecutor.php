@@ -259,11 +259,33 @@ class LdifExportExecutor
 
     private function storeOutput(LdifExportBatch $batch, string $content): string
     {
+        $disk = 'local';
+
         $directory = 'ldif-exports/'.now()->format('Y/m/d');
-        $filename = 'ldif-export-'.$batch->id.'-'.now()->format('Ymd-His').'.ldif';
+        $filename = 'ldif-export-'.$batch->getKey().'-'.now()->format('Ymd-His').'.ldif';
         $path = $directory.'/'.$filename;
 
-        Storage::disk('local')->put($path, $content);
+        $content = str_replace(["\r\n", "\r"], "\n", $content);
+
+        if (! str_ends_with($content, "\n")) {
+            $content .= "\n";
+        }
+
+        Storage::disk($disk)->put($path, $content);
+
+        clearstatcache();
+
+        if (! Storage::disk($disk)->exists($path)) {
+            throw new \RuntimeException('LDIF export failed: output file was not written. disk='.$disk.' path='.$path);
+        }
+
+        $size = Storage::disk($disk)->size($path);
+
+        if ($size <= 0) {
+            Storage::disk($disk)->delete($path);
+
+            throw new \RuntimeException('LDIF export failed: output file is empty. disk='.$disk.' path='.$path);
+        }
 
         return $path;
     }

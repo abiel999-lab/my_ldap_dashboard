@@ -4,6 +4,7 @@ namespace App\Jobs\Directory;
 
 use App\Models\Directory\LdapUserEntry;
 use App\Services\Directory\LdapSingleUserSyncService;
+use App\Services\Sync\VerifiedSyncLogger;
 use App\Support\Operations\SafeCommandExecutionLogger;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,6 +21,7 @@ class SyncUsersBatchJob implements ShouldQueue
     use SerializesModels;
 
     public int $timeout = 1800;
+
     public int $tries = 1;
 
     public function __construct(
@@ -46,15 +48,17 @@ class SyncUsersBatchJob implements ShouldQueue
                         try {
                             $result = $syncService->sync($user);
 
+                            $isOk = (bool) ($result['ok'] ?? false);
+
                             $results[] = [
                                 'user_id' => $user->id,
                                 'dn' => $user->dn,
-                                'ok' => (bool) ($result['ok'] ?? false),
+                                'ok' => $isOk,
                                 'message' => $result['message'] ?? null,
                                 'child_command_execution_id' => $result['command_execution_id'] ?? null,
                             ];
 
-                            ($result['ok'] ?? false) ? $ok++ : $failed++;
+                            $isOk ? $ok++ : $failed++;
                         } catch (Throwable $e) {
                             $failed++;
 
@@ -76,9 +80,21 @@ class SyncUsersBatchJob implements ShouldQueue
                 'results' => $results,
             ];
 
+            $verification = app(VerifiedSyncLogger::class)->verifyAndLog([
+                'connection_id' => 2,
+                'source' => $failed > 0 ? 'SyncUsersBatchJob partial' : 'SyncUsersBatchJob',
+                'operation' => 'ldap_users_batch_sync_verified',
+                'reason' => $failed > 0 ? 'after_users_batch_sync_partial' : 'after_users_batch_sync',
+                'command_execution_id' => $this->commandExecutionId,
+            ]);
+
+            $summary['post_sync_verification'] = $verification;
+            $summary['status_semantics'] = (($verification['final_status'] ?? null) === 'success')
+                ? 'success'
+                : 'success_with_warnings';
+
             if ($failed > 0) {
-                SafeCommandExecutionLogger::markPartial($this->commandExecutionId, $summary, 'Some users failed to sync.', $summary);
-                return;
+                $summary['warning'] = 'Some users failed to sync, but post-sync verification still completed.';
             }
 
             SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, $summary, $summary);

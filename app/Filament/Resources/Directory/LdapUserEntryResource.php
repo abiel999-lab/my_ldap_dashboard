@@ -64,6 +64,59 @@ class LdapUserEntryResource extends Resource
             ->actions([
                 \Filament\Actions\ViewAction::make(),
 
+                \Filament\Actions\Action::make('changePassword')
+                    ->label('Change Password')
+                    ->icon('heroicon-o-key')
+                    ->color('warning')
+                    ->form([
+                        \Filament\Forms\Components\TextInput::make('new_password')
+                            ->label('New Password')
+                            ->password()
+                            ->revealable()
+                            ->required()
+                            ->minLength(12)
+                            ->maxLength(255)
+                            ->helperText('Password akan di-hash sebagai {SSHA} untuk LDAP bind dan sambaNTPassword untuk PEAP/MSCHAPv2. Password plain tidak disimpan di PostgreSQL/log.'),
+
+                        \Filament\Forms\Components\TextInput::make('new_password_confirmation')
+                            ->label('Confirm New Password')
+                            ->password()
+                            ->revealable()
+                            ->required()
+                            ->same('new_password'),
+                    ])
+                    ->requiresConfirmation()
+                    ->modalHeading('Change LDAP User Password')
+                    ->modalDescription('Password akan diganti di LDAP asli, lalu user akan di-refresh ke PostgreSQL. Password plain dan hash tidak akan ditampilkan di log.')
+                    ->action(function ($record, array $data): void {
+                        try {
+                            $result = app(\App\Services\Directory\LdapUserPasswordService::class)
+                                ->changePassword($record, (string) ($data['new_password'] ?? ''));
+
+                            if (! ($result['ok'] ?? false)) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Password change failed')
+                                    ->body((string) ($result['message'] ?? 'Unknown error'))
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Password changed')
+                                ->body('Command Execution ID: '.($result['command_execution_id'] ?? 'N/A').' | Hash: '.($result['hash_algorithm_used'] ?? '{SSHA}'))
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Password change failed')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
                 \Filament\Actions\Action::make('syncFromTable')
                     ->label('Sync')
                     ->icon('heroicon-o-arrow-path')
@@ -517,6 +570,59 @@ class LdapUserEntryResource extends Resource
             ])
             ->actions([
                 \Filament\Actions\ViewAction::make(),
+
+                \Filament\Actions\Action::make('changePassword')
+                    ->label('Change Password')
+                    ->icon('heroicon-o-key')
+                    ->color('warning')
+                    ->form([
+                        \Filament\Forms\Components\TextInput::make('new_password')
+                            ->label('New Password')
+                            ->password()
+                            ->revealable()
+                            ->required()
+                            ->minLength(12)
+                            ->maxLength(255)
+                            ->helperText('Password akan di-hash sebagai {SSHA} untuk LDAP bind dan sambaNTPassword untuk PEAP/MSCHAPv2. Password plain tidak disimpan di PostgreSQL/log.'),
+
+                        \Filament\Forms\Components\TextInput::make('new_password_confirmation')
+                            ->label('Confirm New Password')
+                            ->password()
+                            ->revealable()
+                            ->required()
+                            ->same('new_password'),
+                    ])
+                    ->requiresConfirmation()
+                    ->modalHeading('Change LDAP User Password')
+                    ->modalDescription('Password akan diganti di LDAP asli, lalu user akan di-refresh ke PostgreSQL. Password plain dan hash tidak akan ditampilkan di log.')
+                    ->action(function ($record, array $data): void {
+                        try {
+                            $result = app(\App\Services\Directory\LdapUserPasswordService::class)
+                                ->changePassword($record, (string) ($data['new_password'] ?? ''));
+
+                            if (! ($result['ok'] ?? false)) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Password change failed')
+                                    ->body((string) ($result['message'] ?? 'Unknown error'))
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Password changed')
+                                ->body('Command Execution ID: '.($result['command_execution_id'] ?? 'N/A').' | Hash: '.($result['hash_algorithm_used'] ?? '{SSHA}'))
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Password change failed')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
 
                 \Filament\Actions\Action::make('syncFromTable')
                     ->label('Sync')

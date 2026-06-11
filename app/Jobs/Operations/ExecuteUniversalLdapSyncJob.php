@@ -3,6 +3,7 @@
 namespace App\Jobs\Operations;
 
 use App\Models\Operations\LdapSyncBatch;
+use App\Services\Sync\VerifiedSyncLogger;
 use App\Models\Operations\OperationJob;
 use App\Services\Operations\OperationJobFactory;
 use App\Services\Operations\UniversalLdapSyncService;
@@ -78,6 +79,10 @@ class ExecuteUniversalLdapSyncJob implements ShouldQueue
 
             $batch->forceFill([
                 'status' => $failed > 0 ? 'partial_success' : 'success',
+                'metadata' => array_merge((array) ($batch->metadata ?? []), [
+                    'post_sync_verification' => $verification ?? null,
+                    'post_sync_status_semantics' => (($verification['final_status'] ?? null) === 'success') ? 'success' : 'success_with_warnings',
+                ]),
                 'message' => (string) ($result['message'] ?? 'Universal LDAP sync completed.'),
                 'total_entries' => $total,
                 'created_entries' => $created,
@@ -86,7 +91,23 @@ class ExecuteUniversalLdapSyncJob implements ShouldQueue
                 'finished_at' => now(),
             ])->save();
 
+            $verification = $this->runPostSyncVerification(
+                operationJobId: $operationJob->id ?? null,
+                ldapConnectionId: $batch->ldap_connection_id ?? 2,
+                source: 'ExecuteUniversalLdapSyncJob batch '.$batch->id,
+                reason: 'after_universal_ldap_sync',
+            );
+
+            $verificationContext = [
+                'post_sync_verification' => $verification,
+                'post_sync_final_status' => $verification['final_status'] ?? 'unknown',
+                'post_sync_status_semantics' => (($verification['final_status'] ?? null) === 'success')
+                    ? 'success'
+                    : 'success_with_warnings',
+            ];
+
             $jobs->markSuccess($operationJob, [
+                'post_sync_verification' => $verification ?? null,
                 'event' => 'ldap_sync_success',
                 'ldap_sync_batch_id' => $batch->id,
                 'total_entries' => $total,
@@ -147,4 +168,28 @@ class ExecuteUniversalLdapSyncJob implements ShouldQueue
             'finished_at' => now(),
         ])->save();
     }
+    private function runPostSyncVerification(
+        ?int $operationJobId,
+        ?int $ldapConnectionId,
+        string $source,
+        string $reason = 'execute_universal_ldap_sync_job'
+    ): array {
+        if (! class_exists(VerifiedSyncLogger::class)) {
+            return [
+                'ok' => false,
+                'final_status' => 'verifier_missing',
+                'message' => 'VerifiedSyncLogger class is missing.',
+            ];
+        }
+
+        return app(VerifiedSyncLogger::class)->verifyAndLog([
+            'connection_id' => $ldapConnectionId ?: 2,
+            'source' => $source,
+            'operation' => 'universal_ldap_sync_verified',
+            'reason' => $reason,
+            'operation_job_id' => $operationJobId,
+        ]);
+    }
+
+
 }

@@ -13,3 +13,7 @@
 .DS_Store
 *.bak.*
 *.bak
+
+# Local backups and pentest artifacts
+/backups/
+/pentest_ldap_dashboard_*/

@@ -123,9 +123,14 @@ class LdapUserSyncService
                 $wasRecentlyCreated ? $created++ : $updated++;
             }
 
-            LdapUserEntry::query()
+            $missing = LdapUserEntry::query()
                 ->where('ldap_connection_id', $connection->id)
                 ->whereNotIn('dn', $seenDns ?: ['__none__'])
+                ->where(function ($query): void {
+                    $query
+                        ->whereNull('status')
+                        ->orWhereNotIn('status', ['deleted_from_ldap']);
+                })
                 ->update([
                     'status' => 'missing_from_ldap',
                     'last_synced_at' => now(),
@@ -134,7 +139,7 @@ class LdapUserSyncService
             $execution->update([
                 'status' => 'success',
                 'exit_code' => 0,
-                'stdout' => 'LDAP users synced dynamically. Seen: '.count($seenDns).', Created: '.$created.', Updated: '.$updated.'. LDIF cache: '.$tmpFile,
+                'stdout' => 'LDAP users synced dynamically. Seen: '.count($seenDns).', Created: '.$created.', Updated: '.$updated.', Missing: '.$missing.'. LDIF cache: '.$tmpFile,
                 'stderr' => $this->redactString($stderr),
                 'error_message' => null,
                 'finished_at' => now(),
@@ -146,6 +151,7 @@ class LdapUserSyncService
                 'created' => $created,
                 'updated' => $updated,
                 'seen' => count($seenDns),
+                'missing' => $missing,
                 'command_execution_id' => $execution->id,
                 'ldif_file' => $tmpFile,
             ];

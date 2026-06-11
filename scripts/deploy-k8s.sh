@@ -19,6 +19,7 @@ docker push "$IMAGE_NAME:$TAG"
 docker push "$IMAGE_NAME:latest"
 
 echo "4. Apply Kubernetes manifests..."
+microk8s kubectl apply -f k8s/my-ldap-dashboard-provisioner-rbac.yaml
 microk8s kubectl apply -f k8s/my-ldap-dashboard-deployment.yaml
 microk8s kubectl apply -f k8s/my-ldap-dashboard-service.yaml
 microk8s kubectl apply -f k8s/my-ldap-dashboard-ingress.yaml

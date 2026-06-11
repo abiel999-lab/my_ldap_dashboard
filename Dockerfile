@@ -3,14 +3,17 @@ FROM php:8.4-apache
 WORKDIR /var/www/html
 
 RUN apt-get update && apt-get install -y \
-    git unzip zip curl nodejs npm \
-    libpq-dev libldap2-dev libpng-dev libjpeg-dev libfreetype6-dev \
+    git unzip zip curl netcat-openbsd nodejs npm \
+    libpq-dev postgresql-client libldap2-dev ldap-utils libpng-dev libjpeg-dev libfreetype6-dev \
     libonig-dev libxml2-dev libicu-dev libzip-dev \
     && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_pgsql pgsql ldap mbstring xml gd bcmath intl zip opcache \
     && a2enmod rewrite headers \
     && echo "ServerName localhost" >> /etc/apache2/apache2.conf \
+    && curl -L -o /usr/local/bin/kubectl https://dl.k8s.io/release/v1.33.9/bin/linux/amd64/kubectl \
+    && chmod +x /usr/local/bin/kubectl \
+    && kubectl version --client=true \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -25,6 +28,11 @@ RUN if [ -f package.json ]; then \
     fi
 
 RUN php artisan filament:assets || true
+
+
+# Ensure Laravel public storage symlink exists in container image
+RUN mkdir -p /var/www/html/storage/app/public /var/www/html/public \
+    && ln -sfn /var/www/html/storage/app/public /var/www/html/public/storage
 
 RUN chown -R www-data:www-data storage bootstrap/cache public \
     && chmod -R 775 storage bootstrap/cache public

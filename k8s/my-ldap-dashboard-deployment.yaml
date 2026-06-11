@@ -13,12 +13,20 @@ spec:
       labels:
         app: my-ldap-dashboard
     spec:
+      serviceAccountName: my-ldap-dashboard-provisioner
       containers:
         - name: my-ldap-dashboard
           image: localhost:32000/my-ldap-dashboard:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80
+          env:
+            - name: LDAP_SERVER_K8S_NAMESPACE
+              value: petra-iam
+            - name: LDAP_SERVER_KUBECTL
+              value: kubectl
+            - name: LDAP_SERVER_ENABLE_DOCKER_ACTIONS
+              value: "false"
           envFrom:
             - secretRef:
                 name: my-ldap-dashboard-env

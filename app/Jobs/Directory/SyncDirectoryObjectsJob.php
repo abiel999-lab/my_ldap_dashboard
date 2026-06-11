@@ -5,6 +5,7 @@ namespace App\Jobs\Directory;
 use App\Models\Directory\LdapConnection;
 use App\Models\Directory\LdapDirectoryEntry;
 use App\Support\Operations\SafeCommandExecutionLogger;
+use App\Services\Sync\VerifiedSyncLogger;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -41,6 +42,7 @@ class SyncDirectoryObjectsJob implements ShouldQueue
             'seen' => 0,
             'created' => 0,
             'updated' => 0,
+            'missing' => 0,
             'failed' => 0,
             'errors' => [],
         ];
@@ -54,6 +56,7 @@ class SyncDirectoryObjectsJob implements ShouldQueue
                 $summary['seen'] += $result['seen'];
                 $summary['created'] += $result['created'];
                 $summary['updated'] += $result['updated'];
+                $summary['missing'] = ($summary['missing'] ?? 0) + ($result['missing'] ?? 0);
                 $summary['failed'] += $result['failed'];
                 $summary['errors'] = array_merge($summary['errors'], $result['errors']);
             }
@@ -67,6 +70,19 @@ class SyncDirectoryObjectsJob implements ShouldQueue
 
                 return;
             }
+
+            $verification = app(VerifiedSyncLogger::class)->verifyAndLog([
+                'connection_id' => 2,
+                'source' => 'SyncDirectoryObjectsJob',
+                'operation' => 'ldap_directory_objects_sync_verified',
+                'reason' => 'after_directory_objects_sync',
+                'command_execution_id' => $this->commandExecutionId,
+            ]);
+
+            $summary['post_sync_verification'] = $verification;
+            $summary['status_semantics'] = (($verification['final_status'] ?? null) === 'success')
+                ? 'success'
+                : 'success_with_warnings';
 
             SafeCommandExecutionLogger::markSuccess($this->commandExecutionId, $summary, $summary);
         } catch (Throwable $e) {
@@ -107,9 +123,12 @@ class SyncDirectoryObjectsJob implements ShouldQueue
             'seen' => 0,
             'created' => 0,
             'updated' => 0,
+            'missing' => 0,
             'failed' => 0,
             'errors' => [],
         ];
+
+        $seenDns = [];
 
         $baseDn = $this->baseDn($connection);
 
@@ -155,6 +174,7 @@ class SyncDirectoryObjectsJob implements ShouldQueue
             }
 
             $result['seen']++;
+            $seenDns[] = $dn;
 
             $objectClasses = $entry['objectClass'] ?? $entry['objectclass'] ?? [];
             $rdn = explode(',', $dn, 2)[0] ?? $dn;
@@ -190,6 +210,37 @@ class SyncDirectoryObjectsJob implements ShouldQueue
                 LdapDirectoryEntry::query()->create($payload);
                 $result['created']++;
             }
+        }
+
+        $missingPayload = [];
+
+        foreach ([
+            'status' => 'missing_from_ldap',
+            'last_synced_at' => now(),
+            'updated_at' => now(),
+        ] as $column => $value) {
+            if (in_array($column, $columns, true)) {
+                $missingPayload[$column] = $value;
+            }
+        }
+
+        if ($missingPayload !== []) {
+            $missingQuery = LdapDirectoryEntry::query()
+                ->whereNotIn('dn', $seenDns ?: ['__none__']);
+
+            if (in_array('ldap_connection_id', $columns, true)) {
+                $missingQuery->where('ldap_connection_id', $connection->id);
+            }
+
+            if (in_array('status', $columns, true)) {
+                $missingQuery->where(function ($query): void {
+                    $query
+                        ->whereNull('status')
+                        ->orWhereNotIn('status', ['deleted_from_ldap']);
+                });
+            }
+
+            $result['missing'] = $missingQuery->update($missingPayload);
         }
 
         return $result;

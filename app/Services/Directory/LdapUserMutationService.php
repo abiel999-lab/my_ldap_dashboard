@@ -239,6 +239,7 @@ public function addObjectClass(LdapUserEntry $user, string $objectClass, array $
             'last_seen_at' => now(),
         ])->save();
 
+        $this->refreshUserMirrorAfterWrite($user);
         $user->refresh();
 
         return $result + [
@@ -337,6 +338,7 @@ public function removeObjectClass(LdapUserEntry $user, string $objectClass): arr
             'last_seen_at' => now(),
         ])->save();
 
+        $this->refreshUserMirrorAfterWrite($user);
         $user->refresh();
 
         return $result + [
@@ -501,6 +503,15 @@ public function removeObjectClass(LdapUserEntry $user, string $objectClass): arr
         }
     }
 
+    private function refreshUserMirrorAfterWrite(LdapUserEntry $user): void
+    {
+        try {
+            app(LdapSingleUserSyncService::class)->sync($user->fresh());
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
     private function buildModifyLdif(string $dn, array $changes): string
     {
         if (! filled($dn)) {
@@ -559,15 +570,7 @@ public function removeObjectClass(LdapUserEntry $user, string $objectClass): arr
 
     private function saveNormalAttributes(LdapUserEntry $user, array $attributes): void
     {
-        ksort($attributes, SORT_NATURAL | SORT_FLAG_CASE);
-
-        $user->forceFill([
-            'attributes' => $attributes,
-            'source_hash' => hash('sha256', json_encode($attributes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
-            'last_synced_at' => now(),
-            'last_seen_at' => now(),
-        ])->save();
-
+        $this->refreshUserMirrorAfterWrite($user);
         $user->refresh();
     }
 

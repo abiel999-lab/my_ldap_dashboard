@@ -11,6 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use App\Services\Sync\VerifiedSyncLogger;
 use Throwable;
 
 class SyncLdapSchemaEntriesJob implements ShouldQueue
@@ -81,6 +82,19 @@ class SyncLdapSchemaEntriesJob implements ShouldQueue
                 'outputs' => $outputs,
                 'exit_code' => 0,
             ];
+
+            $verification = app(VerifiedSyncLogger::class)->verifyAndLog([
+                'connection_id' => (int) ($this->ldapConnectionId ?? 2),
+                'source' => 'SyncLdapSchemaEntriesJob',
+                'operation' => 'ldap_schema_entries_sync_verified',
+                'reason' => 'after_schema_entries_sync',
+                'operation_job_id' => property_exists($this, 'operationJobId') ? ($this->operationJobId ?? null) : null,
+            ]);
+
+            $payload['post_sync_verification'] = $verification;
+            $payload['status_semantics'] = (($verification['final_status'] ?? null) === 'success')
+                ? 'success'
+                : 'success_with_warnings';
 
             $this->markSuccess($payload);
         } catch (Throwable $e) {

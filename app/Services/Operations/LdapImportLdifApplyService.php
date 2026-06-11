@@ -48,7 +48,7 @@ class LdapImportLdifApplyService
             $ldif = trim((string) ($row->generated_ldif ?? ''));
 
             if ($ldif !== '') {
-                $this->applyRawLdifWithCommand($ldif);
+                $this->applyRawLdifWithCommand($ldif, $batch);
                 $this->markRow($rowTable, $row, 'applied', 'Raw LDIF applied with ldapmodify command.');
                 $summary['success']++;
                 continue;
@@ -127,7 +127,7 @@ class LdapImportLdifApplyService
         return $summary;
     }
 
-    private function applyRawLdifWithCommand(string $ldif): void
+    private function applyRawLdifWithCommand(string $ldif, object $batch): void
     {
         $ldif = trim($ldif).PHP_EOL;
         $lower = strtolower($ldif);
@@ -162,11 +162,25 @@ class LdapImportLdifApplyService
 
         file_put_contents($tmp, $ldif);
 
+        $connection = $this->ldapConnectionForBatch($batch);
+
+        $scheme = ((bool) ($connection->use_ssl ?? false)) ? 'ldaps' : 'ldap';
+        $host = trim((string) ($connection->host ?? ''));
+        $port = (int) ($connection->port ?? 389);
+        $url = $scheme.'://'.$host.':'.$port;
+
+        $bindDn = trim((string) ($connection->bind_dn ?? ''));
+        $bindPassword = $this->decryptLdapConnectionPassword($connection->bind_password ?? '');
+
+        if ($host === '' || $bindDn === '' || $bindPassword === '') {
+            throw new \RuntimeException('LDAP connection is incomplete for batch '.$batch->id.'. Host, bind DN, and password are required.');
+        }
+
         $cmd = sprintf(
             "ldapmodify -x -H %s -D %s -w %s -f %s 2>&1",
-            escapeshellarg(env('LDAP_DEFAULT_URL', 'ldap://127.0.0.1:30389')),
-            escapeshellarg(env('LDAP_DEFAULT_BIND_DN', 'cn=admin,dc=petra,dc=ac,dc=id')),
-            escapeshellarg(env('LDAP_DEFAULT_BIND_PASSWORD', 'SeongJinWoo999!')),
+            escapeshellarg($url),
+            escapeshellarg($bindDn),
+            escapeshellarg($bindPassword),
             escapeshellarg($tmp)
         );
 
@@ -175,6 +189,38 @@ class LdapImportLdifApplyService
 
         if ($code !== 0) {
             throw new \RuntimeException('ldapmodify failed: '.implode("\n", $output));
+        }
+    }
+
+    private function ldapConnectionForBatch(object $batch): object
+    {
+        $connectionId = (int) ($batch->ldap_connection_id ?? 0);
+
+        if ($connectionId <= 0) {
+            throw new \RuntimeException('Import batch '.$batch->id.' does not have ldap_connection_id.');
+        }
+
+        $connection = DB::table('ldap_connections')->where('id', $connectionId)->first();
+
+        if (! $connection) {
+            throw new \RuntimeException('LDAP connection not found for import batch '.$batch->id.'. Connection ID: '.$connectionId);
+        }
+
+        return $connection;
+    }
+
+    private function decryptLdapConnectionPassword(?string $value): string
+    {
+        $value = (string) $value;
+
+        if ($value === '') {
+            return '';
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (Throwable) {
+            return $value;
         }
     }
 

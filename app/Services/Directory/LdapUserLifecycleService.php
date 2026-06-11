@@ -3,9 +3,11 @@
 namespace App\Services\Directory;
 
 use App\Models\Directory\LdapConnection;
+use App\Models\Directory\LdapDirectoryEntry;
 use App\Models\Directory\LdapUserEntry;
 use App\Models\Operations\CommandExecution;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Process\Process;
 use Throwable;
 
@@ -97,7 +99,7 @@ class LdapUserLifecycleService
             return $result;
         }
 
-        LdapUserEntry::query()->updateOrCreate(
+        $createdUser = LdapUserEntry::query()->updateOrCreate(
             [
                 'ldap_connection_id' => $connection->id,
                 'dn' => $dn,
@@ -109,7 +111,7 @@ class LdapUserLifecycleService
                 'sn' => $attributes['sn'][0] ?? null,
                 'mail' => $attributes['mail'][0] ?? null,
                 'object_classes' => $objectClasses,
-                'attributes' => array_merge($attributes, [
+                'attributes' => array_merge($this->maskAttributeMapForStorage($attributes), [
                     'dn' => [$dn],
                     'objectClass' => $objectClasses,
                 ]),
@@ -118,14 +120,22 @@ class LdapUserLifecycleService
                 'status' => 'active',
                 'last_seen_at' => now(),
                 'last_synced_at' => now(),
-                'source_hash' => hash('sha256', json_encode($attributes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
+                'source_hash' => hash('sha256', json_encode($this->maskAttributeMapForStorage($attributes), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
             ]
         );
+
+        $this->refreshUserMirrorAfterWrite($createdUser);
 
         return [
             'ok' => true,
             'message' => 'LDAP user created successfully.',
             'command_execution_id' => $result['command_execution_id'] ?? null,
+            'ldap_user_entry_id' => $createdUser->id,
+            'dn' => $dn,
+            'mirror' => [
+                'ldap_user_entries' => 'refreshed',
+                'ldap_directory_entries' => 'refreshed',
+            ],
         ];
     }
 
@@ -186,6 +196,9 @@ class LdapUserLifecycleService
             'last_synced_at' => now(),
             'last_seen_at' => now(),
         ])->save();
+
+        $this->markDirectoryEntryDeletedByDn((int) $user->ldap_connection_id, $oldDn);
+        $this->refreshUserMirrorAfterWrite($user);
 
         return [
             'ok' => true,
@@ -262,6 +275,9 @@ class LdapUserLifecycleService
             'last_seen_at' => now(),
         ])->save();
 
+        $this->markDirectoryEntryDeletedByDn((int) $user->ldap_connection_id, $oldDn);
+        $this->refreshUserMirrorAfterWrite($user);
+
         return [
             'ok' => true,
             'message' => 'User RDN renamed successfully.',
@@ -305,17 +321,102 @@ class LdapUserLifecycleService
             return $result;
         }
 
+        $deletedDn = (string) $user->dn;
+
         $user->forceFill([
             'status' => 'deleted_from_ldap',
             'last_synced_at' => now(),
             'last_seen_at' => now(),
         ])->save();
 
+        $this->markDirectoryEntryDeletedByDn((int) $user->ldap_connection_id, $deletedDn);
+
         return [
             'ok' => true,
             'message' => 'LDAP user deleted successfully.',
             'command_execution_id' => $result['command_execution_id'] ?? null,
         ];
+    }
+
+    private function maskAttributeMapForStorage(array $attributes): array
+    {
+        $masked = [];
+
+        foreach ($attributes as $key => $values) {
+            $name = strtolower((string) $key);
+
+            if (in_array($name, ['userpassword', 'password', 'unicodepwd'], true)) {
+                $masked[$key] = ['[REDACTED]'];
+                continue;
+            }
+
+            $masked[$key] = $values;
+        }
+
+        return $masked;
+    }
+
+    private function refreshUserMirrorAfterWrite(LdapUserEntry $user): void
+    {
+        try {
+            $fresh = $user->fresh();
+
+            if ($fresh) {
+                app(LdapSingleUserSyncService::class)->sync($fresh);
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function markDirectoryEntryDeletedByDn(int $ldapConnectionId, string $dn): void
+    {
+        $dn = trim($dn);
+
+        if ($ldapConnectionId <= 0 || $dn === '') {
+            return;
+        }
+
+        if (! class_exists(LdapDirectoryEntry::class)) {
+            return;
+        }
+
+        $table = (new LdapDirectoryEntry())->getTable();
+
+        if (! Schema::hasTable($table)) {
+            return;
+        }
+
+        $columns = Schema::getColumnListing($table);
+
+        $query = LdapDirectoryEntry::query()->where('dn', $dn);
+
+        if (in_array('ldap_connection_id', $columns, true)) {
+            $query->where('ldap_connection_id', $ldapConnectionId);
+        }
+
+        $entry = $query->first();
+
+        if (! $entry) {
+            return;
+        }
+
+        $payload = [];
+
+        foreach ([
+            'status' => 'deleted_from_ldap',
+            'last_seen_at' => now(),
+            'last_synced_at' => now(),
+            'updated_at' => now(),
+        ] as $column => $value) {
+            if (in_array($column, $columns, true)) {
+                $payload[$column] = $value;
+            }
+        }
+
+        if ($payload !== []) {
+            $entry->forceFill($payload)->save();
+        }
     }
 
     private function runLdapCommand(

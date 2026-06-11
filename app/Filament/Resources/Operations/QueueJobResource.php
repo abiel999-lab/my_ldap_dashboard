@@ -4,15 +4,13 @@ namespace App\Filament\Resources\Operations;
 
 use App\Filament\Resources\Operations\QueueJobResource\Pages;
 use App\Models\Operations\QueueMonitorJob;
-use App\Services\Observability\UnifiedActivityLogger;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
-use Filament\Infolists\Components\KeyValueEntry;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -24,7 +22,7 @@ use Throwable;
 
 class QueueJobResource extends Resource
 {
-protected static ?string $model = QueueMonitorJob::class;
+    protected static ?string $model = QueueMonitorJob::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clock';
 
@@ -46,7 +44,7 @@ protected static ?string $model = QueueMonitorJob::class;
                     ->schema([
                         TextEntry::make('id')->label('ID'),
                         TextEntry::make('queue')->label('Queue')->badge(),
-                        TextEntry::make('redis_status')->label('Status')->badge(),
+                        TextEntry::make('redis_status')->label('Queue Status')->badge(),
                         TextEntry::make('job_class')->label('Job Class')->columnSpanFull(),
                         TextEntry::make('job_uuid')->label('Job UUID')->placeholder('N/A')->columnSpanFull(),
                         TextEntry::make('attempts')->label('Attempts'),
@@ -58,8 +56,32 @@ protected static ?string $model = QueueMonitorJob::class;
 
                 Section::make('Payload')
                     ->schema([
-                        KeyValueEntry::make('payload')
-                            ->label('Payload')
+                        TextEntry::make('payload')
+                            ->label('Payload JSON')
+                            ->formatStateUsing(function ($state): string {
+                                if ($state === null || $state === '') {
+                                    return 'N/A';
+                                }
+
+                                if (is_string($state)) {
+                                    $decoded = json_decode($state, true);
+
+                                    if (json_last_error() === JSON_ERROR_NONE) {
+                                        return json_encode(
+                                            $decoded,
+                                            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+                                        ) ?: $state;
+                                    }
+
+                                    return $state;
+                                }
+
+                                return json_encode(
+                                    $state,
+                                    JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+                                ) ?: 'N/A';
+                            })
+                            ->copyable()
                             ->columnSpanFull(),
                     ]),
             ]);
@@ -70,37 +92,15 @@ protected static ?string $model = QueueMonitorJob::class;
         return $table
             ->defaultSort('id', 'desc')
             ->headerActions([
-                Action::make('refreshRedisQueue')
-                    ->label('Refresh Redis Queue')
+                Action::make('refreshQueueMonitor')
+                    ->label('Refresh Queue Monitor')
                     ->icon(Heroicon::ArrowPath)
                     ->color('primary')
                     ->action(function (): void {
                         try {
                             Artisan::call('queue:monitor-refresh');
 
-                            $output = trim(Artisan::output()) ?: 'Redis queue snapshot updated.';
-
-                            app(UnifiedActivityLogger::class)->success(
-                                module: 'operations.queue_jobs',
-                                action: 'refresh_redis_queue',
-                                message: 'Redis queue monitor refreshed.',
-                                context: [
-                                    'operation_type' => 'queue_job',
-                                    'event' => 'refresh_redis_queue',
-                                    'target_type' => 'queue_monitor',
-                                    'target_id' => 'redis_queue',
-                                    'target_label' => 'Redis Queue Monitor',
-                                    'source' => 'filament',
-                                    'command' => 'php artisan queue:monitor-refresh',
-                                    'command_type' => 'queue_monitor',
-                                    'write_command_execution' => true,
-                                    'stdout' => $output,
-                                    'total' => 1,
-                                    'success' => 1,
-                                    'failed' => 0,
-                                    'skipped' => 0,
-                                ],
-                            );
+                            $output = trim(Artisan::output()) ?: 'Queue snapshot updated.';
 
                             Notification::make()
                                 ->title('Queue monitor refreshed')
@@ -108,28 +108,6 @@ protected static ?string $model = QueueMonitorJob::class;
                                 ->success()
                                 ->send();
                         } catch (Throwable $exception) {
-                            app(UnifiedActivityLogger::class)->failed(
-                                module: 'operations.queue_jobs',
-                                action: 'refresh_redis_queue',
-                                message: 'Redis queue monitor refresh failed: '.$exception->getMessage(),
-                                context: [
-                                    'operation_type' => 'queue_job',
-                                    'event' => 'refresh_redis_queue',
-                                    'target_type' => 'queue_monitor',
-                                    'target_id' => 'redis_queue',
-                                    'target_label' => 'Redis Queue Monitor',
-                                    'source' => 'filament',
-                                    'command' => 'php artisan queue:monitor-refresh',
-                                    'command_type' => 'queue_monitor',
-                                    'write_command_execution' => true,
-                                    'error' => $exception->getMessage(),
-                                    'total' => 1,
-                                    'success' => 0,
-                                    'failed' => 1,
-                                    'skipped' => 0,
-                                ],
-                            );
-
                             Notification::make()
                                 ->title('Queue monitor refresh failed')
                                 ->body($exception->getMessage())
@@ -150,13 +128,14 @@ protected static ?string $model = QueueMonitorJob::class;
                     ->searchable(),
 
                 TextColumn::make('redis_status')
-                    ->label('Redis Status')
+                    ->label('Queue Status')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'reserved' => 'info',
-                        'delayed' => 'gray',
-                        default => 'gray',
+                        'pending', 'database_pending' => 'warning',
+                        'reserved', 'database_reserved' => 'info',
+                        'delayed', 'redis_delayed' => 'gray',
+                        'database_failed' => 'danger',
+                        default => str_starts_with((string) $state, 'operation_') ? 'info' : 'gray',
                     })
                     ->sortable(),
 
@@ -193,21 +172,30 @@ protected static ?string $model = QueueMonitorJob::class;
                         'schema' => 'schema',
                         'operations' => 'operations',
                         'default' => 'default',
+                        'filament' => 'filament',
+                        'ldap' => 'ldap',
+                        'ldap-schema' => 'ldap-schema',
                     ]),
 
                 SelectFilter::make('redis_status')
                     ->label('Status')
                     ->options([
-                        'pending' => 'Pending',
-                        'reserved' => 'Reserved',
-                        'delayed' => 'Delayed',
+                        'database_pending' => 'Database Pending',
+                        'database_reserved' => 'Database Reserved',
+                        'database_failed' => 'Database Failed',
+                        'operation_queued' => 'Operation Queued',
+                        'operation_running' => 'Operation Running',
+                        'operation_processing' => 'Operation Processing',
+                        'redis_pending' => 'Redis Pending',
+                        'redis_reserved' => 'Redis Reserved',
+                        'redis_delayed' => 'Redis Delayed',
                     ]),
             ])
             ->recordActions([
                 ViewAction::make(),
             ])
-            ->emptyStateHeading('No Redis queue jobs detected')
-            ->emptyStateDescription('Click Refresh Redis Queue. If still empty, jobs are already completed or workers processed them immediately.');
+            ->emptyStateHeading('No queue jobs detected')
+            ->emptyStateDescription('Click Refresh Queue Monitor. If still empty, jobs are already completed or workers processed them immediately.');
     }
 
     public static function getPages(): array

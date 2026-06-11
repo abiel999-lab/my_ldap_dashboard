@@ -6,6 +6,7 @@ use App\Models\Directory\LdapConnection;
 use App\Models\Operations\LdapSyncBatch;
 use App\Models\Operations\OperationJob;
 use App\Services\Operations\OperationJobFactory;
+use App\Services\Sync\VerifiedSyncLogger;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -72,7 +73,17 @@ class ExecuteSchemaBrowserSyncJob implements ShouldQueue
                 ])->save();
             }
 
+            $verification = app(VerifiedSyncLogger::class)->verifyAndLog([
+                'connection_id' => (int) ($operationJob->ldap_connection_id ?? 2),
+                'source' => 'ExecuteSchemaBrowserSyncJob operation job '.$operationJob->id,
+                'operation' => 'ldap_schema_browser_sync_verified',
+                'reason' => 'after_schema_browser_sync',
+                'operation_job_id' => $operationJob->id,
+            ]);
+
             $jobs->markSuccess($operationJob, [
+                'post_sync_verification' => $verification ?? null,
+                'status_semantics' => (($verification['final_status'] ?? null) === 'success') ? 'success' : 'success_with_warnings',
                 'event' => 'schema_sync_success',
                 'ldap_connection_id' => $connection->id,
                 'ldap_sync_batch_id' => $batch?->id,

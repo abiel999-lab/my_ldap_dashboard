@@ -151,13 +151,28 @@ YAML;
         $domain = $server->domain ?: 'test.local';
         $organization = $server->organization ?: $server->name;
         $password = $server->admin_password ?: 'CHANGE_ME_STRONG_PASSWORD';
-        $port = $server->ldap_port ?: 389;
+
+        $exposeMode = strtolower((string) ($server->expose_mode ?: 'clusterip'));
+        $requestedPort = (int) ($server->ldap_port ?: 389);
+
+        $serviceType = in_array($exposeMode, ['external', 'nodeport', 'node_port'], true)
+            ? 'NodePort'
+            : 'ClusterIP';
+
+        $nodePortYaml = '';
+
+        if ($serviceType === 'NodePort' && $requestedPort >= 30000 && $requestedPort <= 32767) {
+            $nodePortYaml = "\n      nodePort: {$requestedPort}";
+        }
 
         return <<<YAML
 apiVersion: v1
 kind: Secret
 metadata:
   name: {$name}-secret
+  labels:
+    app: {$name}
+    app.kubernetes.io/managed-by: my-ldap-dashboard
 type: Opaque
 stringData:
   LDAP_ADMIN_PASSWORD: "{$password}"
@@ -166,6 +181,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {$name}-data
+  labels:
+    app: {$name}
+    app.kubernetes.io/managed-by: my-ldap-dashboard
 spec:
   accessModes:
     - ReadWriteOnce
@@ -173,10 +191,27 @@ spec:
     requests:
       storage: 1Gi
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {$name}-config
+  labels:
+    app: {$name}
+    app.kubernetes.io/managed-by: my-ldap-dashboard
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 512Mi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {$name}
+  labels:
+    app: {$name}
+    app.kubernetes.io/managed-by: my-ldap-dashboard
 spec:
   replicas: 1
   selector:
@@ -186,12 +221,15 @@ spec:
     metadata:
       labels:
         app: {$name}
+        app.kubernetes.io/managed-by: my-ldap-dashboard
     spec:
       containers:
         - name: openldap
           image: {$image}
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 389
+            - name: ldap
+              containerPort: 389
           env:
             - name: LDAP_ORGANISATION
               value: "{$organization}"
@@ -207,23 +245,31 @@ spec:
           volumeMounts:
             - name: ldap-data
               mountPath: /var/lib/ldap
+            - name: ldap-config
+              mountPath: /etc/ldap/slapd.d
       volumes:
         - name: ldap-data
           persistentVolumeClaim:
             claimName: {$name}-data
+        - name: ldap-config
+          persistentVolumeClaim:
+            claimName: {$name}-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: {$name}
+  labels:
+    app: {$name}
+    app.kubernetes.io/managed-by: my-ldap-dashboard
 spec:
-  type: ClusterIP
+  type: {$serviceType}
   selector:
     app: {$name}
   ports:
     - name: ldap
-      port: {$port}
-      targetPort: 389
+      port: 389
+      targetPort: 389{$nodePortYaml}
 YAML;
     }
 
@@ -454,6 +500,165 @@ YAML;
     }
 
 
+    public function applyKubernetesManifest(LdapServer $server): array
+    {
+        $manifest = trim((string) ($server->kubernetes_manifest ?: $this->kubernetesManifest($server)));
+
+        if ($manifest === '') {
+            return [
+                'ok' => false,
+                'message' => 'Kubernetes manifest is empty. Please refresh generated artifacts first.',
+                'output' => null,
+            ];
+        }
+
+        $namespace = $this->kubernetesNamespace();
+        $kubectl = $this->kubectlBinary();
+
+        $result = $this->runProcessWithInput([
+            $kubectl,
+            '-n',
+            $namespace,
+            'apply',
+            '-f',
+            '-',
+        ], $manifest, 120);
+
+        $server->forceFill([
+            'provision_mode' => 'kubernetes',
+            'status' => $result['ok'] ? 'applied' : 'error',
+            'last_error' => $result['ok'] ? null : $result['message'],
+        ])->save();
+
+        $this->logKubernetesResult($server, 'service_apply_kubernetes_manifest', $result, [
+            'namespace' => $namespace,
+            'resource_name' => $server->safeName(),
+        ]);
+
+        return $result;
+    }
+
+    public function checkKubernetesStatus(LdapServer $server): array
+    {
+        $namespace = $this->kubernetesNamespace();
+        $kubectl = $this->kubectlBinary();
+        $name = $server->safeName();
+
+        $result = $this->runProcess([
+            $kubectl,
+            '-n',
+            $namespace,
+            'get',
+            'pods',
+            '-l',
+            'app='.$name,
+            '-o',
+            'wide',
+        ], 30);
+
+        if (! $result['ok']) {
+            $server->forceFill([
+                'status' => 'error',
+                'last_error' => $result['message'],
+            ])->save();
+
+            $this->logKubernetesResult($server, 'service_check_kubernetes_status', $result, [
+                'namespace' => $namespace,
+                'selector' => 'app='.$name,
+            ]);
+
+            return $result;
+        }
+
+        $output = trim((string) ($result['output'] ?? ''));
+
+        $final = [
+            'ok' => true,
+            'message' => $output !== '' ? $output : 'No Kubernetes pods found for app='.$name,
+            'output' => $output,
+        ];
+
+        $server->forceFill([
+            'status' => $output !== '' ? 'checked' : 'not_found',
+            'last_error' => null,
+        ])->save();
+
+        $this->logKubernetesResult($server, 'service_check_kubernetes_status', $final, [
+            'namespace' => $namespace,
+            'selector' => 'app='.$name,
+        ]);
+
+        return $final;
+    }
+
+    public function restartKubernetesDeployment(LdapServer $server): array
+    {
+        $namespace = $this->kubernetesNamespace();
+        $kubectl = $this->kubectlBinary();
+        $name = $server->safeName();
+
+        $result = $this->runProcess([
+            $kubectl,
+            '-n',
+            $namespace,
+            'rollout',
+            'restart',
+            'deployment/'.$name,
+        ], 60);
+
+        $server->forceFill([
+            'status' => $result['ok'] ? 'restarting' : 'error',
+            'last_error' => $result['ok'] ? null : $result['message'],
+        ])->save();
+
+        $this->logKubernetesResult($server, 'service_restart_kubernetes_deployment', $result, [
+            'namespace' => $namespace,
+            'deployment' => $name,
+        ]);
+
+        return $result;
+    }
+
+    public function deleteKubernetesResources(LdapServer $server): array
+    {
+        $manifest = trim((string) ($server->kubernetes_manifest ?: $this->kubernetesManifest($server)));
+
+        if ($manifest === '') {
+            return [
+                'ok' => false,
+                'message' => 'Kubernetes manifest is empty. Cannot delete generated resources.',
+                'output' => null,
+            ];
+        }
+
+        $namespace = $this->kubernetesNamespace();
+        $kubectl = $this->kubectlBinary();
+
+        $result = $this->runProcessWithInput([
+            $kubectl,
+            '-n',
+            $namespace,
+            'delete',
+            '-f',
+            '-',
+            '--ignore-not-found=true',
+        ], $manifest, 120);
+
+        $server->forceFill([
+            'status' => $result['ok'] ? 'deleted' : 'error',
+            'last_error' => $result['ok'] ? null : $result['message'],
+        ])->save();
+
+        $this->logKubernetesResult($server, 'service_delete_kubernetes_resources', $result, [
+            'namespace' => $namespace,
+            'resource_name' => $server->safeName(),
+        ]);
+
+        return $result;
+    }
+
+
+
     public function startDockerContainer(LdapServer $server): array
     {
         $container = $server->container_name ?: 'openldap-'.$server->safeName();
@@ -602,6 +807,39 @@ YAML;
 
         return $result;
     }
+    private function runProcessWithInput(array $command, string $input, int $timeout = 30): array
+    {
+        try {
+            $process = new Process($command);
+            $process->setTimeout($timeout);
+            $process->setInput($input);
+            $process->run();
+
+            $output = trim($process->getOutput());
+            $error = trim($process->getErrorOutput());
+
+            if (! $process->isSuccessful()) {
+                return [
+                    'ok' => false,
+                    'message' => $error ?: $output ?: 'Command failed.',
+                    'output' => $output,
+                ];
+            }
+
+            return [
+                'ok' => true,
+                'message' => $output ?: 'Command executed successfully.',
+                'output' => $output,
+            ];
+        } catch (Throwable $e) {
+            return [
+                'ok' => false,
+                'message' => $e->getMessage(),
+                'output' => null,
+            ];
+        }
+    }
+
 
     private function runProcess(array $command, int $timeout = 30): array
     {
@@ -633,6 +871,32 @@ YAML;
                 'output' => null,
             ];
         }
+    }
+
+
+
+    private function logKubernetesResult(LdapServer $server, string $action, array $result, array $extra = []): void
+    {
+        $this->logLdapServerActivity(
+            server: $server,
+            ok: (bool) ($result['ok'] ?? false),
+            action: $action,
+            message: (string) ($result['message'] ?? 'Kubernetes action completed.'),
+            extra: array_merge([
+                'result' => $result,
+                'runtime' => 'kubernetes',
+            ], $extra),
+        );
+    }
+
+    private function kubernetesNamespace(): string
+    {
+        return trim((string) env('LDAP_SERVER_K8S_NAMESPACE', env('KUBERNETES_NAMESPACE', 'petra-iam')));
+    }
+
+    private function kubectlBinary(): string
+    {
+        return trim((string) env('LDAP_SERVER_KUBECTL', 'kubectl'));
     }
 
 

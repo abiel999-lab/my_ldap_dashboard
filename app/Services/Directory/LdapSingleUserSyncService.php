@@ -3,7 +3,9 @@
 namespace App\Services\Directory;
 
 use App\Models\Directory\LdapConnection;
+use App\Models\Directory\LdapDirectoryEntry;
 use App\Models\Directory\LdapUserEntry;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Operations\CommandExecution;
 use Symfony\Component\Process\Process;
 use Throwable;
@@ -122,6 +124,8 @@ class LdapSingleUserSyncService
             $objectClasses = $normal['objectClass'] ?? $normal['objectclass'] ?? [];
             $memberOf = $operational['memberOf'] ?? $operational['memberof'] ?? [];
 
+            $normal = $this->redactSensitiveAttributes($normal);
+
             $user->forceFill([
                 'dn' => $parsed['dn'][0] ?? $user->dn,
                 'uid' => $normal['uid'][0] ?? $user->uid,
@@ -141,6 +145,8 @@ class LdapSingleUserSyncService
                     'group_dns' => $memberOf,
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
             ])->save();
+
+            $this->mirrorDirectoryEntry($user, $normal, $operational);
 
             $execution->update([
                 'status' => 'success',
@@ -175,6 +181,74 @@ class LdapSingleUserSyncService
 
             return $this->failed($e->getMessage(), $execution->id);
         }
+    }
+
+    private function mirrorDirectoryEntry(LdapUserEntry $user, array $normal, array $operational): void
+    {
+        if (! class_exists(LdapDirectoryEntry::class)) {
+            return;
+        }
+
+        $table = (new LdapDirectoryEntry())->getTable();
+
+        if (! Schema::hasTable($table)) {
+            return;
+        }
+
+        $columns = Schema::getColumnListing($table);
+        $dn = (string) ($user->dn ?? '');
+
+        if ($dn === '') {
+            return;
+        }
+
+        $attributes = array_merge($normal, $operational);
+        $attributes['dn'] = [$dn];
+
+        $objectClasses = $normal['objectClass'] ?? $normal['objectclass'] ?? $user->object_classes ?? [];
+        $rdn = explode(',', $dn, 2)[0] ?? $dn;
+
+        $payload = [];
+
+        foreach ([
+            'ldap_connection_id' => $user->ldap_connection_id,
+            'connection_id' => $user->ldap_connection_id,
+            'dn' => $dn,
+            'rdn' => $rdn,
+            'object_classes' => array_values((array) $objectClasses),
+            'attributes' => $attributes,
+            'raw_attributes' => $attributes,
+            'normal_attributes' => $normal,
+            'operational_attributes' => $operational,
+            'status' => 'active',
+            'last_seen_at' => now(),
+            'last_synced_at' => now(),
+        ] as $column => $value) {
+            if (in_array($column, $columns, true)) {
+                $payload[$column] = $value;
+            }
+        }
+
+        foreach (['uid', 'cn', 'sn', 'mail', 'ou'] as $attr) {
+            if (in_array($attr, $columns, true) && isset($normal[$attr][0])) {
+                $payload[$attr] = $normal[$attr][0];
+            }
+        }
+
+        $query = LdapDirectoryEntry::query()->where('dn', $dn);
+
+        if (in_array('ldap_connection_id', $columns, true)) {
+            $query->where('ldap_connection_id', $user->ldap_connection_id);
+        }
+
+        $existing = $query->first();
+
+        if ($existing) {
+            $existing->forceFill($payload)->save();
+            return;
+        }
+
+        LdapDirectoryEntry::query()->create($payload);
     }
 
     private function parseLdif(string $ldif): array
@@ -215,6 +289,19 @@ class LdapSingleUserSyncService
         }
 
         return $result;
+    }
+
+    private function redactSensitiveAttributes(array $attributes): array
+    {
+        foreach (array_keys($attributes) as $key) {
+            $name = strtolower((string) $key);
+
+            if (in_array($name, ['userpassword', 'password', 'unicodepwd', 'sambantpassword', 'ntpassword', 'petrantpassword'], true)) {
+                $attributes[$key] = ['[REDACTED]'];
+            }
+        }
+
+        return $attributes;
     }
 
     private function isOperationalAttribute(string $attribute): bool

@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: my-ldap-dashboard-provisioner
+  namespace: petra-iam
+  labels:
+    app: my-ldap-dashboard
+    app.kubernetes.io/managed-by: my-ldap-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: my-ldap-dashboard-provisioner
+  namespace: petra-iam
+  labels:
+    app: my-ldap-dashboard
+    app.kubernetes.io/managed-by: my-ldap-dashboard
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - services
+      - secrets
+      - persistentvolumeclaims
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+
+  - apiGroups: ["apps"]
+    resources:
+      - deployments/status
+    verbs:
+      - get
+      - list
+      - watch
+
+  - apiGroups: ["apps"]
+    resources:
+      - deployments/scale
+    verbs:
+      - get
+      - update
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: my-ldap-dashboard-provisioner
+  namespace: petra-iam
+  labels:
+    app: my-ldap-dashboard
+    app.kubernetes.io/managed-by: my-ldap-dashboard
+subjects:
+  - kind: ServiceAccount
+    name: my-ldap-dashboard-provisioner
+    namespace: petra-iam
+roleRef:
+  kind: Role
+  name: my-ldap-dashboard-provisioner
+  apiGroup: rbac.authorization.k8s.io

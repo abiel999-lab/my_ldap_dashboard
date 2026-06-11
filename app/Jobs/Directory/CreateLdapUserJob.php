@@ -54,10 +54,28 @@ class CreateLdapUserJob implements ShouldQueue
         } catch (Throwable $e) {
             SafeCommandExecutionLogger::markFailed($this->commandExecutionId, $e->getMessage(), [
                 'operation' => 'create_ldap_user',
-                'payload' => $this->payload,
+                'payload' => $this->redactPayload($this->payload),
             ]);
 
             throw $e;
         }
     }
+    private function redactPayload(array $payload): array
+    {
+        foreach ($payload as $key => $value) {
+            $name = strtolower((string) $key);
+
+            if (in_array($name, ['password', 'userpassword', 'user_password', 'unicodepwd'], true)) {
+                $payload[$key] = '[REDACTED]';
+                continue;
+            }
+
+            if (is_array($value)) {
+                $payload[$key] = $this->redactPayload($value);
+            }
+        }
+
+        return $payload;
+    }
+
 }
